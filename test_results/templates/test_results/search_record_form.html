@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+{% load crispy_forms_tags %}
+
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=devide-width, initial-scale=1.0" />
+
+    <title>
+        Covid-19 Test App
+    </title>
+    <style>
+        #header {
+            background-color:black;
+            color:white;
+            text-align:center;
+            height:40%
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Search qPCR Test Records</h1>
+    </div>
+
+    <div>
+        <h2>Search for qPCR Test Records</h2>
+        Fill at least one of the following fields to complete the search:
+        <br>
+        <form action="/test_results/record_search/" method="get">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <div>
+                <p>
+                {{ form.barcode.errors }}
+                {{ form.barcode.label_tag }}
+                {{ form.barcode }}
+                </p>
+            </div>
+            <div>
+                <p>
+                {{ form.technician.errors }}
+                {{ form.technician.label_tag }}
+                {{ form.technician }}
+                </p>
+            </div>
+            <div>
+                <p>
+                {{ form.lab.errors }}
+                {{ form.lab.label_tag }}
+                {{ form.lab }}
+                </p>
+            </div>
+            <div>
+                <p>
+                {{ form.collection_date.errors }}
+                {{ form.collection_date.label_tag }}
+                {{ form.collection_date }}
+                </p>
+            </div>
+            <div>
+                <p>
+                {{ form.processing_date.errors }}
+                {{ form.processing_date.label_tag }}
+                {{ form.processing_date }}
+                </p>
+            </div>
+
+            <input type="submit" value="Submit" />
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html lang="en">
+
+{% load static %}
+{% load render_table from django_tables2 %}
+
+<style>
+    #header {
+    text-align: center;
+}
+ </style>
+
+<head>
+    <meta charset="utf-8">
+    <title>Covid-19 Test App</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+</head>
+
+<body>
+<div id="header">
+    <h1>
+        <td align="center" >Search Results</td>
+    </h1>
+</div>
+
+<div>
+   {% render_table table %}
+</div>
+</body>
+
+</html>
