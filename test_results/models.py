@@ -27,7 +27,7 @@ class test_results(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['barcode', 'collection_site', 'technician', 'lab']),
+            models.Index(fields=['barcode', 'collection_site', 'technician']),
         ]
 
 
@@ -44,3 +44,9 @@ class ResultsForm(ModelForm):
         fields = ['barcode', 'collection_site', 'collection_protocol', 'processing_protocol', 'technician', 'lab',
                   'institute', 'collection_date', 'processing_date', 'machine_model', 'reagents', 'pcr_results_csv',
                   'pcr_platemap_csv']
+
+
+class platemap(models.Model):
+    plate_code = models.CharField(max_length=20, null=False, blank=False, unique=True)
+    barcode = models.CharField(max_length=20, null=False, blank=False, unique=True)
+    well = models.CharField(max_length=20, null=False, blank=False, unique=True)

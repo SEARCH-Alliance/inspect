@@ -9,4 +9,7 @@ urlpatterns = [
     path('failure/', views.create_record, name='failure'),
     path('search_record_form/', views.search_record_form, name='search_record_form'),
     path('record_search/', views.record_search, name='record_search'),
+    path('start_platemap/', views.start_platemap, name='start_platemap'),
+    path('barcode_capture/', views.barcode_capture, name='barcode_capture'),
+    path('platemap/', views.platemap, name='platemap'),
 ]
