@@ -45,28 +45,47 @@
     .new_record {color: green;}
     .search_record {color: dodgerblue;}
     </style>
+        <link href="https://unpkg.com/tailwindcss@^1.2/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tailwindcss/ui@latest/dist/tailwind-ui.min.css"></head>
 </head>
 
-<body>
+<body class="antialiased font-sans bg-gray-100">
+
 
 {% block sidebar %}
-{% if user.is_authenticated %}
-<li>User: {{ user.get_username }}</li>
-<li><a href="{% url 'logout'%}?next={{request.path}}">Logout</a></li>
-{% else %}
-<li><a href="{% url 'login'%}?next={{request.path}}">Login</a></li>
-{% endif %}
+<header class="bg-white shadow">
+    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {% if user.is_authenticated %}
+        <h2 class="text-3xl font-bold leading-tight text-gray-900">
+            User: {{ user.get_username }}
+        </h2>
+        <a href="{% url 'logout'%}?next={{request.path}}">Logout</a>
+        {% else %}
+        <a href="{% url 'login'%}?next={{request.path}}">Login</a>
+        {% endif %}
+    </div>
+  </header>
 {% endblock %}
 
-<div class="parent">
-    <div class="left">
+  <main>
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <!-- Replace with your content -->
+      <div class="px-4 py-6 sm:px-0">
+        <div class="border-4 border-dashed border-gray-200 rounded-lg h-96">
+                <div class="left">
         <button onclick="location.href = '/test_results/new_record_form/';" class="btn new_record">Add New Records</button>
     </div>
 
     <div class="right">
         <button onclick="location.href = '/test_results/search_record_form/';" class="btn search_record">Search Records</button>
     </div>
-
+        </div>
+      </div>
+      <!-- /End replace -->
+    </div>
+  </main>
 </div>
+
+
 </body>
 </html>
