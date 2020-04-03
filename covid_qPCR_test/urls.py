@@ -22,7 +22,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
-    path('test_results/', include('test_results.urls')),
+    path('qpcr_records/', include('qpcr_records.urls')),
     url(r'^admin/', admin.site.urls),
 ]
 

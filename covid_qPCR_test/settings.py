@@ -47,7 +47,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 INSTALLED_APPS = [
-    'test_results.apps.TestResultsConfig',
+    'qpcr_records.apps.QpcrRecordsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -148,6 +148,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 print(MEDIA_ROOT)
 
 
-LOGIN_REDIRECT_URL = '/test_results/'
+LOGIN_REDIRECT_URL = '/qpcr_records/'
 
 
