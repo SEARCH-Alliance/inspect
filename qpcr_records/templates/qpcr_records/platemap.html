@@ -1,20 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+{% extends 'qpcr_records/base.html' %}
+{% block content %}
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-1.4.0.min.js"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-1.4.0.min.js"></script>
+<script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-1.4.0.min.js"></script>
 
-    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-1.4.0.min.js"></script>
-    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-1.4.0.min.js"></script>
-    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-1.4.0.min.js"></script>
-
-    {{ script|safe }}
-
-</head>
-<body>
+{{ script|safe }}
+<div class="container">
 <h3> PlateMap created </h3>
+    <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vROFFL_kZm4yWrYHIJxgTCExmqrw0Y3hEDge0kcxPDAzgD2IW7v2nGK2uhw1ThaMMkniQmehwksyxQe/pubhtml?gid=1559862861&amp;single=true&amp;widget=true&amp;headers=false"
+    width="800" height="800">
+</iframe>
+    {{ div|safe }}
+</div>
+{% endblock %}
 
-{{ div|safe }}
-
-</body>
-</html>

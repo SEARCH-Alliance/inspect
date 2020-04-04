@@ -1,35 +1,11 @@
-<!DOCTYPE html>
-{% load crispy_forms_tags %}
-{% load static %}
-
-<html>
-<head>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-    <meta name="viewport" content="width=devide-width, initial-scale=1.0" />
-
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-
-    <title>
-        Covid-19 Test App
-    </title>
-    <style>
-        #header {
-            background-color:black;
-            color:white;
-            text-align:center;
-            height:40%
-        }
-    </style>
-</head>
-<body>
+{% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<div class="container">
     <h2>Plate # {{ plate }}</h2>
     <br>
     <br>
     <h2>Enter Box Information For Sample</h2>
     <br>
-    {% block content %}
     <form action="/qpcr_records/barcode_capture/" method="GET">
         {% csrf_token %}
         <div class="form-row">
@@ -58,5 +34,4 @@
         <button type="submit" class="btn btn-primary">Scan Sample Barcode</button>
     </form>
     {% endblock %}
-</body>
-</html>
+</div>
