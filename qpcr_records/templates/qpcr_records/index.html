@@ -1,442 +1,518 @@
 {% extends "qpcr_records/base.html" %}
+
+
 {% block content %}
 
-<div class="flex flex-row flex-wrap flex-1 flex-grow content-start pl-16"> <div class="h-40 lg:h-20 w-full flex flex-wrap"> <nav id="header" class="bg-gray-200 w-full lg:max-w-sm flex items-center border-b-1 border-gray-300 order-2 lg:order-1"> </nav> <nav id="header1" class="bg-gray-100 w-auto flex-1 border-b-1 border-gray-300 order-1 lg:order-2"> <div class="flex h-full justify-between items-center"> <!--Search--> <div class="relative w-full max-w-3xl px-6"> <div class="absolute h-10 mt-1 left-0 top-0 flex items-center pl-10"> <svg class="h-4 w-4 fill-current text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"> <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z"></path> </svg> </div> <input id="search-toggle" type="search" placeholder="search" class="block w-full bg-gray-200 focus:outline-none focus:bg-white focus:shadow-md text-gray-700 font-bold rounded-full pl-12 pr-4 py-3" onkeyup="updateSearchResults(this.value);"> </div> <!-- / Search--> <!--Menu--> <div class="flex relative inline-block pr-6"> <div class="relative text-sm"> <button id="userButton" class="flex items-center focus:outline-none mr-3">
-    {% if user.is_authenticated %}
-    <span class="hidden md:inline-block">
-        User: {{user.get_username}}
-    </span>
-    {% endif %}
+        <div class="flex flex-row flex-wrap flex-1 flex-grow content-start pl-16">
 
-<svg class="pl-2 h-2" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 129 129" xmlns:xlink="http://www.w3.org/1999/xlink" enable-background="new 0 0 129 129"> <g> <path d="m121.3,34.6c-1.6-1.6-4.2-1.6-5.8,0l-51,51.1-51.1-51.1c-1.6-1.6-4.2-1.6-5.8,0-1.6,1.6-1.6,4.2 0,5.8l53.9,53.9c0.8,0.8 1.8,1.2 2.9,1.2 1,0 2.1-0.4 2.9-1.2l53.9-53.9c1.7-1.6 1.7-4.2 0.1-5.8z"></path> </g> </svg> </button> <div id="userMenu" class="bg-white nunito rounded shadow-md mt-2 absolute mt-12 top-0 right-0 min-w-full overflow-auto z-30 invisible"> <ul class="list-reset"> <li><a href="{% url 'logout'%}?next={{request.path}}" class="px-4 py-2 block text-gray-900 hover:bg-indigo-400 hover:text-white no-underline hover:no-underline">Logout</a></li> </ul> </div> </div> </div> <!-- / Menu --> </div> </nav> </div> <!--Dash Content --> <div id="dash-content" class="bg-gray-200 py-6 lg:py-0 w-full h-full lg:max-w-sm flex flex-wrap content-start"> <button class="w-1/2 lg:w-full" onclick="location.href = '/qpcr_records/check_information/';"> <div class="border-2 border-gray-400 border-dashed hover:border-transparent hover:bg-white hover:shadow-xl rounded p-6 m-2 md:mx-10 md:my-6"> <div class="flex flex-col items-center"> <div class="flex-shrink pr-4"> <div class="rounded-full p-3 bg-gray-300"><i class="fas fa-plus-square fa-fw fa-inverse text-blue-600"></i></div> </div> <div class="flex-1"> <h3 class="font-bold text-gray-500 text-2xl">Start A New Sampling Plate</h3> </div> </div> </div> </button> <button class="w-1/2 lg:w-full" onclick="location.href = '/qpcr_records/search_record_form/';"> <div class="border-2 border-gray-400 border-dashed hover:border-transparent hover:bg-white hover:shadow-xl rounded p-6 m-2 md:mx-10 md:my-6"> <div class="flex flex-col items-center"> <div class="flex-shrink pr-4"> <div class="rounded-full p-3 bg-gray-300"><i class="fas fa-search fa-fw fa-inverse text-blue-600"></i></div> </div> <div class="flex-1"> <h3 class="font-bold text-gray-500 text-2xl">Search for records</h3> <br> </div> </div> </div> </button> </div> <!--Graph Content --> <div id="main-content" class="w-full flex-1"> <div id="chrome50Overall"> </div> <div id="inputs"> <div class="row"> <div class="col"> <input type="checkbox" id="checkboxErrors50" checked> <label for='checkboxErrors50'>Negative</label> </div> <div class="col"> <input type="checkbox" id="checkboxIps50" checked> <label for="checkboxIps50">Positive</label> </div> </div> </div> <div id="chrome50Detail"> </div> </div> </div> <script> ZC.LICENSE=["569d52cefae586f634c54f86dc99e6a9",
-"b55b025e438fa8a98e32482b5f768ff5"];
-// DEFINE CHART LOCATIONS (IDS)
-// -----------------------------
-// Main chart render location
-var chartId='myChart';
-var chrome50Detail='chrome50Detail';
-var chrome50Overall='chrome50Overall';
-// Checkbox Ids
-var checkboxErrors50='checkboxErrors50';
-var checkboxIps50='checkboxIps50';
-// CHART DATA
-// -----------------------------
-var lastIndex=null;
-var totalUsage=[7484,
-6791,
-5139,
-5484,
-7126,
-7191,
-6987,
-6979,
-6401,
-4753,
-5340,
-7123,
-6985,
-6722,
-6594,
-5988,
-4696,
-5114,
-6368,
-7052,
-9771,
-9034,
-6732,
-5483,
-5992,
-7811,
-7395,
-7181,
-7225,
-6436,
-5094,
-5473,
-6961,
-7072,
-7260,
-6951,
-6422,
-5070,
-5507,
-6867,
-7738,
-8298,
-8064,
-7905,
-6282,
-7104];
-var dates=[1464134400000,
-1464220800000,
-1464307200000,
-1464393600000,
-1464480000000,
-1464566400000,
-1464652800000,
-1464739200000,
-1464825600000,
-1464912000000,
-1464998400000,
-1465084800000,
-1465171200000,
-1465257600000,
-1465344000000,
-1465430400000,
-1465516800000,
-1465603200000,
-1465689600000,
-1465776000000,
-1465862400000,
-1465948800000,
-1466035200000,
-1466121600000,
-1466208000000,
-1466294400000,
-1466380800000,
-1466467200000,
-1466553600000,
-1466640000000,
-1466726400000,
-1466812800000,
-1466899200000,
-1466985600000];
-// Chrome50
-var chrome50= {
-    errors: [198, 202, 131, 132, 211, 218, 217, 224, 217, 171, 170, 230, 234, 226, 214, 192, 146, 153, 175, 213, 218, 221, 188, 131, 149, 192, 193, 165, 99, 56, 42, 28, 38, 28, 27, 27, 16, 9, 12, 12, 11, 14, 11, 7, 5, 6], ips: [32, 18, 14, 18, 18, 30, 34, 16, 19, 20, 13, 24, 29, 16, 23, 17, 12, 12, 18, 15, 39, 20, 19, 11, 13, 16, 15, 15, 6, 4, 3, 1, 3, 2, 2, 2, 2, 9, 1, 1, 2, 1, 1, 1, 8, 6]
-}
+        <div class="h-40 lg:h-20 w-full flex flex-wrap">
+            <nav id="header" class="bg-gray-200 w-full lg:max-w-sm flex items-center border-b-1 border-gray-300 order-2 lg:order-1">
 
-;
-chrome50.errorsOverall=chrome50.errors.reduce(combine);
-chrome50.ipsOverall=chrome50.ips.reduce(combine);
-// Chrome51
-// CHART CONFIG
-// -----------------------------
-// Chrome 50
-var chrome50_overall= {
-    type: "area",
-    globals: {
+            </nav>
+            <nav id="header1" class="bg-gray-100 w-auto flex-1 border-b-1 border-gray-300 order-1 lg:order-2">
+
+                <div class="flex h-full justify-between items-center">
+
+                    <!--Search-->
+                    <div class="relative w-full max-w-3xl px-6">
+                        <div class="absolute h-10 mt-1 left-0 top-0 flex items-center pl-10">
+                            <svg class="h-4 w-4 fill-current text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z"></path>
+                            </svg>
+                        </div>
+
+                        <input id="search-toggle" type="search" placeholder="search" class="block w-full bg-gray-200 focus:outline-none focus:bg-white focus:shadow-md text-gray-700 font-bold rounded-full pl-12 pr-4 py-3" onkeyup="updateSearchResults(this.value);">
+
+                    </div>
+                    <!-- / Search-->
+
+                    <!--Menu-->
+
+                    <div class="flex relative inline-block pr-6">
+
+                        <div class="relative text-sm">
+                            <button id="userButton" class="flex items-center focus:outline-none mr-3">
+                                {% if user.is_authenticated %}
+            <span class="hidden md:inline-block">
+                        User: {{ user.get_username }}
+            </span>
+        {% endif %}
+                                <svg class="pl-2 h-2" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 129 129" xmlns:xlink="http://www.w3.org/1999/xlink" enable-background="new 0 0 129 129">
+                                    <g>
+                                        <path d="m121.3,34.6c-1.6-1.6-4.2-1.6-5.8,0l-51,51.1-51.1-51.1c-1.6-1.6-4.2-1.6-5.8,0-1.6,1.6-1.6,4.2 0,5.8l53.9,53.9c0.8,0.8 1.8,1.2 2.9,1.2 1,0 2.1-0.4 2.9-1.2l53.9-53.9c1.7-1.6 1.7-4.2 0.1-5.8z"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                            <div id="userMenu" class="bg-white nunito rounded shadow-md mt-2 absolute mt-12 top-0 right-0 min-w-full overflow-auto z-30 invisible">
+                                <ul class="list-reset">
+                                    <li><a href="{% url 'logout'%}?next={{request.path}}" class="px-4 py-2 block text-gray-900 hover:bg-indigo-400 hover:text-white no-underline hover:no-underline">Logout</a></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- / Menu -->
+
+                </div>
+
+            </nav>
+        </div>
+
+        <!--Dash Content -->
+        <div id="dash-content" class="bg-gray-200 py-6 lg:py-0 w-full h-full lg:max-w-sm flex flex-wrap content-start">
+
+            <button class="w-1/2 lg:w-full" onclick="location.href = '/qpcr_records/check_information/';">
+                <div class="border-2 border-gray-400 border-dashed hover:border-transparent hover:bg-white hover:shadow-xl rounded p-6 m-2 md:mx-10 md:my-6">
+                    <div class="flex flex-col items-center">
+                        <div class="flex-shrink pr-4">
+                            <div class="rounded-full p-3 bg-gray-300"><i class="fas fa-plus-square fa-fw fa-inverse text-blue-600"></i></div>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-500 text-2xl">Start A New Sampling Plate</h3>
+                        </div>
+                    </div>
+                </div>
+            </button>
+
+            <button class="w-1/2 lg:w-full" onclick="location.href = '/qpcr_records/upload_qpcr_results/';">
+                <div class="border-2 border-gray-400 border-dashed hover:border-transparent hover:bg-white hover:shadow-xl rounded p-6 m-2 md:mx-10 md:my-6">
+                    <div class="flex flex-col items-center">
+                        <div class="flex-shrink pr-4">
+                            <div class="rounded-full p-3 bg-gray-300"><i class="fas fa-file-upload fa-fw fa-inverse text-blue-600"></i></div>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-500 text-2xl">Upload qPCR Results</h3>
+                            <br>
+                        </div>
+                    </div>
+                </div>
+            </button>
+
+            <button class="w-1/2 lg:w-full" onclick="location.href = '/qpcr_records/search_record_form/';">
+                <div class="border-2 border-gray-400 border-dashed hover:border-transparent hover:bg-white hover:shadow-xl rounded p-6 m-2 md:mx-10 md:my-6">
+                    <div class="flex flex-col items-center">
+                        <div class="flex-shrink pr-4">
+                            <div class="rounded-full p-3 bg-gray-300"><i class="fas fa-search fa-fw fa-inverse text-blue-600"></i></div>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-500 text-2xl">Search for records</h3>
+                            <br>
+                        </div>
+                    </div>
+                </div>
+            </button>
+
+        </div>
+
+        <!--Graph Content -->
+        <div id="main-content" class="w-full flex-1">
+<div id="chrome50Overall">
+  </div>
+
+  <div id="inputs">
+    <div class="row">
+
+      <div class="col">
+        <input type="checkbox" id="checkboxErrors50" checked>
+        <label for='checkboxErrors50'>Negative</label>
+      </div>
+
+      <div class="col">
+        <input type="checkbox" id="checkboxIps50" checked>
+        <label for="checkboxIps50">Positive</label>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="chrome50Detail">
+  </div>
+
+        </div>
+
+    </div>
+
+    <script>
+   ZC.LICENSE = ["569d52cefae586f634c54f86dc99e6a9", "b55b025e438fa8a98e32482b5f768ff5"];
+    // DEFINE CHART LOCATIONS (IDS)
+    // -----------------------------
+    // Main chart render location
+    var chartId = 'myChart';
+    var chrome50Detail = 'chrome50Detail';
+    var chrome50Overall = 'chrome50Overall';
+
+    // Checkbox Ids
+    var checkboxErrors50 = 'checkboxErrors50';
+    var checkboxIps50 = 'checkboxIps50';
+
+
+    // CHART DATA
+    // -----------------------------
+    var lastIndex = null;
+    var totalUsage = [74844938, 67916452, 51397750, 54840784, 71261006, 71914665, 69877920, 69797876, 64015606, 47538624, 53405488, 71237670, 69854483, 67229795, 65940984, 59888233, 46967265, 51144680, 63681846, 70527432, 97712043, 90345661, 67326277, 54836594, 59923602, 78117849, 73954211, 71816590, 72253684, 64360719, 50948147, 54739648, 69613566, 70720606, 72607842, 69519811, 64228413, 50706194, 55072683, 68672444, 77385133, 82989307, 80641084, 79055948, 62823593, 71047012];
+    var dates = [1464134400000, 1464220800000, 1464307200000, 1464393600000, 1464480000000, 1464566400000, 1464652800000, 1464739200000, 1464825600000, 1464912000000, 1464998400000, 1465084800000, 1465171200000, 1465257600000, 1465344000000, 1465430400000, 1465516800000, 1465603200000, 1465689600000, 1465776000000, 1465862400000, 1465948800000, 1466035200000, 1466121600000, 1466208000000, 1466294400000, 1466380800000, 1466467200000, 1466553600000, 1466640000000, 1466726400000, 1466812800000, 1466899200000, 1466985600000];
+
+    // Chrome50
+    var chrome50 = {
+        errors: [198, 202, 131, 132, 211, 218, 217, 224, 217, 171, 170, 230, 234, 226, 214, 192, 146, 153, 175, 213, 218, 221, 188, 131, 149, 192, 193, 165, 99, 56, 42, 28, 38, 28, 27, 27, 16, 9, 12, 12, 11, 14, 11, 7, 5, 6], ips: [32, 18, 14, 18, 18, 30, 34, 16, 19, 20, 13, 24, 29, 16, 23, 17, 12, 12, 18, 15, 39, 20, 19, 11, 13, 16, 15, 15, 6, 4, 3, 1, 3, 2, 2, 2, 2, 9, 1, 1, 2, 1, 1, 1, 8, 6]
+    };
+    chrome50.errorsOverall = chrome50.errors.reduce(combine);
+    chrome50.ipsOverall = chrome50.ips.reduce(combine);
+
+    // Chrome51
+
+
+    // CHART CONFIG
+    // -----------------------------
+
+    // Chrome 50
+    var chrome50_overall = {
+      type: "area",
+      globals: {
         fontFamily: 'Open Sans'
-    }
-    ,
-    border: '1px solid #ddd',
-    plot: {
+      },
+      border: '1px solid #ddd',
+      plot: {
         alphaArea: 1,
         marker: {
-            visible: false
-        }
-        ,
+          visible: false
+        },
         tooltip: {
-            visible: false
+          visible: false
         }
-    }
-    ,
-    plotarea: {
+      },
+      plotarea: {
         margin: '62px 52px 52px'
-    }
-    ,
-    title: {
-        backgroundColor: 'rgb(247, 247, 247)', border: '1px solid #ddd', color: 'rgb(44, 50, 55)', fontSize: 18, height: 40, padding: 10, text: 'COVID-19: Postive vs Negative Samples', textAlign: 'left'
-    }
-    ,
-    legend: {
-        toggleAction: 'none', marginTop: 61
-    }
-    ,
-    mediaRules: [ {
+      },
+      title: {
+        backgroundColor: 'rgb(247, 247, 247)',
+        border: '1px solid #ddd',
+        color: 'rgb(44, 50, 55)',
+        fontSize: 18,
+        height: 40,
+        padding: 10,
+        text: 'COVID-19: Postive vs Negative Samples',
+        textAlign: 'left'
+      },
+      legend: {
+        toggleAction: 'none',
+        marginTop: 61
+      },
+      mediaRules: [{
         maxWidth: 700,
         legend: {
-            visible: false
+          visible: false
         }
-    }
-    ],
-    scaleY: {
+      }],
+      scaleY: {
         short: true
-    }
-    ,
-    scaleX: {
+      },
+      scaleX: {
         values: dates,
         transform: {
-            type: 'date', all: '%dd-%M-%y (%D)'
-        }
-        ,
-        markers: [ {
-            alpha: 0.1, backgroundColor: '#000', type: 'area', range: [2, 3]
-        }
-        ,
-        {
-            alpha: 0.1, backgroundColor: '#000', type: 'area', range: [9, 10]
-        }
-        ,
-        {
-            alpha: 0.1, backgroundColor: '#000', type: 'area', range: [16, 17]
-        }
-        ,
-        {
-            alpha: 0.1, backgroundColor: '#000', type: 'area', range: [23, 24]
-        }
-        ,
-        {
-            alpha: 0.1, backgroundColor: '#000', type: 'area', range: [30, 31]
-        }
-        ,
-        {
-            alpha: 0.1, backgroundColor: '#000', type: 'area', range: [37, 38]
-        }
-        ]
-    }
-    ,
-    crosshairX: {
+          type: 'date',
+          all: '%dd-%M-%y (%D)'
+        },
+        markers: [{
+          alpha: 0.1,
+          backgroundColor: '#000',
+          type: 'area',
+          range: [2, 3]
+        }, {
+          alpha: 0.1,
+          backgroundColor: '#000',
+          type: 'area',
+          range: [9, 10]
+        }, {
+          alpha: 0.1,
+          backgroundColor: '#000',
+          type: 'area',
+          range: [16, 17]
+        }, {
+          alpha: 0.1,
+          backgroundColor: '#000',
+          type: 'area',
+          range: [23, 24]
+        }, {
+          alpha: 0.1,
+          backgroundColor: '#000',
+          type: 'area',
+          range: [30, 31]
+        }, {
+          alpha: 0.1,
+          backgroundColor: '#000',
+          type: 'area',
+          range: [37, 38]
+        }]
+      },
+      crosshairX: {
         plotLabel: {
-            backgroundColor: '#FFF', border: '1px solid #ddd', fontSize: 16, thousandsSeparator: ',', padding: 5
+          backgroundColor: '#FFF',
+          border: '1px solid #ddd',
+          fontSize: 16,
+          thousandsSeparator: ',',
+          padding: 5
         }
-    }
-    ,
-    series: [ {
+      },
+      series: [{
         backgroundColor: '#9B2C2C',
         lineColor: '#9B2C2C',
         lineWidth: 0,
         text: 'Negative',
         values: chrome50.errors,
         legendItem: {
-            text: 'Negative'
+          text: 'Negative'
         }
-    }
-    ,
-    {
+      }, {
         backgroundColor: '#276749',
         lineColor: '#276749',
         lineWidth: 0,
         text: 'Positive',
         values: chrome50.ips,
         legendItem: {
-            text: 'Positive'
+          text: 'Positive'
         }
-    }
-    ]
-}
+      }]
+    };
 
-;
-// Chrome 50
-var chrome50_detail= {
-    type: 'pie',
-    globals: {
+    // Chrome 50
+    var chrome50_detail = {
+      type: 'pie',
+      globals: {
         fontFamily: 'Open Sans'
-    }
-    ,
-    border: '1px solid #ddd',
-    plot: {
+      },
+      border: '1px solid #ddd',
+      plot: {
         slice: 70,
         valueBox: {
-            visible: true,
-            placement: 'out',
-            fontSize: 11,
-            thousandsSeparator: ',',
-            offsetR: 15,
-            text: '%t: %v',
-            rules: [ {
-                rule: '%p == 0', placement: 'center', offsetY: -17
-            }
-            ,
-            {
-                rule: '%p == 1', placement: 'center', offsetY: -7
-            }
-            ,
-            {
-                rule: '%p == 2', placement: 'center', offsetY: 7
-            }
-            ,
-            {
-                rule: '%p == 3', placement: 'center', offsetY: 17
-            }
-            ]
+          visible: true,
+          placement: 'out',
+          fontSize: 11,
+          thousandsSeparator: ',',
+          offsetR: 15,
+          text: '%t: %v',
+          rules: [{
+            rule: '%p == 0',
+            placement: 'center',
+            offsetY: -17
+          }, {
+            rule: '%p == 1',
+            placement: 'center',
+            offsetY: -7
+          }, {
+            rule: '%p == 2',
+            placement: 'center',
+            offsetY: 7
+          }, {
+            rule: '%p == 3',
+            placement: 'center',
+            offsetY: 17
+          }]
         }
-    }
-    ,
-    tooltip: {
+      },
+      tooltip: {
         visible: false
-    }
-    ,
-    plotarea: {
+      },
+      plotarea: {
         margin: '62px 52px 52px'
-    }
-    ,
-    title: {
-        backgroundColor: 'rgb(247, 247, 247)', border: '1px solid #ddd', color: 'rgb(44, 50, 55)', fontSize: 18, height: 40, padding: 10, text: 'Details - Positive vs Negative', textAlign: 'left'
-    }
-    ,
-    subtitle: {
-        text: 'Overall', textAlign: 'left', x: 6, y: 40
-    }
-    ,
-    legend: {
-        visible: false, toggleAction: 'remove'
-    }
-    ,
-    series: [ {
-        backgroundColor: '#9B2C2C', text: 'Negative', values: [chrome50.errorsOverall]
-    }
-    ,
-    {
-        backgroundColor: '#276749', text: 'Positive', values: [chrome50.ipsOverall]
-    }
-    ]
-}
+      },
+      title: {
+        backgroundColor: 'rgb(247, 247, 247)',
+        border: '1px solid #ddd',
+        color: 'rgb(44, 50, 55)',
+        fontSize: 18,
+        height: 40,
+        padding: 10,
+        text: 'Details - Positive vs Negative',
+        textAlign: 'left'
+      },
+      subtitle: {
+        text: 'Overall',
+        textAlign: 'left',
+        x: 6,
+        y: 40
+      },
+      legend: {
+        visible: false,
+        toggleAction: 'remove'
+      },
+      series: [{
+        backgroundColor: '#9B2C2C',
+        text: 'Negative',
+        values: [chrome50.errorsOverall]
+      }, {
+        backgroundColor: '#276749',
+        text: 'Positive',
+        values: [chrome50.ipsOverall]
+      }]
+    };
 
-;
-// RENDER CHART
-// -----------------------------
-// AREA
-// Render area chart
-zingchart.render( {
-    id: chrome50Overall, data: {
+
+    // RENDER CHART
+    // -----------------------------
+
+    // AREA
+    // Render area chart
+    zingchart.render({
+      id: chrome50Overall,
+      data: {
         gui: {
-            behaviors: [ {
-                id: 'Reload', enabled: 'none'
-            }
-            ]
-        }
-        , graphset: [chrome50_overall]
-    }
-    , height: 400, width: '100%', events: {
+          behaviors: [{
+            id: 'Reload',
+            enabled: 'none'
+          }]
+        },
+        graphset: [chrome50_overall]
+      },
+      height: 400,
+      width: '100%',
+      events: {
         // lets update the ring chart based on where we are hovering
         'guide_mousemove': function(p) {
-            // If it's a new index...
-            if (lastIndex && lastIndex !==p.items[0].nodeindex || !lastIndex) {
-                // Update the last index
-                lastIndex=p.items[0].nodeindex;
-                var detailJSON=zingchart.exec(chrome50Detail, 'getdata');
-                for (var i=0;
-                i < p.items.length;
-                i++) {
-                    detailJSON.graphset[0].series[p.items[i].plotindex].values=[p.items[i].value];
-                }
-                detailJSON.graphset[0].subtitle.text=new Date(p.items[0].keyvalue).toDateString();
-                zingchart.exec(chrome50Detail, 'setdata', {
-                    data: detailJSON
-                }
-                );
+          // If it's a new index...
+          if (lastIndex && lastIndex !== p.items[0].nodeindex || !lastIndex) {
+            // Update the last index
+            lastIndex = p.items[0].nodeindex;
+            var detailJSON = zingchart.exec(chrome50Detail, 'getdata');
+            for (var i = 0; i < p.items.length; i++) {
+              detailJSON.graphset[0].series[p.items[i].plotindex].values = [p.items[i].value];
             }
-        }
-        , load: loaded(chrome50Overall)
-    }
-}
+            detailJSON.graphset[0].subtitle.text = new Date(p.items[0].keyvalue).toDateString();
+            zingchart.exec(chrome50Detail, 'setdata', {
+              data: detailJSON
+            });
+          }
+        },
+        load: loaded(chrome50Overall)
+      }
+    });
 
-);
-// RING
-// Render ring chart
-zingchart.render( {
-    id: chrome50Detail, data: {
+    // RING
+    // Render ring chart
+    zingchart.render({
+      id: chrome50Detail,
+      data: {
         gui: {
-            behaviors: [ {
-                id: 'Reload', enabled: 'none'
-            }
-            ]
-        }
-        , graphset: [chrome50_detail]
-    }
-    , height: 400, width: '100%', events: {
+          behaviors: [{
+            id: 'Reload',
+            enabled: 'none'
+          }]
+        },
+        graphset: [chrome50_detail]
+      },
+      height: 400,
+      width: '100%',
+      events: {
         load: loaded(chrome50Detail)
+      }
+    });
+
+
+    // CHECKBOX TOGGLE EVENTS
+    // -----------------------------
+    document.getElementById(checkboxErrors50).addEventListener('click', toggleGraphs);
+    document.getElementById(checkboxIps50).addEventListener('click', toggleGraphs);
+
+
+    // UPDATE THE CHART
+    // -----------------------------
+    var updateArray = [{
+        visible: true
+      },
+      {
+        visible: true
+      }
+    ];
+
+
+    // CHART RENDERED
+    // -----------------------------
+    // Set CSS class to show chart after render
+    function loaded(id) {
+      var chart = document.querySelector('#' + id);
+      chart.classList.add('loaded');
     }
-}
 
-);
-// CHECKBOX TOGGLE EVENTS
-// -----------------------------
-document.getElementById(checkboxErrors50).addEventListener('click', toggleGraphs);
-document.getElementById(checkboxIps50).addEventListener('click', toggleGraphs);
-// UPDATE THE CHART
-// -----------------------------
-var updateArray=[ {
-    visible: true
-}
 
-,
-{
-    visible: true
-}
+    // HELPER FNS
+    // -----------------------------
 
-];
-// CHART RENDERED
-// -----------------------------
-// Set CSS class to show chart after render
-function loaded(id) {
-    var chart=document.querySelector('#' + id);
-    chart.classList.add('loaded');
-}
+    // Checkbox click handler
+    function toggleGraphs() {
+      var plotIndex = 0;
 
-// HELPER FNS
-// -----------------------------
-// Checkbox click handler
-function toggleGraphs() {
-    var plotIndex=0;
-    // Determine plot index
-    switch (this.id) {
-        case checkboxErrors50: plotIndex=0;
-        break;
-        case checkboxIps50: plotIndex=1;
-        break;
-    }
-    // Toggle array boolean state
-    updateArray[plotIndex].visible=this.checked;
-    // Update the chart
-    zingchart.exec(chrome50Overall, 'appendseriesdata', {
+      // Determine plot index
+      switch (this.id) {
+        case checkboxErrors50:
+          plotIndex = 0;
+          break;
+        case checkboxIps50:
+          plotIndex = 1;
+          break;
+      }
+
+      // Toggle array boolean state
+      updateArray[plotIndex].visible = this.checked;
+
+      // Update the chart
+      zingchart.exec(chrome50Overall, 'appendseriesdata', {
         data: updateArray
-    }
-    );
-    zingchart.exec(chrome50Detail, 'appendseriesdata', {
+      });
+      zingchart.exec(chrome50Detail, 'appendseriesdata', {
         data: updateArray
+      });
     }
-    );
-}
 
-// Combine 2 values
-function combine(a, b) {
-    return a + b;
-}
+    // Combine 2 values
+    function combine(a, b) {
+      return a + b;
+    }
+    </script>
 
-</script> <script>
-/*Toggle dropdown list*/
+    <script>
+        /*Toggle dropdown list*/
+        /*https://gist.github.com/slavapas/593e8e50cf4cc16ac972afcbad4f70c8*/
 
+        var userMenuDiv = document.getElementById("userMenu");
+        var userMenu = document.getElementById("userButton");
 
-/*https://gist.github.com/slavapas/593e8e50cf4cc16ac972afcbad4f70c8*/
+        document.onclick = check;
 
-var userMenuDiv=document.getElementById("userMenu");
-var userMenu=document.getElementById("userButton");
-document.onclick=check;
-function check(e) {
-    var target=(e && e.target) || (event && event.srcElement);
-    //User Menu
-    if (!checkParent(target, userMenuDiv)) {
-        // click NOT on the menu
-        if (checkParent(target, userMenu)) {
-            // click on the link
-            if (userMenuDiv.classList.contains("invisible")) {
-                userMenuDiv.classList.remove("invisible");
+        function check(e) {
+            var target = (e && e.target) || (event && event.srcElement);
+
+            //User Menu
+            if (!checkParent(target, userMenuDiv)) {
+                // click NOT on the menu
+                if (checkParent(target, userMenu)) {
+                    // click on the link
+                    if (userMenuDiv.classList.contains("invisible")) {
+                        userMenuDiv.classList.remove("invisible");
+                    } else {
+                        userMenuDiv.classList.add("invisible");
+                    }
+                } else {
+                    // click both outside link and outside menu, hide menu
+                    userMenuDiv.classList.add("invisible");
+                }
             }
-            else {
-                userMenuDiv.classList.add("invisible");
+
+        }
+
+        function checkParent(t, elm) {
+            while (t.parentNode) {
+                if (t == elm) {
+                    return true;
+                }
+                t = t.parentNode;
             }
+            return false;
         }
-        else {
-            // click both outside link and outside menu, hide menu
-            userMenuDiv.classList.add("invisible");
-        }
-    }
-}
+    </script>
 
-function checkParent(t, elm) {
-    while (t.parentNode) {
-        if (t==elm) {
-            return true;
-        }
-        t=t.parentNode;
-    }
-    return false;
-}
 
-</script>
 {% endblock %}
+
 
 </html>
