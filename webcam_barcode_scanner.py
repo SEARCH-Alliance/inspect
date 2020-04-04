@@ -71,7 +71,8 @@ def barcode_capture():
                 cv2.destroyAllWindows()
                 cv2.waitKey(1)
                 break
-    return barcodes
+    # Noor: adding index to return first barcode scanned (fix mutli-barcode bug)
+    return barcodes[0]
 
 
 if __name__ == "__main__":
