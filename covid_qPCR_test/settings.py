@@ -24,7 +24,7 @@ AWS Credentials and other details obtained from hidden file using decouple
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
-#AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME')
+AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME')
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
@@ -43,8 +43,11 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 INSTALLED_APPS = [
-    'test_results.apps.TestResultsConfig',
+    'qpcr_records.apps.QpcrRecordsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -145,6 +148,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 print(MEDIA_ROOT)
 
 
-LOGIN_REDIRECT_URL = '/test_results/'
+LOGIN_REDIRECT_URL = '/qpcr_records/'
 
 

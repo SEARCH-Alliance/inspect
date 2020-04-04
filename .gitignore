@@ -7,3 +7,10 @@ db.sqlite3
 /static
 .DS_Store
 .env
+.idea/covid_qPCR_test.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/workspace.xml
+
+.idea/inspectionProfiles:
+profiles_settings.xml

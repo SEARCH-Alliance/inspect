@@ -1,0 +1,42 @@
+{% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<div class="container">
+    <div id="header">
+        <h1>Sampling Plate</h1>
+    </div>
+    <h3>Please confirm that the information below is correct. Edit any field accordingly if needed.</h3>
+    <br>
+    <form action="/qpcr_records/start_platemap/" method="GET" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-row">
+            <div class="form-group col-md-6 mb-0">
+                {{ form.sampling_date|as_crispy_field }}
+            </div>
+
+            <div class="form-group col-md-6 mb-0">
+                {{ form.rna_extraction_protocol|as_crispy_field }}
+            </div>
+
+            <div class="form-group col-md-6 mb-0">
+                {{ form.qpcr_instrument|as_crispy_field }}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-6 mb-0">
+                {{ form.technician|as_crispy_field }}
+            </div>
+
+            <div class="form-group col-md-6 mb-0">
+                {{ form.lab|as_crispy_field }}
+            </div>
+
+            <div class="form-group col-md-6 mb-0">
+                {{ form.institute|as_crispy_field }}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Proceed To Scan Plate Barcode</button>
+    </form>
+</div>
+{% endblock %}
