@@ -1,18 +1,13 @@
 {% extends "qpcr_records/base.html" %}
 
-
 {% block content %}
 
-        <div class="flex flex-row flex-wrap flex-1 flex-grow content-start pl-16">
-
+    <div class="flex flex-row flex-wrap flex-1 flex-grow content-start pl-16">
         <div class="h-40 lg:h-20 w-full flex flex-wrap">
             <nav id="header" class="bg-gray-200 w-full lg:max-w-sm flex items-center border-b-1 border-gray-300 order-2 lg:order-1">
-
             </nav>
             <nav id="header1" class="bg-gray-100 w-auto flex-1 border-b-1 border-gray-300 order-1 lg:order-2">
-
                 <div class="flex h-full justify-between items-center">
-
                     <!--Search-->
                     <div class="relative w-full max-w-3xl px-6">
                         <div class="absolute h-10 mt-1 left-0 top-0 flex items-center pl-10">
@@ -20,23 +15,19 @@
                                 <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z"></path>
                             </svg>
                         </div>
-
                         <input id="search-toggle" type="search" placeholder="search" class="block w-full bg-gray-200 focus:outline-none focus:bg-white focus:shadow-md text-gray-700 font-bold rounded-full pl-12 pr-4 py-3" onkeyup="updateSearchResults(this.value);">
-
                     </div>
                     <!-- / Search-->
 
                     <!--Menu-->
-
                     <div class="flex relative inline-block pr-6">
-
                         <div class="relative text-sm">
                             <button id="userButton" class="flex items-center focus:outline-none mr-3">
                                 {% if user.is_authenticated %}
-            <span class="hidden md:inline-block">
-                        User: {{ user.get_username }}
-            </span>
-        {% endif %}
+                                    <span class="hidden md:inline-block">
+                                        User: {{ user.get_username }}
+                                    </span>
+                                {% endif %}
                                 <svg class="pl-2 h-2" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 129 129" xmlns:xlink="http://www.w3.org/1999/xlink" enable-background="new 0 0 129 129">
                                     <g>
                                         <path d="m121.3,34.6c-1.6-1.6-4.2-1.6-5.8,0l-51,51.1-51.1-51.1c-1.6-1.6-4.2-1.6-5.8,0-1.6,1.6-1.6,4.2 0,5.8l53.9,53.9c0.8,0.8 1.8,1.2 2.9,1.2 1,0 2.1-0.4 2.9-1.2l53.9-53.9c1.7-1.6 1.7-4.2 0.1-5.8z"></path>
@@ -49,19 +40,14 @@
                                 </ul>
                             </div>
                         </div>
-
                     </div>
-
                     <!-- / Menu -->
-
                 </div>
-
             </nav>
         </div>
 
         <!--Dash Content -->
         <div id="dash-content" class="bg-gray-200 py-6 lg:py-0 w-full h-full lg:max-w-sm flex flex-wrap content-start">
-
             <button class="w-1/2 lg:w-full" onclick="location.href = '/qpcr_records/check_information/';">
                 <div class="border-2 border-gray-400 border-dashed hover:border-transparent hover:bg-white hover:shadow-xl rounded p-6 m-2 md:mx-10 md:my-6">
                     <div class="flex flex-col items-center">
@@ -96,7 +82,7 @@
                             <div class="rounded-full p-3 bg-gray-300"><i class="fas fa-search fa-fw fa-inverse text-blue-600"></i></div>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-gray-500 text-2xl">Search for records</h3>
+                            <h3 class="font-bold text-gray-500 text-2xl">Advanced Search</h3>
                             <br>
                         </div>
                     </div>
@@ -107,34 +93,29 @@
 
         <!--Graph Content -->
         <div id="main-content" class="w-full flex-1">
-<div id="chrome50Overall">
-  </div>
+            <div id="chrome50Overall">
+            </div>
+            <div id="inputs">
+                <div class="row">
 
-  <div id="inputs">
-    <div class="row">
+                    <div class="col">
+                        <input type="checkbox" id="checkboxErrors50" checked>
+                        <label for='checkboxErrors50'>Negative</label>
+                    </div>
+                    <div class="col">
+                        <input type="checkbox" id="checkboxIps50" checked>
+                        <label for="checkboxIps50">Positive</label>
+                    </div>
+                </div>
+            </div>
 
-      <div class="col">
-        <input type="checkbox" id="checkboxErrors50" checked>
-        <label for='checkboxErrors50'>Negative</label>
-      </div>
-
-      <div class="col">
-        <input type="checkbox" id="checkboxIps50" checked>
-        <label for="checkboxIps50">Positive</label>
-      </div>
-
-    </div>
-  </div>
-
-  <div id="chrome50Detail">
-  </div>
-
+            <div id="chrome50Detail">
+            </div>
         </div>
-
     </div>
 
     <script>
-   ZC.LICENSE = ["569d52cefae586f634c54f86dc99e6a9", "b55b025e438fa8a98e32482b5f768ff5"];
+    ZC.LICENSE = ["569d52cefae586f634c54f86dc99e6a9", "b55b025e438fa8a98e32482b5f768ff5"];
     // DEFINE CHART LOCATIONS (IDS)
     // -----------------------------
     // Main chart render location
@@ -511,8 +492,4 @@
         }
     </script>
 
-
 {% endblock %}
-
-
-</html>
