@@ -13,24 +13,18 @@
     {
         width:100%;
     }
-    .left
-    {
-        float:left;
-        width:50%;
-        box-sizing:border-box;
-        padding:5px;
-        border:#CCC solid 1px;
-        min-height:200px;
+    * {
+        box-sizing: border-box;
     }
-
-    .right
-    {
-        float:left;
-        width:50%;
-        box-sizing:border-box;
-        padding:5px;
-        border:#CCC solid 1px;
-        min-height:200px;
+    .column {
+        float: left;
+        width: 33.33%;
+        padding: 10px;
+    }
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
     }
     .btn
     {
@@ -58,15 +52,19 @@
 {% endif %}
 {% endblock %}
 
-<div class="parent">
-    <div class="left">
+
+<div class="row">
+    <div class="column">
         <button onclick="location.href = '/qpcr_records/check_information/';" class="btn new_record">Start A New Sampling Plate</button>
     </div>
 
-    <div class="right">
+    <div class="column">
         <button onclick="location.href = '/qpcr_records/search_record_form/';" class="btn search_record">Search Records</button>
     </div>
 
+    <div class="column">
+        <button onclick="location.href = '/qpcr_records/upload_qpcr_results/';" class="btn search_record">Upload qPCR Results</button>
+    </div>
 </div>
 </body>
 </html>

@@ -7,6 +7,9 @@ from bokeh.models import ColumnDataSource, Grid, LinearAxis, Plot, Text
 from bokeh.embed import components
 from django_tables2 import RequestConfig
 from django_tables2.export.export import TableExport
+from decouple import config
+from datetime import date
+import boto3
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
@@ -17,7 +20,59 @@ def index(request):
     """
     Login page redirects here
     """
-    return render(request, 'qpcr_records/index.html')
+    if request.method == 'POST':
+        print(request.FILES.keys())
+        if 'Browse' in request.FILES.keys():
+
+            # f = request.FILES['pcr_results_csv']
+            barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
+            barcode = barcode.rstrip()
+
+            aws_access_key_id = config('aws_access_key_id')
+            aws_secret_access_key = config('aws_secret_access_key')
+            aws_storage_bucket_name = config('aws_storage_bucket_name')
+            aws_s3_region_name = 'us-west-2'
+
+            #s3_client = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key= aws_secret_access_key)
+            today = date.today()
+            fname = str(barcode) + '_' + str(today.strftime("%m%d%y")) + '.txt'
+            print(fname)
+            flink = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + fname
+
+            s3 = boto3.resource('s3')
+            bucket = s3.Bucket(aws_storage_bucket_name)
+            bucket.upload_fileobj(request.FILES['Browse'], fname)
+
+            csv_file = request.FILES["Browse"]
+            file_data = csv_file.read().decode("utf-8")
+
+            lines = file_data.split("\n")
+            s = lines[0].split(',')
+            for i in (0, len(s)):
+                if s[i] == 'well':
+                    well_col = i
+                elif s[i] == 'cQ':
+                    ct_col = i
+                else:
+                    continue
+
+            # loop over the lines and save them in db. If error , store as string and then display
+            for line in lines[1:]:
+                s = line.split(",")
+                t = test_results.objects.filter(plate_id=barcode, sampling_plate_well=s[well_col]).update(ct_value=s[ct_col])
+
+
+            #s3_client.upload_file(request.FILES['pcr_results_csv'], aws_storage_bucket_name, fname)
+
+            print(test_results.objects.filter(plate_id=barcode).count())
+            # t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=request.FILES['pcr_results_csv'])
+            t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=flink)
+            #t.save()
+            return render(request, 'qpcr_records/index.html')
+        else:
+            return render(request, 'qpcr_records/index.html')
+    else:
+        return render(request, 'qpcr_records/index.html')
 
 
 @login_required
@@ -102,6 +157,7 @@ def start_platemap(request):
         for k in request.GET.keys():
             request.session[k] = request.GET[k]
         barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
+        barcode = barcode.rstrip()
         request.session['plate'] = barcode
         request.session['last_scan'] = 'plate'
 
@@ -131,6 +187,7 @@ def barcode_capture(request):
         print('Not Set Yet')
 
     barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
+    barcode = barcode.rstrip()
 
     # Checks if the last scanned barcode was for a plate. In that case, the current scan is for the first well 'A1'.
     if request.session['last_scan'] == 'plate':
@@ -234,6 +291,7 @@ def platemap(request):
     :return:
     """
     barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
+    barcode = barcode.rstrip()
     obj = test_results.objects.create(barcode=barcode, collection_site=request.session['collection_site'],
                                       collection_protocol=request.session['collection_protocol'],
                                       processing_protocol=request.session['processing_protocol'],
@@ -309,6 +367,7 @@ def record_search(request):
         if q == '':
             return render(request, 'qpcr_records/search_record_form_error.html')
         else:
+            print(q.count())
             table = test_resultsTable(q)
             RequestConfig(request).configure(table)
 
@@ -319,3 +378,9 @@ def record_search(request):
 
             table.columns.hide('id')
             return render(request, 'qpcr_records/record_search.html', {'table': table})
+
+
+@login_required
+def upload_qpcr_results(request):
+    f = qpcrResultUploadForm()
+    return render(request, 'qpcr_records/upload_qpcr_results.html', {'form': f})

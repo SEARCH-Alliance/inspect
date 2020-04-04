@@ -9,6 +9,7 @@ qpcr_instrument_choices = (('1', 'BioRad CFX_384'), ('2', 'BioRad CFX_XXX'))
 
 class test_results(models.Model):
     barcode = models.CharField(max_length=20, null=False, blank=False, default='X')
+    fake_name = models.CharField(max_length=30, null=False, blank=False, default='X')
     sample_box_number = models.CharField(max_length=20, null=False, blank=False, default='X')
     sample_box_x_position = models.CharField(max_length=20, null=False, blank=False, default='X')
     sample_box_y_position = models.CharField(max_length=20, null=False, blank=False, default='X')
@@ -30,8 +31,12 @@ class test_results(models.Model):
     lab = models.CharField(max_length=20, null=False, blank=False, default='X')
     institute = models.CharField(max_length=20, null=False, blank=False, default='X')
 
-    pcr_results_csv = models.FileField(upload_to='documents/')
-    pcr_platemap_csv = models.FileField(upload_to='documents/')
+    pcr_results_csv = models.URLField(max_length=300, null=False, blank=False, default='X')
+    n1_ct_value = models.CharField(max_length=20, null=False, blank=False, default='X')
+    n2_ct_value = models.CharField(max_length=20, null=False, blank=False, default='X')
+    rp_ct_value = models.CharField(max_length=20, null=False, blank=False, default='X')
+    # pcr_results_csv = models.FileField(upload_to='documents/')
+    # pcr_platemap_csv = models.FileField(upload_to='documents/')
 
     class Meta:
         indexes = [
@@ -55,3 +60,9 @@ class SamplingForm_v2(ModelForm):
     class Meta:
         model = test_results
         fields = ['sample_box_number', 'sample_box_x_position', 'sample_box_y_position', 'plate_id', 'sampling_plate_well']
+
+
+class qpcrResultUploadForm(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['pcr_results_csv']
