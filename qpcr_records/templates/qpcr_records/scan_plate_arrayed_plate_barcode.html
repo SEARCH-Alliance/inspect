@@ -5,9 +5,23 @@
         {% csrf_token %}
         <div class="form-row">
             <div class="form-group col-md-6 mb-0">
-                {{ form1.plate_3_id|as_crispy_field }}
+                {{ form1.barcode1|as_crispy_field }}
             </div>
 
+            <div class="form-group col-md-6 mb-0">
+                {{ form1.barcode2|as_crispy_field }}
+            </div>
+
+            <div class="form-group col-md-6 mb-0">
+                {{ form1.barcode3|as_crispy_field }}
+            </div>
+
+            <div class="form-group col-md-6 mb-0">
+                {{ form1.barcode4|as_crispy_field }}
+            </div>
+        </div>
+
+        <div class="form-row">
             <div class="form-group col-md-6 mb-0">
                 {{ form2.plate_4_id|as_crispy_field }}
             </div>
