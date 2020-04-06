@@ -31,7 +31,8 @@ AWS_S3_OBJECT_PARAMETERS = {
 }
 AWS_LOCATION = 'static'
 # This setting interferes with the download of files. Keeping as "None" interferes with upload.
-AWS_DEFAULT_ACL = None
+AWS_DEFAULT_ACL = 'public-read'
+
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('DJANGO_SECRET_KEY')

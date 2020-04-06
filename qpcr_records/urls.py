@@ -13,4 +13,5 @@ urlpatterns = [
     path('barcode_capture/', views.barcode_capture, name='barcode_capture'),
     path('platemap/', views.platemap, name='platemap'),
     path('check_information/', views.check_information, name='check_information'),
+    path('upload_qpcr_results/', views.upload_qpcr_results, name='upload_qpcr_results'),
 ]

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<form action="/qpcr_records/" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="Browse">
+    <br>
+    <br>
+    <button type="submit">Upload qPCR Results And Scan Corresponding Barcode</button>
+</form>
+
+</body>
+</html>

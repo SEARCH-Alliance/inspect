@@ -7,6 +7,11 @@ from bokeh.models import ColumnDataSource, Grid, LinearAxis, Plot, Text
 from bokeh.embed import components
 from django_tables2 import RequestConfig
 from django_tables2.export.export import TableExport
+from decouple import config
+from datetime import date
+import boto3
+import pandas
+from io import StringIO
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
@@ -17,7 +22,63 @@ def index(request):
     """
     Login page redirects here
     """
-    return render(request, 'qpcr_records/index.html')
+    if request.method == 'POST':
+        if 'Browse' in request.FILES.keys():
+            # f = request.FILES['pcr_results_csv']
+            barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
+            barcode = barcode.rstrip()
+
+            csv_file = pandas.read_csv(request.FILES['Browse'])
+            for i, j in zip(csv_file['Well'], csv_file['Cq']):
+                if i[1:] in ['01', '02', '03', '04', '05', '06', '07', '08', '09']:
+                    i = i[0] + str(i[2])
+
+                if test_results.objects.filter(plate_id=barcode, qpcr_n1_well=i).count() > 0:
+                    print('HERE 1')
+                    print(i)
+                    t = test_results.objects.filter(plate_id=barcode, qpcr_n1_well=i).update(n1_ct_value=j)
+                elif test_results.objects.filter(plate_id=barcode, qpcr_n2_well=i).count() > 0:
+                    print('HERE 2')
+                    print(i)
+                    t = test_results.objects.filter(plate_id=barcode, qpcr_n2_well=i).update(n2_ct_value=j)
+                else:
+                    print('HERE 3')
+                    print(i)
+                    t = test_results.objects.filter(plate_id=barcode, qpcr_rp_well=i).update(rp_ct_value=j)
+
+            aws_access_key_id = config('aws_access_key_id')
+            aws_secret_access_key = config('aws_secret_access_key')
+            aws_storage_bucket_name = config('aws_storage_bucket_name')
+            aws_s3_region_name = 'us-west-2'
+
+            today = date.today()
+            fname = str(barcode) + '_' + str(today.strftime("%m%d%y")) + '.txt'
+            flink = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + fname
+            t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=flink)
+
+            csv_buffer = StringIO()
+            csv_file.to_csv(csv_buffer, sep=",", index=False)
+            s3_resource = boto3.resource("s3")
+            s3_resource.Object(aws_storage_bucket_name, fname).put(Body=csv_buffer.getvalue())
+
+            # s3 = boto3.client('s3')
+            # s3.put_object(Bucket=aws_storage_bucket_name, Body=csv_file, Key=fname)
+
+            # s3_client = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key= aws_secret_access_key)
+
+            # s3 = boto3.resource('s3')
+            # bucket = s3.Bucket(aws_storage_bucket_name)
+            # bucket.upload_fileobj(request.FILES['Browse'], fname)
+
+            # s3_client.upload_file(request.FILES['pcr_results_csv'], aws_storage_bucket_name, fname)
+
+            # t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=request.FILES['pcr_results_csv'])
+            # t.save()
+            return render(request, 'qpcr_records/index.html')
+        else:
+            return render(request, 'qpcr_records/index.html')
+    else:
+        return render(request, 'qpcr_records/index.html')
 
 
 @login_required
@@ -102,6 +163,7 @@ def start_platemap(request):
         for k in request.GET.keys():
             request.session[k] = request.GET[k]
         barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
+        barcode = barcode.rstrip()
         request.session['plate'] = barcode
         request.session['last_scan'] = 'plate'
 
@@ -131,6 +193,7 @@ def barcode_capture(request):
         print('Not Set Yet')
 
     barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
+    barcode = barcode.rstrip()
 
     # Checks if the last scanned barcode was for a plate. In that case, the current scan is for the first well 'A1'.
     if request.session['last_scan'] == 'plate':
@@ -138,7 +201,8 @@ def barcode_capture(request):
         request.session['last_scan'] = 'A1'
         request.session['n1_well'] = 'A1'
 
-        obj = test_results.objects.create(barcode=barcode, sample_box_number=request.session['sample_box_number'],
+        obj = test_results.objects.create(barcode=barcode, fake_name=request.session['fake_name'],
+                                          sample_box_number=request.session['sample_box_number'],
                                           sample_box_x_position=request.session['sample_box_x_position'],
                                           sample_box_y_position=request.session['sample_box_y_position'],
                                           plate_id=request.session['plate'], sampling_plate_well='A1',
@@ -234,6 +298,7 @@ def platemap(request):
     :return:
     """
     barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
+    barcode = barcode.rstrip()
     obj = test_results.objects.create(barcode=barcode, collection_site=request.session['collection_site'],
                                       collection_protocol=request.session['collection_protocol'],
                                       processing_protocol=request.session['processing_protocol'],
@@ -275,14 +340,20 @@ def record_search(request):
     :return table: Returns a django-tables2 object to be displayed on the webpage
     """
     if request.method == 'GET':
+        print(request.GET.keys())
         # ['csrfmiddlewaretoken', 'barcode', 'technician', 'lab', 'collection_date', 'processing_date']
         q = ''
-        for k in ['barcode', 'technician', 'lab', 'sampling_date', 'plate_id']:
+        for k in ['barcode', 'fake_name', 'technician', 'lab', 'sampling_date', 'plate_id']:
             if request.GET[k] != '' and k == 'barcode':
                 if q == '':
                     q = test_results.objects.filter(barcode=request.GET[k])
                 else:
                     q = q.filter(barcode=request.GET[k])
+            elif request.GET[k] != '' and k == 'fake_name':
+                if q == '':
+                    q = test_results.objects.filter(fake_name=request.GET[k])
+                else:
+                    q = q.filter(fake_name=request.GET[k])
             elif request.GET[k] != '' and k == 'technician':
                 if q == '':
                     q = test_results.objects.filter(technician=request.GET[k])
@@ -309,6 +380,7 @@ def record_search(request):
         if q == '':
             return render(request, 'qpcr_records/search_record_form_error.html')
         else:
+            print(q.count())
             table = test_resultsTable(q)
             RequestConfig(request).configure(table)
 
@@ -319,3 +391,9 @@ def record_search(request):
 
             table.columns.hide('id')
             return render(request, 'qpcr_records/record_search.html', {'table': table})
+
+
+@login_required
+def upload_qpcr_results(request):
+    f = qpcrResultUploadForm()
+    return render(request, 'qpcr_records/upload_qpcr_results.html', {'form': f})
