@@ -10,38 +10,62 @@ qpcr_instrument_choices = (('1', 'BioRad CFX_384'), ('2', 'BioRad CFX_XXX'))
 class test_results(models.Model):
     barcode = models.CharField(max_length=20, null=False, blank=False, default='X')
     fake_name = models.CharField(max_length=30, null=False, blank=False, default='X')
-    sample_box_number = models.CharField(max_length=20, null=False, blank=False, default='X')
-    sample_box_x_position = models.CharField(max_length=20, null=False, blank=False, default='X')
-    sample_box_y_position = models.CharField(max_length=20, null=False, blank=False, default='X')
 
-    plate_id = models.CharField(max_length=15, null=False, blank=False, default='X')
-    sampling_plate_well = models.CharField(max_length=5, null=False, blank=False, default='X')
+    plate_1_id = models.CharField(max_length=15, null=False, blank=False, default='X', help_text='Scan or Enter for 96-well Plate 1')
+    plate_1_well = models.CharField(max_length=5, null=False, blank=False, default='X')
     sampling_date = models.DateField(max_length=20, null=False, blank=False, default=datetime.date.today)
+
+    plate_2_id = models.CharField(max_length=15, null=False, blank=False, default='X',
+                                  help_text='Scan or Enter Barcode of 96-well Storage Plate')
+    plate_2_well = models.CharField(max_length=5, null=False, blank=False, default='X')
     rna_extraction_protocol = models.CharField(max_length=50, null=False, blank=False,
                                                choices=rna_extraction_protocol_choices,
                                                default='1')
 
-    qpcr_n1_well = models.CharField(max_length=5, null=False, blank=False, default='X')
-    qpcr_n2_well = models.CharField(max_length=5, null=False, blank=False, default='X')
-    qpcr_rp_well = models.CharField(max_length=5, null=False, blank=False, default='X')
-    qpcr_instrument = models.CharField(max_length=50, null=False, blank=False, choices=qpcr_instrument_choices,
-                                       default='1')
+    plate_3_id = models.CharField(max_length=15, null=False, blank=False, default='X',
+                                  help_text='Scan or Enter Barcode of Elution Plate from KingFisher')
+    plate_3_well = models.CharField(max_length=5, null=False, blank=False, default='X')
+
+    plate_4_id = models.CharField(max_length=15, null=False, blank=False, default='X',
+                                  help_text='Scan or Enter Barcode of Arraying EpMotion 394 Well Plate')
+    plate_4_well = models.CharField(max_length=5, null=False, blank=False, default='X')
+
+    plate_5_id = models.CharField(max_length=15, null=False, blank=False, default='X',
+                                  help_text='Scan or Enter Barcode of qPCR back-up Plate')
+    plate_5_well = models.CharField(max_length=5, null=False, blank=False, default='X')
+
+    plate_6_id = models.CharField(max_length=15, null=False, blank=False, default='X',
+                                  help_text='Scan or Enter Barcode of qPCR Reaction Plate')
+    plate_6_well = models.CharField(max_length=5, null=False, blank=False, default='X')
+
+    ms2_ct_value = models.FloatField(null=False, blank=False, default=0)
+    ms2_ct_mean_value = models.FloatField(null=False, blank=False, default=0)
+    ms2_ct_sd_value = models.FloatField(null=False, blank=False, default=0)
+
+    n_ct_value = models.FloatField(null=False, blank=False, default=0)
+    n_ct_mean_value = models.FloatField(null=False, blank=False, default=0)
+    n_ct_sd_value = models.FloatField(null=False, blank=False, default=0)
+
+    orf1ab_ct_value = models.FloatField(null=False, blank=False, default=0)
+    orf1ab_ct_mean_value = models.FloatField(null=False, blank=False, default=0)
+    orf1ab_ct_sd_value = models.FloatField(null=False, blank=False, default=0)
+
+    s_ct_value = models.FloatField(null=False, blank=False, default=0)
+    s_ct_mean_value = models.FloatField(null=False, blank=False, default=0)
+    s_ct_sd_value = models.FloatField(null=False, blank=False, default=0)
 
     technician = models.CharField(max_length=20, null=False, blank=False, default='X')
     lab = models.CharField(max_length=20, null=False, blank=False, default='X')
     institute = models.CharField(max_length=20, null=False, blank=False, default='X')
 
     pcr_results_csv = models.URLField(max_length=300, null=False, blank=False, default='X')
-    n1_ct_value = models.CharField(max_length=20, null=False, blank=False, default='X')
-    n2_ct_value = models.CharField(max_length=20, null=False, blank=False, default='X')
-    rp_ct_value = models.CharField(max_length=20, null=False, blank=False, default='X')
     # pcr_results_csv = models.FileField(upload_to='documents/')
     # pcr_platemap_csv = models.FileField(upload_to='documents/')
 
     class Meta:
         indexes = [
-            models.Index(fields=['barcode', 'technician', 'sampling_date']),
-        ]
+            models.Index(fields=['barcode', 'technician', 'sampling_date', 'plate_1_id', 'plate_2_id', 'plate_3_id',
+                                 'plate_4_id', 'plate_5_id', 'plate_6_id']),]
 
 
 class test_resultsTable(tables.Table):
@@ -50,16 +74,46 @@ class test_resultsTable(tables.Table):
         template_name = 'django_tables2/bootstrap.html'
 
 
-class SamplingForm(ModelForm):
+class Plate_1_Form(ModelForm):
     class Meta:
         model = test_results
-        fields = ['sampling_date', 'rna_extraction_protocol', 'qpcr_instrument', 'technician', 'lab', 'institute']
+        fields = ['plate_1_id']
 
 
-class SamplingForm_v2(ModelForm):
+class Plate_2_Form(ModelForm):
     class Meta:
         model = test_results
-        fields = ['sample_box_number', 'sample_box_x_position', 'sample_box_y_position', 'plate_id', 'sampling_plate_well']
+        fields = ['plate_2_id']
+
+
+class Plate_3_Form(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['plate_3_id']
+
+
+class Plate_4_Form(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['plate_4_id']
+
+
+class Plate_5_Form(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['plate_5_id']
+
+
+class Plate_6_Form(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['plate_6_id']
+
+
+class Sample_Form(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['barcode', 'fake_name']
 
 
 class qpcrResultUploadForm(ModelForm):

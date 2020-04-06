@@ -27,6 +27,9 @@
 
         <div class="form-row">
             <div class="form-group col-md-6 mb-0">
+                {{ form.fake_name|as_crispy_field }}
+            </div>
+            <div class="form-group col-md-6 mb-0">
                 {{ form.sampling_plate_well|as_crispy_field }}
             </div>
         </div>

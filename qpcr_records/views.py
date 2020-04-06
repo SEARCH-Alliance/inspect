@@ -10,6 +10,8 @@ from django_tables2.export.export import TableExport
 from decouple import config
 from datetime import date
 import boto3
+import pandas
+from io import StringIO
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
@@ -21,53 +23,57 @@ def index(request):
     Login page redirects here
     """
     if request.method == 'POST':
-        print(request.FILES.keys())
         if 'Browse' in request.FILES.keys():
-
             # f = request.FILES['pcr_results_csv']
             barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
             barcode = barcode.rstrip()
+
+            csv_file = pandas.read_csv(request.FILES['Browse'])
+            for i, j in zip(csv_file['Well'], csv_file['Cq']):
+                if i[1:] in ['01', '02', '03', '04', '05', '06', '07', '08', '09']:
+                    i = i[0] + str(i[2])
+
+                if test_results.objects.filter(plate_id=barcode, qpcr_n1_well=i).count() > 0:
+                    print('HERE 1')
+                    print(i)
+                    t = test_results.objects.filter(plate_id=barcode, qpcr_n1_well=i).update(n1_ct_value=j)
+                elif test_results.objects.filter(plate_id=barcode, qpcr_n2_well=i).count() > 0:
+                    print('HERE 2')
+                    print(i)
+                    t = test_results.objects.filter(plate_id=barcode, qpcr_n2_well=i).update(n2_ct_value=j)
+                else:
+                    print('HERE 3')
+                    print(i)
+                    t = test_results.objects.filter(plate_id=barcode, qpcr_rp_well=i).update(rp_ct_value=j)
 
             aws_access_key_id = config('aws_access_key_id')
             aws_secret_access_key = config('aws_secret_access_key')
             aws_storage_bucket_name = config('aws_storage_bucket_name')
             aws_s3_region_name = 'us-west-2'
 
-            #s3_client = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key= aws_secret_access_key)
             today = date.today()
             fname = str(barcode) + '_' + str(today.strftime("%m%d%y")) + '.txt'
-            print(fname)
             flink = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + fname
-
-            s3 = boto3.resource('s3')
-            bucket = s3.Bucket(aws_storage_bucket_name)
-            bucket.upload_fileobj(request.FILES['Browse'], fname)
-
-            csv_file = request.FILES["Browse"]
-            file_data = csv_file.read().decode("utf-8")
-
-            lines = file_data.split("\n")
-            s = lines[0].split(',')
-            for i in (0, len(s)):
-                if s[i] == 'well':
-                    well_col = i
-                elif s[i] == 'cQ':
-                    ct_col = i
-                else:
-                    continue
-
-            # loop over the lines and save them in db. If error , store as string and then display
-            for line in lines[1:]:
-                s = line.split(",")
-                t = test_results.objects.filter(plate_id=barcode, sampling_plate_well=s[well_col]).update(ct_value=s[ct_col])
-
-
-            #s3_client.upload_file(request.FILES['pcr_results_csv'], aws_storage_bucket_name, fname)
-
-            print(test_results.objects.filter(plate_id=barcode).count())
-            # t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=request.FILES['pcr_results_csv'])
             t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=flink)
-            #t.save()
+
+            csv_buffer = StringIO()
+            csv_file.to_csv(csv_buffer, sep=",", index=False)
+            s3_resource = boto3.resource("s3")
+            s3_resource.Object(aws_storage_bucket_name, fname).put(Body=csv_buffer.getvalue())
+
+            # s3 = boto3.client('s3')
+            # s3.put_object(Bucket=aws_storage_bucket_name, Body=csv_file, Key=fname)
+
+            # s3_client = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key= aws_secret_access_key)
+
+            # s3 = boto3.resource('s3')
+            # bucket = s3.Bucket(aws_storage_bucket_name)
+            # bucket.upload_fileobj(request.FILES['Browse'], fname)
+
+            # s3_client.upload_file(request.FILES['pcr_results_csv'], aws_storage_bucket_name, fname)
+
+            # t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=request.FILES['pcr_results_csv'])
+            # t.save()
             return render(request, 'qpcr_records/index.html')
         else:
             return render(request, 'qpcr_records/index.html')
@@ -195,7 +201,8 @@ def barcode_capture(request):
         request.session['last_scan'] = 'A1'
         request.session['n1_well'] = 'A1'
 
-        obj = test_results.objects.create(barcode=barcode, sample_box_number=request.session['sample_box_number'],
+        obj = test_results.objects.create(barcode=barcode, fake_name=request.session['fake_name'],
+                                          sample_box_number=request.session['sample_box_number'],
                                           sample_box_x_position=request.session['sample_box_x_position'],
                                           sample_box_y_position=request.session['sample_box_y_position'],
                                           plate_id=request.session['plate'], sampling_plate_well='A1',
@@ -333,14 +340,20 @@ def record_search(request):
     :return table: Returns a django-tables2 object to be displayed on the webpage
     """
     if request.method == 'GET':
+        print(request.GET.keys())
         # ['csrfmiddlewaretoken', 'barcode', 'technician', 'lab', 'collection_date', 'processing_date']
         q = ''
-        for k in ['barcode', 'technician', 'lab', 'sampling_date', 'plate_id']:
+        for k in ['barcode', 'fake_name', 'technician', 'lab', 'sampling_date', 'plate_id']:
             if request.GET[k] != '' and k == 'barcode':
                 if q == '':
                     q = test_results.objects.filter(barcode=request.GET[k])
                 else:
                     q = q.filter(barcode=request.GET[k])
+            elif request.GET[k] != '' and k == 'fake_name':
+                if q == '':
+                    q = test_results.objects.filter(fake_name=request.GET[k])
+                else:
+                    q = q.filter(fake_name=request.GET[k])
             elif request.GET[k] != '' and k == 'technician':
                 if q == '':
                     q = test_results.objects.filter(technician=request.GET[k])
