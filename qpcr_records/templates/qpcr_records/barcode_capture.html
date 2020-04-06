@@ -12,31 +12,15 @@
         {% csrf_token %}
         <div class="form-row">
             <div class="form-group col-md-6 mb-0">
-                {{ form.sample_box_number|as_crispy_field }}
+                {{ form.barcode|as_crispy_field }}
             </div>
 
             <div class="form-group col-md-6 mb-0">
-                {{ form.sample_box_x_position|as_crispy_field }}
-            </div>
-
-            <div class="form-group col-md-6 mb-0">
-                {{ form.sample_box_y_position|as_crispy_field }}
+                {{ form.plate_1_well|as_crispy_field }}
             </div>
         </div>
 
-        <br>
-        <br>
-
-        <div class="form-row">
-            <div class="form-group col-md-6 mb-0">
-                {{ form.fake_name|as_crispy_field }}
-            </div>
-            <div class="form-group col-md-6 mb-0">
-                {{ form.sampling_plate_well|as_crispy_field }}
-            </div>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Scan Sample Barcode</button>
+        <button type="submit" class="btn btn-primary">Proceed To Next Well</button>
     </form>
     {% endblock %}
 </div>

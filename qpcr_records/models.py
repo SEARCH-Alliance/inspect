@@ -74,16 +74,10 @@ class test_resultsTable(tables.Table):
         template_name = 'django_tables2/bootstrap.html'
 
 
-class Plate_1_Form(ModelForm):
+class Plate_1_2_Form(ModelForm):
     class Meta:
         model = test_results
-        fields = ['plate_1_id']
-
-
-class Plate_2_Form(ModelForm):
-    class Meta:
-        model = test_results
-        fields = ['plate_2_id']
+        fields = ['plate_1_id', 'plate_2_id']
 
 
 class Plate_3_Form(ModelForm):
@@ -110,10 +104,34 @@ class Plate_6_Form(ModelForm):
         fields = ['plate_6_id']
 
 
-class Sample_Form(ModelForm):
+class Sampling_Form(ModelForm):
     class Meta:
         model = test_results
-        fields = ['barcode', 'fake_name']
+        fields = ['barcode', 'plate_1_well', 'plate_2_well']
+
+
+class Extraction_Form(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['barcode', 'plate_3_well']
+
+
+class EpMotion384_Form(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['barcode', 'plate_4_well']
+
+
+class QPCR_Backup_Form(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['barcode', 'plate_5_well']
+
+
+class QPCR_Reaction_Form(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['barcode', 'plate_5_well']
 
 
 class qpcrResultUploadForm(ModelForm):
