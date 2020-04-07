@@ -47,7 +47,7 @@
         // Create grid of wells
         colNames.forEach(col => {
             // create column
-            plateCol = document.createElement("div");
+            var plateCol = document.createElement("div");
             plateCol.id = "col" + col;
             plateCol.classList.add("plate-col");
             // Create wells in column
@@ -64,6 +64,9 @@
 
                 // Set square width/height size
                 well.classList.add("well");
+                if (row == activeWell[1]) {
+                    well.classList.add("active-row");
+                }
                 if (label == activeWell) {
                     well.classList.add("active-well");
                     well.classList.add("active");
@@ -122,8 +125,21 @@
         justify-content: center;
     }
     
+    .well div {
+        color: darkgrey;
+    }
+    
     .active-well {
         background: yellow;
+        font-weight: bold;
+    }
+    
+    .active-row {
+        border: 1px solid black;
+    }
+    
+    .active-row div {
+        color: black;
     }
 </style>
 {% endblock %}
