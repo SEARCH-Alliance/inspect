@@ -6,6 +6,7 @@
         <br>
         <br>
         <h2>Enter Box Information For Sample</h2>
+        <div id="platemap" class="table table-sm"></div>
     </div>
     <br>
     <form action="/qpcr_records/barcode_capture/" method="GET">
@@ -22,5 +23,108 @@
 
         <button type="submit" class="btn btn-primary">Proceed To Next Well</button>
     </form>
-    {% endblock %}
+</div>
+<script>
+    // TODO retrieve platemap size
+    var numRows = [1, 2, 3, 4, 5, 6, 7, 8]
+    var colNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
+
+    // Determine well size and padding as factor of parent size
+    function getWellSize() {
+        var plate = document.getElementById("platemap");
+        var size = (plate.offsetWidth / colNames.length);
+        return size;
+    }
+
+    // Create plate elements
+    function renderPlate() {
+        console.log('rendering');
+        var plate = document.getElementById("platemap");
+        var activeWell = "{{ form.plate_1_well.value }}"
+
+        var wellSize = getWellSize();
+
+        // Create grid of wells
+        colNames.forEach(col => {
+            // create column
+            plateCol = document.createElement("div");
+            plateCol.id = "col" + col;
+            plateCol.classList.add("plate-col");
+            // Create wells in column
+            numRows.forEach(row => {
+
+                var well = document.createElement("div");
+
+                // Well ID e.g. A1, D9, etc.
+                label = col + row;
+                well.id = label;
+                labeldiv = document.createElement("div");
+                labeldiv.innerText = label;
+                well.appendChild(labeldiv);
+
+                // Set square width/height size
+                well.classList.add("well");
+                if (label == activeWell) {
+                    well.classList.add("active-well");
+                    well.classList.add("active");
+                }
+                plateCol.appendChild(well);
+            });
+            plate.append(plateCol);
+        });
+
+        resizePlate();
+    }
+
+    // Update well size and padding based on window resize
+    function resizePlate() {
+        console.log('resizing');
+        var plate = document.getElementById("platemap");
+        var wellSize = getWellSize();
+
+        var cols = document.querySelectorAll('.plate-col');
+        cols.forEach(c => {
+            c.style.marginLeft = wellSize / 10 + "px";
+            c.style.marginRight = wellSize / 10 + "px";
+        });
+
+        var wells = document.querySelectorAll('.well');
+        wells.forEach(w => {
+            w.style.width = (8 * wellSize / 10) + "px";
+            w.style.height = (8 * wellSize / 10) + "px";
+            w.style.marginTop = (2 * wellSize / 10) + "px";
+            w.style.marginBottom = (2 * wellSize / 10) + "px";
+        });
+
+    }
+
+    // Add window event hooks
+    window.addEventListener("load", renderPlate);
+    window.addEventListener("resize", resizePlate);
+</script>
+<style>
+    #platemap {
+        max-width: 600px;
+        background: lightblue;
+        border-radius: 4px;
+    }
+    
+    .plate-col {
+        display: inline-block;
+    }
+    
+    .well {
+        background: white;
+        border: 1px solid darkgrey;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .active-well {
+        background: yellow;
+    }
+</style>
+{% endblock %}
 </div>
