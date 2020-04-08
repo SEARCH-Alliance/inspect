@@ -161,7 +161,7 @@ def search_record_form(request):
 def check_information(request):
     """
     THIS FUNCTION IS NO LONGER USED
-    
+
     Redirect to this view when user wants to start a new platemap. Before the user starts loading a fresh plate, some
     information such as collection site, protocol version, technician name, lab, etc; will need to be reviewed by the
     user. If the default values for the fields are correct, the user has the option to process with loading the samples
@@ -177,22 +177,15 @@ def check_information(request):
 @login_required
 def start_sampling_plate(request):
     """
-    Redirect to this view after the user has confirmed the defaults in the submission form. The first step is to scan a
-    barcode for the plate. Execute the webcam_barcode_scanner script to to capture barcode from the label using a webcam
-    Once the barcode is saved to a session variable, redirect to sample barcode scan view.
-    Records the plate barcode in a session variable "plate"
-    Records the lastest scanned plate or well in session variable "last_scan". This variable is useful in keeping track of
-    how much of the well has been loaded and which well to prompt the user with
+    Present list of safety checks to user before starting plating.
     :param request: signal call that this function has been called
-    :return barcode: captured barcode
-    :return next_well: Since the plate barcode has been recorded here, the next well will always be A1
     """
     if request.method == 'GET':
         for k in request.GET.keys():
             request.session[k] = request.GET[k]
 
+        request.session['plate_1_well'] = 'X'
         f = Sampling_Form(initial={'plate_1_well': 'A1', 'plate_2_well': 'A1'})
-        request.session['plate_well'] = 'A1'
         return render(request, 'qpcr_records/start_sampling_plate.html', {'form': f})
 
 
@@ -212,21 +205,37 @@ def barcode_capture(request):
 
     # Checks if the last scanned barcode was for a plate. In that case, the current scan is for the first well 'A1'.
     if 'plate_1_well' in request.session.keys():
-        if request.session['plate_1_well'] == 'A1':
-            request.session[request.session['plate_1_well']] = request.session['barcode']
-            request.session['last_scan'] = 'A1'
+        well = request.session['plate_1_well']
+        print(well)
+
+        if well == 'X': # Redirect from start
+            print('Starting at first control well')
+            request.session[well] = request.session['barcode']
+            request.session['last_scan'] = well
+            f = Sampling_Form(initial={'plate_1_well': 'A1', 'plate_2_well': 'A1'})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
+        if well == 'A1': # First control well
+            print('Going to second control well')
+            request.session[well] = request.session['barcode']
+            request.session['last_scan'] = well
+            f = Sampling_Form(initial={'plate_1_well': 'H1', 'plate_2_well': 'H1'})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
+        elif well == 'H1': # Second control well
+            request.session[well] = request.session['barcode']
+            request.session['last_scan'] = well
             f = Sampling_Form(initial={'plate_1_well': 'B1', 'plate_2_well': 'B1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
-        elif request.session['plate_1_well'] == 'C3':
-            request.session[request.session['plate_1_well']] = request.session['barcode']
+        elif well == 'C3': # END
+            request.session[well] = request.session['barcode']
             request.session['last_scan'] = 'C3'
             f = Plate_1_2_Form()
             return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
         else:
-            request.session[request.session['plate_1_well']] = request.session['barcode']
-            request.session['last_scan'] = request.session['plate_1_well']
-            row = request.session['plate_1_well'][0]
-            col = int(request.session['plate_1_well'][1])
+            print('Proceeding to next well')
+            request.session[well] = request.session['barcode']
+            request.session['last_scan'] = well
+            row = well[0]
+            col = int(well[1])
             if row == 'C':
                 row = d1[row]
                 col = col + 1
