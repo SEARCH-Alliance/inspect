@@ -9,6 +9,8 @@
         <div id="platemap" class="table table-sm"></div>
     </div>
     <br>
+    <h2>Enter Sample Barcode And Load Sample Into The Assigned Well</h2>
+    <br>
     <form action="/qpcr_records/barcode_capture/" method="GET">
         {% csrf_token %}
         <div class="form-row">
@@ -16,13 +18,20 @@
                 {{ form.barcode|as_crispy_field }}
             </div>
 
+            <br>
+
             <div class="form-group col-md-6 mb-0">
-                {{ form.plate_1_well|as_crispy_field }}
+                {{ form.ssp_well|as_crispy_field }}
+            </div>
+
+            <div class="form-group col-md-6 mb-0">
+                {{ form.sep_well|as_crispy_field }}
             </div>
         </div>
 
         <button type="submit" class="btn btn-primary">Proceed To Next Well</button>
     </form>
+<<<<<<< HEAD
 </div>
 <script>
     // TODO retrieve platemap size
@@ -144,3 +153,13 @@
 </style>
 {% endblock %}
 </div>
+=======
+
+    <br>
+    <br>
+    <form action="/qpcr_records/" method="GET">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-primary">End Plate</button>
+    </form>
+    {% endblock %}
+>>>>>>> master
