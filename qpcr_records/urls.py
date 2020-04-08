@@ -4,6 +4,8 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('barcode_list_upload/', views.barcode_list_upload, name='barcode_list_upload'),
+    path('unknown_barcode/', views.unknown_barcode, name='unknown_barcode'),
     path('new_record_form/', views.new_record_form, name='new_record_form'),
     path('success/', views.create_record, name='success'),
     path('failure/', views.create_record, name='failure'),

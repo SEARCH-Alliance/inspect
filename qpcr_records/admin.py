@@ -3,12 +3,15 @@ from .models import test_results
 
 
 class test_overlapAdmin(admin.ModelAdmin):
-    list_display = ('barcode', 'fake_name', 'plate_1_id', 'sampling_date', 'plate_2_id', 'plate_2_well',
-                    'rna_extraction_protocol', 'plate_3_id', 'plate_3_well', 'plate_4_id', 'plate_4_well', 'plate_5_id',
-                    'plate_5_well', 'plate_6_id', 'plate_6_well', 'ms2_ct_value', 'ms2_ct_mean_value',
-                    'ms2_ct_sd_value', 'n_ct_value', 'n_ct_mean_value', 'n_ct_sd_value', 'orf1ab_ct_value',
-                    'orf1ab_ct_mean_value', 'orf1ab_ct_sd_value', 's_ct_value', 's_ct_mean_value', 's_ct_sd_value',
-                    'technician', 'lab', 'institute', 'pcr_results_csv', 'search_fields')
+    list_display = ('barcode', 'fake_name', 'ssp_id', 'ssp_well', 'sampling_date', 'sep_id', 'sep_well','sample_extraction_technician1',
+                    'sample_extraction_technician1_lab', 'sample_extraction_technician1_institute',
+                    'sample_extraction_technician2', 'sample_extraction_technician2_lab',
+                    'sample_extraction_technician2_institute', 'ms2_lot_id', 'epm_id', 'rna_extract_reagent_ids', 'kfr_id',
+                    'rep_id', 'rep_well', 'rsp_id', 'rsp_well', 'frz_id', 'rwp_id', 'rwp_well', 'rna_extraction_technician',
+                    'rna_extraction_technician_lab', 'rna_extraction_technician_institute', 'qrp_id', 'qrp_well',
+                    'probe_mix_id', 'enzyme_mix_id', 'mhv_id', 'qs5_id', 'qpcr_technician', 'qpcr_technician_lab',
+                    'qpcr_technician_institute','ms2_ct_value', 'n_ct_value', 'orf1ab_ct_value', 's_ct_value',
+                    'decision_tree_results', 'final_results', 'pcr_results_csv', 'eds_results_csv')
 
 
 admin.site.register(test_results, test_overlapAdmin)

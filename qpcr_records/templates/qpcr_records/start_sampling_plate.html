@@ -11,11 +11,24 @@
                 {{ form.barcode|as_crispy_field }}
             </div>
 
+            <br>
+
             <div class="form-group col-md-6 mb-0">
-                {{ form.plate_1_well|as_crispy_field }}
+                {{ form.ssp_well|as_crispy_field }}
+            </div>
+
+            <div class="form-group col-md-6 mb-0">
+                {{ form.sep_well|as_crispy_field }}
             </div>
         </div>
 
         <button type="submit" class="btn btn-primary">Proceed To Next Well</button>
+    </form>
+
+    <br>
+    <br>
+    <form action="/qpcr_records/" method="GET">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-primary">End Plate</button>
     </form>
     {% endblock %}
