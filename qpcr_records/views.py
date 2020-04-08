@@ -48,56 +48,11 @@ def index(request):
 
     if request.method == 'POST':
         if 'Browse' in request.FILES.keys():
-            # f = request.FILES['pcr_results_csv']
-            barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
-            barcode = barcode.rstrip()
-
-            csv_file = pandas.read_csv(request.FILES['Browse'])
-            for i, j in zip(csv_file['Well'], csv_file['Cq']):
-                if i[1:] in ['01', '02', '03', '04', '05', '06', '07', '08', '09']:
-                    i = i[0] + str(i[2])
-
-                if test_results.objects.filter(plate_id=barcode, qpcr_n1_well=i).count() > 0:
-                    print('HERE 1')
-                    print(i)
-                    t = test_results.objects.filter(plate_id=barcode, qpcr_n1_well=i).update(n1_ct_value=j)
-                elif test_results.objects.filter(plate_id=barcode, qpcr_n2_well=i).count() > 0:
-                    print('HERE 2')
-                    print(i)
-                    t = test_results.objects.filter(plate_id=barcode, qpcr_n2_well=i).update(n2_ct_value=j)
-                else:
-                    print('HERE 3')
-                    print(i)
-                    t = test_results.objects.filter(plate_id=barcode, qpcr_rp_well=i).update(rp_ct_value=j)
-
-            aws_access_key_id = config('aws_access_key_id')
-            aws_secret_access_key = config('aws_secret_access_key')
-            aws_storage_bucket_name = config('aws_storage_bucket_name')
-            aws_s3_region_name = 'us-west-2'
-
-            today = date.today()
-            fname = str(barcode) + '_' + str(today.strftime("%m%d%y")) + '.txt'
-            flink = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + fname
-            t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=flink)
-
-            csv_buffer = StringIO()
-            csv_file.to_csv(csv_buffer, sep=",", index=False)
-            s3_resource = boto3.resource("s3")
-            s3_resource.Object(aws_storage_bucket_name, fname).put(Body=csv_buffer.getvalue())
-
-            # s3 = boto3.client('s3')
-            # s3.put_object(Bucket=aws_storage_bucket_name, Body=csv_file, Key=fname)
-
-            # s3_client = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key= aws_secret_access_key)
-
-            # s3 = boto3.resource('s3')
-            # bucket = s3.Bucket(aws_storage_bucket_name)
-            # bucket.upload_fileobj(request.FILES['Browse'], fname)
-
-            # s3_client.upload_file(request.FILES['pcr_results_csv'], aws_storage_bucket_name, fname)
-
-            # t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=request.FILES['pcr_results_csv'])
-            # t.save()
+            file = request.FILES['Browse']
+            objs = test_results.objects.filter(qrp_id=file.name.split('_')[0]).update(file_transfer_status='Complete')
+            print("The file name is : %s" % file.name)
+            s3 = boto3.resource('s3')
+            s3.Bucket('covidtest2').put_object(Key=file.name, Body=file)
             return render(request, 'qpcr_records/index.html')
         elif 'Select Barcode List File' in request.FILES.keys():
             barcodes = request.FILES['Select Barcode List File'].read().decode("utf-8").splitlines()
@@ -477,5 +432,5 @@ def track_samples(request):
         exporter = TableExport(export_format, table)
         return exporter.response('table.{}'.format(export_format))
 
-    table.columns.hide('id')
+    #table.columns.hide('id')
     return render(request, 'qpcr_records/track_samples.html', {'table': table})
