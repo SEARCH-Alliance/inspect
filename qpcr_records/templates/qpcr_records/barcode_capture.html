@@ -1,15 +1,36 @@
 {% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-<div class="container">
-    <div class="jumbotron jumbotron-fluid">
-        <h2>Plate # {{ plate }}</h2>
-        <br>
-        <br>
-        <h2>Enter Box Information For Sample</h2>
+<div class="d-flex flex-column flex-grow">
+    <div class="jumbotron w-100">
+        <div class="container">
+            <h2>Scan Sample Barcode</h2>
+            <div>
+                <div class="font-weight-bold">Instructions: </div> Scan sample barcode and load sample into the indicated well.</div>
+            <hr>
+            <div class="d-flex flex-row flex-wrap align-items-start justify-content-between">
+                <div id="platemap" class="table table-sm"></div>
+                <div class="card" style="width: 14rem;">
+                    <div class="card-body">
+                        <h4 class="card-title">Legend</h4>
+                    </div>
+                    <ul id="legend" class="list-group list-group-flush lp-1">
+                        <li class="list-group-item d-flex flex-row">
+                            <div class="well"></div>
+                            <span class="mx-3 my-auto">Sample well</span>
+                        </li>
+                        <li class="list-group-item d-flex flex-row">
+                            <div class="well control-well"></div>
+                            <span class="mx-3 my-auto">Control well</span>
+                        </li>
+                        <li class="list-group-item d-flex flex-row">
+                            <div class="well active-well"></div>
+                            <span class="mx-3 my-auto">Current well</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
-    <br>
-    <h2>Enter Sample Barcode And Load Sample Into The Assigned Well</h2>
-    <br>
     <form action="/qpcr_records/barcode_capture/" method="GET">
         {% csrf_token %}
         <div class="form-row">
@@ -30,11 +51,154 @@
 
         <button type="submit" class="btn btn-primary">Proceed To Next Well</button>
     </form>
+</div>
+<br>
+<br>
+<form action="/qpcr_records/" method="GET">
+    {% csrf_token %}
+    <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-primary">End Plate</button>
+</form>
+<script>
+    // TODO retrieve platemap size
+    var rowNames = ["A", "B", "C", "D", "E", "F", "G", "H"]
+    var colNames = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
-    <br>
-    <br>
-    <form action="/qpcr_records/" method="GET">
-        {% csrf_token %}
-        <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-primary">End Plate</button>
-    </form>
-    {% endblock %}
+    // Determine well size and padding as factor of parent size
+    function getWellSize() {
+        var plate = document.getElementById("platemap");
+        var size = (plate.offsetWidth / colNames.length);
+        return size;
+    }
+
+    // Create plate elements
+    function renderPlate() {
+        console.log('rendering');
+        var plate = document.getElementById("platemap");
+        var activeWell = "{{ form.ssp_well.value }}"
+
+        var wellSize = getWellSize();
+
+        // Create grid of wells
+        colNames.forEach(col => {
+            // create column
+            var plateCol = document.createElement("div");
+            plateCol.id = "col" + col;
+            plateCol.classList.add("plate-col");
+            if (col == activeWell[1]) {
+                plateCol.classList.add("active-col");
+            }
+            // Create wells in column
+            rowNames.forEach(row => {
+
+                var well = document.createElement("div");
+
+                // Well ID e.g. A1, D9, etc.
+                label = row + col;
+                well.id = label;
+                labeldiv = document.createElement("div");
+                labeldiv.innerText = label;
+                well.appendChild(labeldiv);
+
+                // Set square width/height size
+                well.classList.add("well");
+
+
+                if (label == activeWell) {
+                    console.log(activeWell);
+                    well.classList.add("active-well");
+                    well.classList.add("active");
+                } else if (label == 'A1' | label == 'H1') {
+                    well.classList.add("control-well");
+                }
+                plateCol.appendChild(well);
+            });
+            plate.append(plateCol);
+        });
+
+        resizePlate();
+    }
+
+    // Update well size and padding based on window resize
+    function resizePlate() {
+        console.log('resizing');
+        var plate = document.getElementById("platemap");
+        var wellSize = getWellSize();
+
+        var cols = document.querySelectorAll('.plate-col');
+        cols.forEach(c => {
+            c.style.marginLeft = wellSize / 10 + "px";
+            c.style.marginRight = wellSize / 10 + "px";
+        });
+
+        var wells = document.querySelectorAll('.well');
+        wells.forEach(w => {
+            w.style.width = (8 * wellSize / 10) + "px";
+            w.style.height = (8 * wellSize / 10) + "px";
+            w.style.marginTop = (2 * wellSize / 10) + "px";
+            w.style.marginBottom = (2 * wellSize / 10) + "px";
+        });
+
+    }
+
+    // Add window event hooks
+    window.addEventListener("load", renderPlate);
+    window.addEventListener("resize", resizePlate);
+</script>
+<style>
+    #platemap {
+        max-width: 600px;
+        min-width: 400px;
+        background: lightblue;
+        border-radius: 4px;
+    }
+    
+    .plate-col {
+        display: inline-block;
+    }
+    
+    .well {
+        background: white;
+        /* border: 1px solid darkgrey; */
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .well div {
+        color: darkgrey;
+    }
+    
+    .active-col .well {
+        border: 1px solid black;
+    }
+    
+    .active-col .well div {
+        color: black;
+    }
+    
+    .active-well {
+        background: yellow !important;
+        font-weight: bold !important;
+    }
+    /* control wells */
+    
+    .control-well {
+        background: lightcoral;
+    }
+    
+    .control-well div {
+        color: white;
+    }
+    
+    #legend .well {
+        border: 1px solid grey;
+        margin: 0 !important;
+    }
+    
+    #legend span {
+        margin: auto 0;
+    }
+</style>
+{% endblock %}
+</div>
