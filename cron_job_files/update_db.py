@@ -47,12 +47,6 @@ def process_new_entries(conn):
 
     with f as open('time_retrieved.txt', 'r'):
         last_retrieved_time = f.read()
-    finished_barcodes = []
-    with f as open('read_barcodes.txt', 'r'):
-        for line in f:
-            objs = line.split(", ")
-            for i in objs:
-                finished_barcodes.append(i)
 
     # Clear previous files for transfer
     os.system('rm Result_transfer_*')
@@ -119,9 +113,11 @@ def process_new_entries(conn):
     # * Now pull entries that have been cleared by technician for transfer
     # * but haven't been sent yet
     query = f'SELECT * FROM qpcr_results \
-                  WHERE barcode NOT IN ({finished_barcodes}) \
+                  WHERE file_transfer_status = 'Not Complete' \
                   AND final_results != 'Undetermined''
     df = pd.read_sql_query(query,conn)
+    keep_columns = []
+    df = df.drop(df.columns.difference(keep_columns), 1, inplace=True)
     new_finished_barcodes = list(df['barcode'])
     # * Export entries to csv + SFTP to Rady site
     #temporarily save the csv file, sftp it then delete
@@ -133,10 +129,14 @@ def process_new_entries(conn):
     # Save last read timestamp to file
     with f as open('time_retrieved.txt', "w"):
         f.write(current_time)
-    # Add new processed barcodes to file
-    with f as open('read_barcodes.txt',"a"):
-        for bar in new_finished_barcodes:
-            f.write(bar + ", ")
+    # Update db file transfer statuses for files just transfered
+    for barcode in new_finished_barcodes:
+        cur.execute(f'UPDATE qpcr_results \
+                    SET file_transfer_status = 'Complete' \
+                    WHERE barcode = {barcode})
+
+
+
 
     cur.close()
     print('Database connection closed.')
@@ -151,3 +151,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+# file_transfer_status = Complete, Not Complete
