@@ -2,9 +2,10 @@
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 <div class="container">
     <div id="header">
-        <h1>Sampling Plate</h1>
+        <h3>Sampling Plate</h3>
     </div>
-    <h3>Please confirm that the information below is correct. Edit any field accordingly if needed.</h3>
+    <h5>Please confirm that the information below is correct. Edit any field accordingly if needed.</h5>
+    <br>
     <br>
     <form action="/qpcr_records/start_platemap/" method="GET" enctype="multipart/form-data">
         {% csrf_token %}
