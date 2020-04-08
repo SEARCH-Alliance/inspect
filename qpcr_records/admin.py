@@ -11,7 +11,7 @@ class test_overlapAdmin(admin.ModelAdmin):
                     'rna_extraction_technician_lab', 'rna_extraction_technician_institute', 'qrp_id', 'qrp_well',
                     'probe_mix_id', 'enzyme_mix_id', 'mhv_id', 'qs5_id', 'qpcr_technician', 'qpcr_technician_lab',
                     'qpcr_technician_institute','ms2_ct_value', 'n_ct_value', 'orf1ab_ct_value', 's_ct_value',
-                    'decision_tree_results', 'final_results', 'pcr_results_csv', 'eds_results_csv')
+                    'decision_tree_results', 'final_results', 'pcr_results_csv', 'eds_results_csv', 'file_transfer_status')
 
 
 admin.site.register(test_results, test_overlapAdmin)
