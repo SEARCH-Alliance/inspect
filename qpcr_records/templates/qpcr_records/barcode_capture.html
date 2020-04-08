@@ -51,13 +51,14 @@
 
         <button type="submit" class="btn btn-primary">Proceed To Next Well</button>
     </form>
+    <br>
+    <br>
+    <form action="/qpcr_records/" method="GET">
+        {% csrf_token %}
+        <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-primary">End Plate</button>
+    </form>
 </div>
-<br>
-<br>
-<form action="/qpcr_records/" method="GET">
-    {% csrf_token %}
-    <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-primary">End Plate</button>
-</form>
+
 <script>
     // TODO retrieve platemap size
     var rowNames = ["A", "B", "C", "D", "E", "F", "G", "H"]
