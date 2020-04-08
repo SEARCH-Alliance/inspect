@@ -1,5 +1,9 @@
 import pandas as pd
 import numpy as np
+import boto3
+import os
+import sys
+from io import StringIO
 
 class Results:
 
@@ -27,16 +31,16 @@ class Results:
         target_count = 3 - [r_dict[x] for x in covid_targets].count("Undetermined")
         # Test is NA if no targets are positive AND MS2 is NEGATIVE
         if target_count == 0 and MS2 == "Undetermined":
-            return "NA"
+            return "Invalid"
         # Test is NEGATIVE if no targets are positive AND MS2 is POSITIVE
         elif target_count == 0 and MS2 != "Undetermined":
-            return "NEGATIVE"
+            return "Negative"
         # Test is INCONCLUSIVE if ONLY ONE target is positive (regardless of MS2 status)
         elif target_count == 1:
-            return "INCONCLUSIVE"
+            return "Inconclusive"
         # Test is POSITIVE if MORE THAN ONE target is positive (regardless of MS2 status)
         elif target_count > 1:
-            return "POSITIVE"
+            return "Positive"
 
     def parse_results(self):
         print("Parsing results")
@@ -55,6 +59,20 @@ class Results:
 
     # Call this function to get a nested dictionary of results indexed as follows:
     # {well position: {target1:value,target2:value,...,'diagnosis':value}}
-    def get_results(self,file_path):
-        self.read_file(file_path)
+    def get_results(self,object_key):
+        self.pull_from_s3(object_key)
         return self.parse_results()
+
+    def pull_from_s3(self,object_key):
+        # get AWS credentials
+        # NOTE: double check credentials
+        aws_id = os.environ['AWS_ID']
+        aws_secret = os.environ['AWS_SECRET']
+        client = boto3.client('s3',aws_access_key_id=aws_id,
+                              aws_secret_access_key=aws_secret)
+        # NOTE: set proper bucket name
+        bucket_name = 'put_bucket_name_here'
+        excel_obj = client.get_object(Bucket=bucket_name,Key=object_key)
+        body = csv_obj['Body']
+        excel_string = body.read().decode('utf-8')
+        self.read_file(StringIO(excel_string))
