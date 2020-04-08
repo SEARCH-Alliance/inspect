@@ -11,7 +11,7 @@ import boto3
 import pandas
 from io import StringIO
 import datetime
-from django.db.models import Q
+from django.contrib import messages
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
@@ -27,83 +27,49 @@ def index(request):
     """
     if request.method == 'GET':
         print(request.GET)
-        if 'plate_1_id' in request.GET.keys():
+        if 'ssp_id' in request.GET.keys():
             l = list()
             for i in ['A', 'B', 'C']:
                 for j in range(1, 4):
-                    l.append(test_results(barcode=request.session[i + str(j)], plate_1_id=request.GET['plate_1_id'],
-                                          plate_1_well=i + str(j), plate_2_id=request.GET['plate_2_id'],
-                                          plate_2_well=i + str(j),
+                    l.append(test_results(barcode=request.session[i + str(j)], ssp_id=request.GET['ssp_id'],
+                                          ssp_well=i + str(j), sep_id=request.GET['sep_id'],
+                                          sep_well=i + str(j),
                                           sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
             test_results.objects.bulk_create(l)
-        elif 'plate_2_id' in request.GET.keys() and 'plate_3_id' in request.GET.keys():
-            objs = test_results.objects.filter(plate_2_id=request.GET['plate_2_id']).update(plate_3_id=request.GET['plate_3_id'])
+        elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
+            objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(rep_id=request.GET['rep_id'])
+            objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(rsp_id=request.GET['rsp_id'])
         elif 'barcode4' in request.GET.keys():
             objs = test_results.objects.filter(
-                plate_3_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
-                                request.GET['barcode4']]).update(plate_4_id=request.GET['plate_4_id'])
-        elif 'plate_4_id' in request.GET.keys() and 'plate_5_id' in request.GET.keys():
-            objs = test_results.objects.filter(plate_4_id=request.GET['plate_4_id']).update(plate_5_id=request.GET['plate_5_id'])
-        elif 'plate_5_id' in request.GET.keys() and 'plate_6_id' in request.GET.keys():
-            objs = test_results.objects.filter(plate_5_id=request.GET['plate_5_id']).update(plate_6_id=request.GET['plate_6_id'])
+                rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
+                            request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'])
+        elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
+            objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']).update(qrp_id=request.GET['qrp_id'])
 
     if request.method == 'POST':
         if 'Browse' in request.FILES.keys():
-            # f = request.FILES['pcr_results_csv']
-            barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
-            barcode = barcode.rstrip()
-
-            csv_file = pandas.read_csv(request.FILES['Browse'])
-            for i, j in zip(csv_file['Well'], csv_file['Cq']):
-                if i[1:] in ['01', '02', '03', '04', '05', '06', '07', '08', '09']:
-                    i = i[0] + str(i[2])
-
-                if test_results.objects.filter(plate_id=barcode, qpcr_n1_well=i).count() > 0:
-                    print('HERE 1')
-                    print(i)
-                    t = test_results.objects.filter(plate_id=barcode, qpcr_n1_well=i).update(n1_ct_value=j)
-                elif test_results.objects.filter(plate_id=barcode, qpcr_n2_well=i).count() > 0:
-                    print('HERE 2')
-                    print(i)
-                    t = test_results.objects.filter(plate_id=barcode, qpcr_n2_well=i).update(n2_ct_value=j)
-                else:
-                    print('HERE 3')
-                    print(i)
-                    t = test_results.objects.filter(plate_id=barcode, qpcr_rp_well=i).update(rp_ct_value=j)
-
-            aws_access_key_id = config('aws_access_key_id')
-            aws_secret_access_key = config('aws_secret_access_key')
-            aws_storage_bucket_name = config('aws_storage_bucket_name')
-            aws_s3_region_name = 'us-west-2'
-
-            today = date.today()
-            fname = str(barcode) + '_' + str(today.strftime("%m%d%y")) + '.txt'
-            flink = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + fname
-            t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=flink)
-
-            csv_buffer = StringIO()
-            csv_file.to_csv(csv_buffer, sep=",", index=False)
-            s3_resource = boto3.resource("s3")
-            s3_resource.Object(aws_storage_bucket_name, fname).put(Body=csv_buffer.getvalue())
-
-            # s3 = boto3.client('s3')
-            # s3.put_object(Bucket=aws_storage_bucket_name, Body=csv_file, Key=fname)
-
-            # s3_client = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key= aws_secret_access_key)
-
-            # s3 = boto3.resource('s3')
-            # bucket = s3.Bucket(aws_storage_bucket_name)
-            # bucket.upload_fileobj(request.FILES['Browse'], fname)
-
-            # s3_client.upload_file(request.FILES['pcr_results_csv'], aws_storage_bucket_name, fname)
-
-            # t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=request.FILES['pcr_results_csv'])
-            # t.save()
+            file = request.FILES['Browse']
+            objs = test_results.objects.filter(qrp_id=file.name.split('_')[0]).update(file_transfer_status='Complete')
+            print("The file name is : %s" % file.name)
+            s3 = boto3.resource('s3')
+            s3.Bucket('covidtest2').put_object(Key=file.name, Body=file)
+            return render(request, 'qpcr_records/index.html')
+        elif 'Select Barcode List File' in request.FILES.keys():
+            barcodes = request.FILES['Select Barcode List File'].read().decode("utf-8").splitlines()
+            l = list()
+            for b in barcodes:
+                l.append(test_results(barcode=b, sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
+            test_results.objects.bulk_create(l)
             return render(request, 'qpcr_records/index.html')
         else:
             return render(request, 'qpcr_records/index.html')
     else:
         return render(request, 'qpcr_records/index.html')
+
+
+@login_required
+def barcode_list_upload(request):
+    return render(request, 'qpcr_records/barcode_list_upload.html')
 
 
 @login_required
@@ -184,8 +150,11 @@ def start_sampling_plate(request):
         for k in request.GET.keys():
             request.session[k] = request.GET[k]
 
-        request.session['plate_1_well'] = 'X'
-        f = Sampling_Form(initial={'plate_1_well': 'A1', 'plate_2_well': 'A1'})
+        request.session['ssp_well'] = 'X' # ! is this needed?
+        request.session['expected_barcodes'] = list(
+            test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
+                                        sep_well='').values_list('barcode', flat=True))
+        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
         return render(request, 'qpcr_records/start_sampling_plate.html', {'form': f})
 
 
@@ -204,31 +173,32 @@ def barcode_capture(request):
         request.session[k] = request.GET[k]
 
     # Checks if the last scanned barcode was for a plate. In that case, the current scan is for the first well 'A1'.
-    if 'plate_1_well' in request.session.keys():
-        well = request.session['plate_1_well']
+    if 'ssp_well' in request.session.keys():
+        well = request.session['ssp_well']
         print(well)
 
         if well == 'X': # Redirect from start
             print('Starting at first control well')
-            request.session[well] = request.session['barcode']
-            request.session['last_scan'] = well
-            f = Sampling_Form(initial={'plate_1_well': 'A1', 'plate_2_well': 'A1'})
+            # request.session[well] = request.session['barcode']
+            # request.session['last_scan'] = well
+            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
         if well == 'A1': # First control well
             print('Going to second control well')
             request.session[well] = request.session['barcode']
             request.session['last_scan'] = well
-            f = Sampling_Form(initial={'plate_1_well': 'H1', 'plate_2_well': 'H1'})
+            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
         elif well == 'H1': # Second control well
             request.session[well] = request.session['barcode']
             request.session['last_scan'] = well
-            f = Sampling_Form(initial={'plate_1_well': 'B1', 'plate_2_well': 'B1'})
+            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
         elif well == 'C3': # END
             request.session[well] = request.session['barcode']
+
             request.session['last_scan'] = 'C3'
-            f = Plate_1_2_Form()
+            f = SampleStorageAndExtractionPlateForm()
             return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
         else:
             print('Proceeding to next well')
@@ -242,8 +212,13 @@ def barcode_capture(request):
             else:
                 row = d1[row]
 
-            f = Sampling_Form(initial={'plate_1_well': row + str(col), 'plate_2_well': row + str(col)})
+            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': row + str(col), 'sep_well': row + str(col)})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
+
+
+@login_required
+def unknown_barcode(request):
+    return render(request, 'qpcr_records/unknown_barcode.html')
 
 
 @login_required
@@ -272,22 +247,8 @@ def scan_plate_2_3_barcode(request):
     :param request:
     :return:
     """
-    f1 = Plate_1_2_Form()
-    f2 = Plate_3_Form()
-    return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2})
-
-
-@login_required
-def scan_plate_2_3_barcode(request):
-    """
-    Redirected here after the barcode for the last well is scanned. Create a platemap for display with the barcodes
-    specified along the corresponding well.
-    Also, records for each barcode will be created.
-    :param request:
-    :return:
-    """
-    f1 = Plate_1_2_Form()
-    f2 = Plate_3_Form()
+    f1 = SampleStorageAndExtractionPlateForm()
+    f2 = RNAExtractionAndStoragePlateForm()
     return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2})
 
 
@@ -301,7 +262,7 @@ def scan_plate_arrayed_plate_barcode(request):
     :return:
     """
     f1 = ArrayingForm()
-    f2 = Plate_4_Form()
+    f2 = RNAWorkingPlateForm()
     return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2})
 
 
@@ -328,8 +289,8 @@ def scan_plate_5_6_barcode(request):
     :param request:
     :return:
     """
-    f1 = Plate_5_Form()
-    f2 = Plate_6_Form()
+    f1 = RNAWorkingPlateForm()
+    f2 = QPCRReactionPlateForm()
     return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2})
 
 
@@ -344,62 +305,65 @@ def record_search(request):
         print(request.GET.keys())
         # ['csrfmiddlewaretoken', 'barcode', 'technician', 'lab', 'collection_date', 'processing_date']
         q = ''
-        for k in ['barcode', 'fake_name', 'technician', 'lab', 'sampling_date', 'plate_1_id', 'plate_2_id', 'plate_3_id', 'plate_4_id', 'plate_5_id', 'plate_6_id']:
+        for k in ['barcode', 'sampling_date', 'ssp_id', 'sep_id', 'rep_id', 'rsp_id', 'rwp_id', 'qrp_id',
+                  'sampling_extraction_technician', 'rna_extraction_technician', 'qpcr_technician']:
             if request.GET[k] != '' and k == 'barcode':
                 if q == '':
                     q = test_results.objects.filter(barcode=request.GET[k])
                 else:
                     q = q.filter(barcode=request.GET[k])
-            elif request.GET[k] != '' and k == 'fake_name':
-                if q == '':
-                    q = test_results.objects.filter(fake_name=request.GET[k])
-                else:
-                    q = q.filter(fake_name=request.GET[k])
-            elif request.GET[k] != '' and k == 'technician':
-                if q == '':
-                    q = test_results.objects.filter(technician=request.GET[k])
-                else:
-                    q = q.filter(technician=request.GET[k])
-            elif request.GET[k] != '' and k == 'lab':
-                if q == '':
-                    q = test_results.objects.filter(lab=request.GET[k])
-                else:
-                    q = q.filter(lab=request.GET[k])
             elif request.GET[k] != '' and k == 'sampling_date':
                 if q == '':
                     q = test_results.objects.filter(sampling_date=request.GET[k])
                 else:
                     q = q.filter(sampling_date=request.GET[k])
-            elif request.GET[k] != '' and k == 'plate_1_id':
+            elif request.GET[k] != '' and k == 'ssp_id':
                 if q == '':
-                    q = test_results.objects.filter(plate_1_id=request.GET[k])
+                    q = test_results.objects.filter(ssp_id=request.GET[k])
                 else:
-                    q = q.filter(plate_1_id=request.GET[k])
-            elif request.GET[k] != '' and k == 'plate_2_id':
+                    q = q.filter(ssp_id=request.GET[k])
+            elif request.GET[k] != '' and k == 'sep_id':
                 if q == '':
-                    q = test_results.objects.filter(plate_2_id=request.GET[k])
+                    q = test_results.objects.filter(sep_id=request.GET[k])
                 else:
-                    q = q.filter(plate_2_id=request.GET[k])
-            elif request.GET[k] != '' and k == 'plate_3_id':
+                    q = q.filter(sep_id=request.GET[k])
+            elif request.GET[k] != '' and k == 'rep_id':
                 if q == '':
-                    q = test_results.objects.filter(plate_3_id=request.GET[k])
+                    q = test_results.objects.filter(rep_id=request.GET[k])
                 else:
-                    q = q.filter(plate_3_id=request.GET[k])
-            elif request.GET[k] != '' and k == 'plate_4_id':
+                    q = q.filter(rep_id=request.GET[k])
+            elif request.GET[k] != '' and k == 'rsp_id':
                 if q == '':
-                    q = test_results.objects.filter(plate_4_id=request.GET[k])
+                    q = test_results.objects.filter(rsp_id=request.GET[k])
                 else:
-                    q = q.filter(plate_4_id=request.GET[k])
-            elif request.GET[k] != '' and k == 'plate_4_id':
+                    q = q.filter(rsp_id=request.GET[k])
+            elif request.GET[k] != '' and k == 'rwp_id':
                 if q == '':
-                    q = test_results.objects.filter(plate_5_id=request.GET[k])
+                    q = test_results.objects.filter(rwp_id=request.GET[k])
                 else:
-                    q = q.filter(plate_5_id=request.GET[k])
-            elif request.GET[k] != '' and k == 'plate_6_id':
+                    q = q.filter(rwp_id=request.GET[k])
+            elif request.GET[k] != '' and k == 'qrp_id':
                 if q == '':
-                    q = test_results.objects.filter(plate_6_id=request.GET[k])
+                    q = test_results.objects.filter(qrp_id=request.GET[k])
                 else:
-                    q = q.filter(plate_6_id=request.GET[k])
+                    q = q.filter(qrp_id=request.GET[k])
+            elif request.GET[k] != '' and k == 'sampling_extraction_technician':
+                if q == '':
+                    q = test_results.objects.filter(sample_extraction_technician1=request.GET[k])
+                    q = test_results.objects.filter(sample_extraction_technician2=request.GET[k])
+                else:
+                    q = q.filter(sample_extraction_technician1=request.GET[k])
+                    q = q.filter(sample_extraction_technician2=request.GET[k])
+            elif request.GET[k] != '' and k == 'rna_extraction_technician':
+                if q == '':
+                    q = test_results.objects.filter(rna_extraction_technician=request.GET[k])
+                else:
+                    q = q.filter(rna_extraction_technician=request.GET[k])
+            elif request.GET[k] != '' and k == 'qpcr_technician':
+                if q == '':
+                    q = test_results.objects.filter(qpcr_technician=request.GET[k])
+                else:
+                    q = q.filter(qpcr_technician=request.GET[k])
             else:
                 continue
 
@@ -414,7 +378,7 @@ def record_search(request):
                 exporter = TableExport(export_format, table)
                 return exporter.response('table.{}'.format(export_format))
 
-            table.columns.hide('id')
+            # table.columns.hide('id')
             return render(request, 'qpcr_records/record_search.html', {'table': table})
 
 
@@ -444,29 +408,29 @@ def track_samples(request):
     for k in l2:
         if k == 'Sample_Plated':
             if q == '':
-                q = test_results.objects.filter(plate_1_id='X')
+                q = test_results.objects.filter(ssp_id='X')
             else:
-                q = q.filter(plate_1_id='X')
+                q = q.filter(ssp_id='X')
         elif k == 'Sample_Stored':
             if q == '':
-                q = test_results.objects.filter(plate_2_id='X')
+                q = test_results.objects.filter(sep_id='X')
             else:
-                q = q.filter(plate_2_id='X')
+                q = q.filter(sep_id='X')
         elif k == 'RNA_Extraction':
             if q == '':
-                q = test_results.objects.filter(plate_3_id='X')
+                q = test_results.objects.filter(rep_id='X')
             else:
-                q = q.filter(plate_3_id='X')
+                q = q.filter(rep_id='X')
         elif k == 'Sample_Arrayed':
             if q == '':
-                q = test_results.objects.filter(plate_4_id='X')
+                q = test_results.objects.filter(rsp_id='X')
             else:
-                q = q.filter(plate_4_id='X')
+                q = q.filter(rsp_id='X')
         elif k == 'qPCR_BackUp':
             if q == '':
-                q = test_results.objects.filter(plate_5_id='X')
+                q = test_results.objects.filter(rwp_id='X')
             else:
-                q = q.filter(plate_5_id='X')
+                q = q.filter(rwp_id='X')
         else:
             q = test_results.objects.all()
             break
@@ -479,5 +443,5 @@ def track_samples(request):
         exporter = TableExport(export_format, table)
         return exporter.response('table.{}'.format(export_format))
 
-    table.columns.hide('id')
+    #table.columns.hide('id')
     return render(request, 'qpcr_records/track_samples.html', {'table': table})

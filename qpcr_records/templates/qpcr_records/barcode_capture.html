@@ -5,7 +5,7 @@
         <div class="container">
             <h2>Scan Sample Barcode</h2>
             <div>
-                <div class="font-weight-bold">Instructions: </div> Scan the barcode to associate with the indicated well.</div>
+                <div class="font-weight-bold">Instructions: </div> Scan sample barcode and load sample into the indicated well.</div>
             <hr>
             <div class="d-flex flex-row flex-wrap align-items-start justify-content-between">
                 <div id="platemap" class="table table-sm"></div>
@@ -38,14 +38,26 @@
                 {{ form.barcode|as_crispy_field }}
             </div>
 
+            <br>
+
             <div class="form-group col-md-6 mb-0">
-                {{ form.plate_1_well|as_crispy_field }}
+                {{ form.ssp_well|as_crispy_field }}
+            </div>
+
+            <div class="form-group col-md-6 mb-0">
+                {{ form.sep_well|as_crispy_field }}
             </div>
         </div>
 
         <button type="submit" class="btn btn-primary">Proceed To Next Well</button>
     </form>
 </div>
+<br>
+<br>
+<form action="/qpcr_records/" method="GET">
+    {% csrf_token %}
+    <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-primary">End Plate</button>
+</form>
 <script>
     // TODO retrieve platemap size
     var rowNames = ["A", "B", "C", "D", "E", "F", "G", "H"]
