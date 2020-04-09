@@ -6,6 +6,7 @@ import django_tables2 as tables
 sample_release_choices = (('Yes', 'Yes'), ('No', 'No'), ('NA', 'NA'))
 sample_result_choices = (('Undetermined', 'Undetermined'), ('Invalid', 'Invalid'), ('Inconclusive', 'Inconclusive'),
                         ('Positive', 'Positive'), ('Negative', 'Negative'))
+file_transfer_status_choices = (('Complete', 'Complete'), ('Not Complete', 'Not Complete'))
 
 
 class test_results(models.Model):
@@ -80,6 +81,7 @@ class test_results(models.Model):
     pcr_results_csv = models.URLField(max_length=300, null=False, default='')
     eds_results_csv = models.URLField(max_length=300, null=False, default='')
 
+    file_transfer_status = models.CharField(max_length=15, null=False, default='Not Complete', choices=file_transfer_status_choices)
     sample_release = models.CharField(max_length=15, null=False, default='NA', choices=sample_release_choices)
 
     class Meta:

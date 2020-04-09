@@ -48,56 +48,11 @@ def index(request):
 
     if request.method == 'POST':
         if 'Browse' in request.FILES.keys():
-            # f = request.FILES['pcr_results_csv']
-            barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
-            barcode = barcode.rstrip()
-
-            csv_file = pandas.read_csv(request.FILES['Browse'])
-            for i, j in zip(csv_file['Well'], csv_file['Cq']):
-                if i[1:] in ['01', '02', '03', '04', '05', '06', '07', '08', '09']:
-                    i = i[0] + str(i[2])
-
-                if test_results.objects.filter(plate_id=barcode, qpcr_n1_well=i).count() > 0:
-                    print('HERE 1')
-                    print(i)
-                    t = test_results.objects.filter(plate_id=barcode, qpcr_n1_well=i).update(n1_ct_value=j)
-                elif test_results.objects.filter(plate_id=barcode, qpcr_n2_well=i).count() > 0:
-                    print('HERE 2')
-                    print(i)
-                    t = test_results.objects.filter(plate_id=barcode, qpcr_n2_well=i).update(n2_ct_value=j)
-                else:
-                    print('HERE 3')
-                    print(i)
-                    t = test_results.objects.filter(plate_id=barcode, qpcr_rp_well=i).update(rp_ct_value=j)
-
-            aws_access_key_id = config('aws_access_key_id')
-            aws_secret_access_key = config('aws_secret_access_key')
-            aws_storage_bucket_name = config('aws_storage_bucket_name')
-            aws_s3_region_name = 'us-west-2'
-
-            today = date.today()
-            fname = str(barcode) + '_' + str(today.strftime("%m%d%y")) + '.txt'
-            flink = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + fname
-            t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=flink)
-
-            csv_buffer = StringIO()
-            csv_file.to_csv(csv_buffer, sep=",", index=False)
-            s3_resource = boto3.resource("s3")
-            s3_resource.Object(aws_storage_bucket_name, fname).put(Body=csv_buffer.getvalue())
-
-            # s3 = boto3.client('s3')
-            # s3.put_object(Bucket=aws_storage_bucket_name, Body=csv_file, Key=fname)
-
-            # s3_client = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key= aws_secret_access_key)
-
-            # s3 = boto3.resource('s3')
-            # bucket = s3.Bucket(aws_storage_bucket_name)
-            # bucket.upload_fileobj(request.FILES['Browse'], fname)
-
-            # s3_client.upload_file(request.FILES['pcr_results_csv'], aws_storage_bucket_name, fname)
-
-            # t = test_results.objects.filter(plate_id=barcode).update(pcr_results_csv=request.FILES['pcr_results_csv'])
-            # t.save()
+            file = request.FILES['Browse']
+            objs = test_results.objects.filter(qrp_id=file.name.split('_')[0]).update(file_transfer_status='Complete')
+            print("The file name is : %s" % file.name)
+            s3 = boto3.resource('s3')
+            s3.Bucket('covidtest2').put_object(Key=file.name, Body=file)
             return render(request, 'qpcr_records/index.html')
         elif 'Select Barcode List File' in request.FILES.keys():
             barcodes = request.FILES['Select Barcode List File'].read().decode("utf-8").splitlines()
@@ -188,25 +143,18 @@ def check_information(request):
 @login_required
 def start_sampling_plate(request):
     """
-    Redirect to this view after the user has confirmed the defaults in the submission form. The first step is to scan a
-    barcode for the plate. Execute the webcam_barcode_scanner script to to capture barcode from the label using a webcam
-    Once the barcode is saved to a session variable, redirect to sample barcode scan view.
-    Records the plate barcode in a session variable "plate"
-    Records the lastest scanned plate or well in session variable "last_scan". This variable is useful in keeping track of
-    how much of the well has been loaded and which well to prompt the user with
+    Present list of safety checks to user before starting plating.
     :param request: signal call that this function has been called
-    :return barcode: captured barcode
-    :return next_well: Since the plate barcode has been recorded here, the next well will always be A1
     """
     if request.method == 'GET':
         for k in request.GET.keys():
             request.session[k] = request.GET[k]
 
+        request.session['ssp_well'] = 'X' # ! is this needed?
         request.session['expected_barcodes'] = list(
             test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
                                         sep_well='').values_list('barcode', flat=True))
         f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
-        request.session['plate_well'] = 'A1'
         return render(request, 'qpcr_records/start_sampling_plate.html', {'form': f})
 
 
@@ -224,22 +172,40 @@ def barcode_capture(request):
     for k in request.GET.keys():
         request.session[k] = request.GET[k]
 
+    # Checks if the last scanned barcode was for a plate. In that case, the current scan is for the first well 'A1'.
     if 'ssp_well' in request.session.keys():
-        if request.session['ssp_well'] == 'A1':
-            request.session[request.session['ssp_well']] = request.session['barcode']
-            request.session['last_scan'] = 'A1'
+        well = request.session['ssp_well']
+        print(well)
+
+        if well == 'X': # Redirect from start
+            print('Starting at first control well')
+            # request.session[well] = request.session['barcode']
+            # request.session['last_scan'] = well
+            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
+        if well == 'A1': # First control well
+            print('Going to second control well')
+            request.session[well] = request.session['barcode']
+            request.session['last_scan'] = well
+            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1'})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
+        elif well == 'H1': # Second control well
+            request.session[well] = request.session['barcode']
+            request.session['last_scan'] = well
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
-        elif request.session['ssp_well'] == 'C3':
-            request.session[request.session['ssp_well']] = request.session['barcode']
+        elif well == 'C3': # END
+            request.session[well] = request.session['barcode']
+
             request.session['last_scan'] = 'C3'
             f = SampleStorageAndExtractionPlateForm()
             return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
         else:
-            request.session[request.session['ssp_well']] = request.session['barcode']
-            request.session['last_scan'] = request.session['ssp_well']
-            row = request.session['ssp_well'][0]
-            col = int(request.session['ssp_well'][1])
+            print('Proceeding to next well')
+            request.session[well] = request.session['barcode']
+            request.session['last_scan'] = well
+            row = well[0]
+            col = int(well[1])
             if row == 'C':
                 row = d1[row]
                 col = col + 1
@@ -434,9 +400,9 @@ def track_samples(request):
     l2 = list()
     for k in l:
         if k in request.GET['track_samples']:
-            continue
-        else:
             l2.append(k)
+        else:
+            continue
 
     q = ''
     for k in l2:
@@ -477,5 +443,5 @@ def track_samples(request):
         exporter = TableExport(export_format, table)
         return exporter.response('table.{}'.format(export_format))
 
-    table.columns.hide('id')
+    #table.columns.hide('id')
     return render(request, 'qpcr_records/track_samples.html', {'table': table})
