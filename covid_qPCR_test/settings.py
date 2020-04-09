@@ -155,4 +155,4 @@ print(MEDIA_ROOT)
 
 LOGIN_REDIRECT_URL = '/qpcr_records/'
 
-
+DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap-responsive.html'

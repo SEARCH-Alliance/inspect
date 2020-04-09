@@ -150,12 +150,12 @@ def start_sampling_plate(request):
         for k in request.GET.keys():
             request.session[k] = request.GET[k]
 
-        request.session['ssp_well'] = 'X' # ! is this needed?
+        request.session['ssp_well'] = 'X'
+        request.session['current_barcodes'] = []
         request.session['expected_barcodes'] = list(
             test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
                                         sep_well='').values_list('barcode', flat=True))
-        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
-        return render(request, 'qpcr_records/start_sampling_plate.html', {'form': f})
+        return render(request, 'qpcr_records/start_sampling_plate.html', {'barcodes': request.session['current_barcodes']})
 
 
 @login_required
@@ -174,38 +174,23 @@ def barcode_capture(request):
 
     # Checks if the last scanned barcode was for a plate. In that case, the current scan is for the first well 'A1'.
     if 'ssp_well' in request.session.keys():
-        well = request.session['ssp_well']
-        print(well)
-
-        if well == 'X': # Redirect from start
-            print('Starting at first control well')
-            # request.session[well] = request.session['barcode']
-            # request.session['last_scan'] = well
+        barcodes = request.session['current_barcodes']
+        if request.session['ssp_well'] == 'X': # Redirect from start
+            request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
-        if well == 'A1': # First control well
-            print('Going to second control well')
-            request.session[well] = request.session['barcode']
-            request.session['last_scan'] = well
-            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
-        elif well == 'H1': # Second control well
-            request.session[well] = request.session['barcode']
-            request.session['last_scan'] = well
-            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
-        elif well == 'C3': # END
-            request.session[well] = request.session['barcode']
-
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+        elif request.session['ssp_well'] == 'C3': # END
+            request.session['current_barcodes'].append(request.session['barcode'])
+            request.session[request.session['ssp_well']] = request.session['barcode']
             request.session['last_scan'] = 'C3'
             f = SampleStorageAndExtractionPlateForm()
             return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
         else:
-            print('Proceeding to next well')
-            request.session[well] = request.session['barcode']
-            request.session['last_scan'] = well
-            row = well[0]
-            col = int(well[1])
+            request.session['current_barcodes'].append(request.session['barcode'])
+            request.session[request.session['ssp_well']] = request.session['barcode']
+            request.session['last_scan'] = request.session['ssp_well']
+            row = request.session['ssp_well'][0]
+            col = int(request.session['ssp_well'][1:])
             if row == 'C':
                 row = d1[row]
                 col = col + 1
@@ -213,7 +198,7 @@ def barcode_capture(request):
                 row = d1[row]
 
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': row + str(col), 'sep_well': row + str(col)})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
 
 
 @login_required
