@@ -385,9 +385,9 @@ def track_samples(request):
     l2 = list()
     for k in l:
         if k in request.GET['track_samples']:
-            continue
-        else:
             l2.append(k)
+        else:
+            continue
 
     q = ''
     for k in l2:
