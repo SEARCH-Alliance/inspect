@@ -23,6 +23,8 @@ class test_results(models.Model):
     sep_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of Sample Extraction Plate (SEP)')
     sep_well = models.CharField(max_length=3, null=False, default='')
+    andersson_lab_frz_id = models.CharField(max_length=15, null=False, default='',
+                                         help_text='Enter Sample Storage Freezer Number')
     sample_extraction_technician1 = models.CharField(max_length=20, null=False, default='')
     sample_extraction_technician1_lab = models.CharField(max_length=20, null=False, default='')
     sample_extraction_technician1_institute = models.CharField(max_length=20, null=False, default='')
@@ -44,7 +46,7 @@ class test_results(models.Model):
     rsp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of RNA Storage Plate')
     rsp_well = models.CharField(max_length=2, null=False, default='')
-    frz_id = models.CharField(max_length=15, null=False, default='',
+    knight_lab_frz_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Enter RNA Storage Freezer Number')
     rwp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of RNA Working Plate')
@@ -65,6 +67,8 @@ class test_results(models.Model):
                               help_text='Enter Mosquito HV Number')
     qs5_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Enter QS5 Number')
+    laurent_lab_frz_id = models.CharField(max_length=15, null=False, default='',
+                                         help_text='Enter RNA Storage Freezer Number')
     qpcr_technician = models.CharField(max_length=20, null=False, default='')
     qpcr_technician_lab = models.CharField(max_length=20, null=False, default='')
     qpcr_technician_institute = models.CharField(max_length=20, null=False, default='')
@@ -110,7 +114,6 @@ class SampleStorageAndExtractionWellForm(ModelForm):
         labels = {'barcode': 'Sample Barcode', 'ssp_well': 'Sample Storage Plate Well',
                   'sep_well': 'Sample Extraction Plate Well'}
         widgets = {'barcode': TextInput(attrs={'autofocus':'autofocus'}), 'ssp_well': HiddenInput(attrs={'readonly': True}), 'sep_well': HiddenInput(attrs={'readonly': True})}
-
 
 
 class SampleStorageAndExtractionPlateForm(ModelForm):

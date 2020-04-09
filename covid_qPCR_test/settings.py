@@ -40,7 +40,7 @@ SECRET_KEY = config('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['detectawsenv.eba-ahpi3383.us-west-2.elasticbeanstalk.com', '127.0.0.1']
 
 # Application definition
 
@@ -98,12 +98,8 @@ WSGI_APPLICATION = 'covid_qPCR_test.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'covidtestdb',
-        'USER': 'yeo',
-        'PASSWORD': 'yeolab2018',
-        'HOST': 'localhost',
-        'PORT': '',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 
@@ -155,4 +151,4 @@ print(MEDIA_ROOT)
 
 LOGIN_REDIRECT_URL = '/qpcr_records/'
 
-DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap-responsive.html'
+

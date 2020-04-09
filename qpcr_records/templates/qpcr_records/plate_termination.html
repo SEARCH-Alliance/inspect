@@ -1,10 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<div class="container">
+    <br>
+    <h2>Premature end to sample plating</h2>
+    <br>
+    <form action="/qpcr_records/" method="get">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" title="You will lose all scanned samples">Terminate Plate</button>
+    </form>
+    <br>
+    <form action="/qpcr_records/scan_plate_1_2_barcode.html" method="get">
+        <button type="submit" class="btn btn-primary" title="Scanned samples will be saved">Finish Plate And Save Samples</button>
+    </form>
