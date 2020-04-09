@@ -1,5 +1,5 @@
 from django.db import models
-from django.forms import ModelForm
+from django.forms import ModelForm, HiddenInput, TextInput
 import datetime
 import django_tables2 as tables
 
@@ -96,8 +96,12 @@ class test_resultsTable(tables.Table):
                   'rsp_well', 'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
                   'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'pcr_results_csv',
                   'sample_release')
-        template_name = 'django_tables2/bootstrap.html'
 
+
+# class BarcodeScanningTable(tables.Table):
+#     class Meta:
+#         model = test_results
+#         fields = ('barcode')
 
 class SampleStorageAndExtractionWellForm(ModelForm):
     class Meta:
@@ -105,6 +109,8 @@ class SampleStorageAndExtractionWellForm(ModelForm):
         fields = ['barcode', 'ssp_well', 'sep_well']
         labels = {'barcode': 'Sample Barcode', 'ssp_well': 'Sample Storage Plate Well',
                   'sep_well': 'Sample Extraction Plate Well'}
+        widgets = {'barcode': TextInput(attrs={'autofocus':'autofocus'}), 'ssp_well': HiddenInput(attrs={'readonly': True}), 'sep_well': HiddenInput(attrs={'readonly': True})}
+
 
 
 class SampleStorageAndExtractionPlateForm(ModelForm):

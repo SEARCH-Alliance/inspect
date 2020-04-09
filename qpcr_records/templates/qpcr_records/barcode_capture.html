@@ -1,19 +1,23 @@
 {% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
+
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 <div class="d-flex flex-column flex-grow">
     <div class="jumbotron w-100">
         <div class="container">
             <h2>Scan Sample Barcode</h2>
-            <div>
-                <div class="font-weight-bold">Instructions: </div> Scan sample barcode and load sample into the indicated well.</div>
-            <hr>
+            <div class="my-3">
+                <div class="font-weight-bold">Instructions: </div>
+                {% if form.ssp_well.value != 'A1' %}
+                <div>Scan sample barcode and load sample into the indicated well.</div>
+                {% else %}
+                <div>Load controls into indicated wells.</div>
+                {% endif %}
+            </div>
             <div class="d-flex flex-row flex-wrap align-items-start justify-content-between">
                 <div id="platemap" class="table table-sm"></div>
-                <div class="card" style="width: 14rem;">
-                    <div class="card-body">
-                        <h4 class="card-title">Legend</h4>
-                    </div>
-                    <ul id="legend" class="list-group list-group-flush lp-1">
+                <div class="card" style="width: 18rem;">
+                    <h4 class="card-header">Legend</h4>
+                    <ul id="legend" class="list-group list-group-flush">
                         <li class="list-group-item d-flex flex-row">
                             <div class="well"></div>
                             <span class="mx-3 my-auto">Sample well</span>
@@ -24,40 +28,55 @@
                         </li>
                         <li class="list-group-item d-flex flex-row">
                             <div class="well active-well"></div>
-                            <span class="mx-3 my-auto">Current well</span>
+                            <span class="mx-3 my-auto">Current sample well</span>
                         </li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
-    <form action="/qpcr_records/barcode_capture/" method="GET">
-        {% csrf_token %}
-        <div class="form-row">
-            <div class="form-group col-md-6 mb-0">
-                {{ form.barcode|as_crispy_field }}
+    <div class="container">
+        <form action="/qpcr_records/barcode_capture/" method="GET">
+            {% csrf_token %}
+            <div class="form-row">
+                <!-- Load controls step: hide barcode field -->
+                {% if form.ssp_well.value != 'A1' %}
+                <div class="form-group col-md-4 mb-0">
+                    {{ form.barcode|as_crispy_field }}
+                </div>
+                {% endif %}
+
+                <div>
+                    {{ form.ssp_well|as_crispy_field }}
+                </div>
+                <div>
+                    {{ form.sep_well|as_crispy_field }}
+                </div>
             </div>
 
-            <br>
-
-            <div class="form-group col-md-6 mb-0">
-                {{ form.ssp_well|as_crispy_field }}
-            </div>
-
-            <div class="form-group col-md-6 mb-0">
-                {{ form.sep_well|as_crispy_field }}
-            </div>
+            <button type="submit" class="btn btn-primary">Proceed To Next Well</button>
+        </form>
+        <br>
+        <br>
+        <form action="/qpcr_records/" method="GET">
+            {% csrf_token %}
+            <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-primary">End Plate</button>
+        </form>
+    </div>
+    <div class="container my-5">
+        <div class="card" style="width: 18rem;">
+            <h4 class="card-header">
+                Scanned Barcodes
+            </h4>
+            <ul class="list-group list-group-flush">
+                {% for barcode in barcodes %}
+                <li class="list-group-item">{{ barcode }}</li>
+                {% endfor %}
+            </ul>
         </div>
-
-        <button type="submit" class="btn btn-primary">Proceed To Next Well</button>
-    </form>
+    </div>
 </div>
-<br>
-<br>
-<form action="/qpcr_records/" method="GET">
-    {% csrf_token %}
-    <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-primary">End Plate</button>
-</form>
+
 <script>
     // TODO retrieve platemap size
     var rowNames = ["A", "B", "C", "D", "E", "F", "G", "H"]
@@ -103,12 +122,19 @@
                 well.classList.add("well");
 
 
+                if (label == 'A1' | label == 'H1') {
+                    well.classList.add("control-well");
+                }
+                console.log(label.slice(1));
+                var activeRow = activeWell[0];
+                var activeCol = activeWell.substring(1);
+                if ((row < activeRow & col == activeCol) | col < activeCol) {
+                    well.classList.add("loaded-well");
+                }
                 if (label == activeWell) {
-                    console.log(activeWell);
+                    // console.log(activeWell);
                     well.classList.add("active-well");
                     well.classList.add("active");
-                } else if (label == 'A1' | label == 'H1') {
-                    well.classList.add("control-well");
                 }
                 plateCol.appendChild(well);
             });
@@ -178,13 +204,18 @@
     }
     
     .active-well {
-        background: yellow !important;
-        font-weight: bold !important;
+        background: yellow;
+        font-weight: bold;
     }
-    /* control wells */
+    
+    .loaded-well {
+        background: grey;
+        color: white;
+    }
     
     .control-well {
-        background: lightcoral;
+        background: lightcoral !important;
+        font-weight: normal !important;
     }
     
     .control-well div {
@@ -201,4 +232,3 @@
     }
 </style>
 {% endblock %}
-</div>
