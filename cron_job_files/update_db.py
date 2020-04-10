@@ -75,8 +75,8 @@ def process_new_entries(conn):
         raw_vals_dict[file] = r.get_results(file)
     # * Update entries in database
     # * Get fake names associated with barcodes
-    # NOTE: double check barcode and fake name csv file name
-    barc_df = pd.read_csv('barcodes.csv')
+    # NOTE: UPLOAD BARCODE FILE TO TSCC
+    barc_df = pd.read_csv('unique_psuedo_names_and_codes_04082020-v2-0_49999.csv')
     barc_df = barc_df.set_index('barcode')
     for key,val in barcode_dict.items():
         # MS2 Ct
@@ -106,7 +106,7 @@ def process_new_entries(conn):
 
         # Fake name
         cur.execute(f'UPDATE qpcr_results \
-                    SET fake_name = {barc_df['first name'][key] + ' ' + barc_df['last name'][key]} \
+                    SET fake_name = {barc_df['Last, First'][key]} \
                     WHERE barcode = {key})
 
         # qPCR instrument
