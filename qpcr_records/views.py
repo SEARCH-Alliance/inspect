@@ -12,6 +12,7 @@ import pandas
 from io import StringIO
 import datetime
 from django.contrib import messages
+from django.db.models import Q
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
@@ -26,15 +27,20 @@ def index(request):
     Login page redirects here
     """
     if request.method == 'GET':
-        print(request.GET)
         if 'ssp_id' in request.GET.keys():
+            print(list(request.session.keys()))
             l = list()
-            for i in ['A', 'B', 'C']:
-                for j in range(1, 4):
-                    l.append(test_results(barcode=request.session[i + str(j)], ssp_id=request.GET['ssp_id'],
-                                          ssp_well=i + str(j), sep_id=request.GET['sep_id'],
-                                          sep_well=i + str(j),
-                                          sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
+            for i in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+                for j in range(1, 13):
+                    if i+str(j) in ['A1', 'H1']:
+                        continue
+                    elif i+str(j) not in request.session.keys():
+                        continue
+                    else:
+                        l.append(test_results(barcode=request.session[i + str(j)], ssp_id=request.GET['ssp_id'],
+                                              ssp_well=i + str(j), sep_id=request.GET['sep_id'],
+                                              sep_well=i + str(j),
+                                              sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
             test_results.objects.bulk_create(l)
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
             objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(rep_id=request.GET['rep_id'])
@@ -50,7 +56,6 @@ def index(request):
         if 'Browse' in request.FILES.keys():
             file = request.FILES['Browse']
             objs = test_results.objects.filter(qrp_id=file.name.split('_')[0]).update(file_transfer_status='Complete')
-            print("The file name is : %s" % file.name)
             s3 = boto3.resource('s3')
             s3.Bucket('covidtest2').put_object(Key=file.name, Body=file)
             return render(request, 'qpcr_records/index.html')
@@ -104,7 +109,6 @@ def create_record(request):
             return render(request, 'qpcr_records/success.html', {'status': 'works'})
         else:
             # something is wrong with the entries
-            print(f.errors)
             return render(request, 'qpcr_records/success.html', {'status': 'form not valid'})
     else:
         f = ArrayingForm()
@@ -146,16 +150,24 @@ def start_sampling_plate(request):
     Present list of safety checks to user before starting plating.
     :param request: signal call that this function has been called
     """
+    for k in list(request.session.keys()):
+        if k not in ['_auth_user_id', '_auth_user_backend', '_auth_user_hash']:
+            del request.session[k]
+
     if request.method == 'GET':
         for k in request.GET.keys():
             request.session[k] = request.GET[k]
 
-        request.session['ssp_well'] = 'X' # ! is this needed?
+        request.session['ssp_well'] = 'X'
+        request.session['current_barcodes'] = []
+        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
         request.session['expected_barcodes'] = list(
             test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
                                         sep_well='').values_list('barcode', flat=True))
-        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
-        return render(request, 'qpcr_records/start_sampling_plate.html', {'form': f})
+        for k in request.session.keys():
+            print(k)
+            print(request.session[k])
+        return render(request, 'qpcr_records/start_sampling_plate.html', {'form': f, 'barcodes': request.session['current_barcodes']})
 
 
 @login_required
@@ -167,53 +179,57 @@ def barcode_capture(request):
     :param request: signal call that this function has been called
     :return f: captured barcode
     """
-    d1 = {'A': 'B', 'B': 'C', 'C': 'A'}
+    d1 = {'A': 'B', 'B': 'C', 'C': 'D', 'D': 'E', 'E': 'F', 'F': 'G', 'G': 'H', 'H': 'A'}
 
     for k in request.GET.keys():
         request.session[k] = request.GET[k]
 
+    barcodes = request.session['current_barcodes']
+
     # Checks if the last scanned barcode was for a plate. In that case, the current scan is for the first well 'A1'.
-    if 'ssp_well' in request.session.keys():
-        well = request.session['ssp_well']
-        print(well)
-
-        if well == 'X': # Redirect from start
-            print('Starting at first control well')
-            # request.session[well] = request.session['barcode']
-            # request.session['last_scan'] = well
-            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
-        if well == 'A1': # First control well
-            print('Going to second control well')
-            request.session[well] = request.session['barcode']
-            request.session['last_scan'] = well
-            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
-        elif well == 'H1': # Second control well
-            request.session[well] = request.session['barcode']
-            request.session['last_scan'] = well
-            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
-        elif well == 'C3': # END
-            request.session[well] = request.session['barcode']
-
-            request.session['last_scan'] = 'C3'
+    if 'barcode' in request.GET.keys():
+        if request.session['ssp_well'] == 'G1':
+            request.session['current_barcodes'].append(request.session['barcode'])
+            request.session[request.session['ssp_well']] = request.session['barcode']
+            request.session['last_scan'] = request.session['ssp_well']
+            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A2', 'sep_well': 'A2'})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+        elif request.session['ssp_well'] == 'H12': # END
+            request.session['current_barcodes'].append(request.session['barcode'])
+            request.session[request.session['ssp_well']] = request.session['barcode']
+            request.session['last_scan'] = 'H12'
             f = SampleStorageAndExtractionPlateForm()
             return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
         else:
-            print('Proceeding to next well')
-            request.session[well] = request.session['barcode']
-            request.session['last_scan'] = well
-            row = well[0]
-            col = int(well[1])
-            if row == 'C':
+            request.session['current_barcodes'].append(request.session['barcode'])
+            request.session[request.session['ssp_well']] = request.session['barcode']
+            request.session['last_scan'] = request.session['ssp_well']
+            row = request.session['ssp_well'][0]
+            col = int(request.session['ssp_well'][1:])
+            print(request.session['ssp_well'])
+            print(row)
+            print(col)
+            if row == 'H':
                 row = d1[row]
                 col = col + 1
             else:
                 row = d1[row]
 
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': row + str(col), 'sep_well': row + str(col)})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+    else:
+        if request.session['ssp_well'] == 'A1': # Redirect from start
+            request.session['last_scan'] = request.session['ssp_well']
+            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1'})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+        if request.session['ssp_well'] == 'H1': # Redirect from start
+            request.session['last_scan'] = request.session['ssp_well']
+            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+        else:
+            request.session['last_scan'] = request.session['ssp_well']
+            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
 
 
 @login_required
@@ -224,6 +240,16 @@ def unknown_barcode(request):
 @login_required
 def update_existing_records(request):
     return render(request, 'qpcr_records/update_existing_records.html')
+
+
+@login_required
+def plate_termination(request):
+    print(request.GET.keys())
+    print(request.session.keys())
+    if 'barcode' in request.session.keys():
+        request.session[request.session['ssp_well']] = request.session['barcode']
+    f = SampleStorageAndExtractionPlateForm()
+    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
 
 
 @login_required
@@ -302,68 +328,67 @@ def record_search(request):
     :return table: Returns a django-tables2 object to be displayed on the webpage
     """
     if request.method == 'GET':
-        print(request.GET.keys())
         # ['csrfmiddlewaretoken', 'barcode', 'technician', 'lab', 'collection_date', 'processing_date']
         q = ''
         for k in ['barcode', 'sampling_date', 'ssp_id', 'sep_id', 'rep_id', 'rsp_id', 'rwp_id', 'qrp_id',
                   'sampling_extraction_technician', 'rna_extraction_technician', 'qpcr_technician']:
             if request.GET[k] != '' and k == 'barcode':
                 if q == '':
-                    q = test_results.objects.filter(barcode=request.GET[k])
+                    q = test_results.objects.filter(barcode__iexact=request.GET[k])
                 else:
-                    q = q.filter(barcode=request.GET[k])
+                    q = q.filter(barcode__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'sampling_date':
                 if q == '':
-                    q = test_results.objects.filter(sampling_date=request.GET[k])
+                    q = test_results.objects.filter(sampling_date__iexact=request.GET[k])
                 else:
-                    q = q.filter(sampling_date=request.GET[k])
+                    q = q.filter(sampling_date__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'ssp_id':
                 if q == '':
-                    q = test_results.objects.filter(ssp_id=request.GET[k])
+                    q = test_results.objects.filter(ssp_id__iexact=request.GET[k])
                 else:
-                    q = q.filter(ssp_id=request.GET[k])
+                    q = q.filter(ssp_id__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'sep_id':
                 if q == '':
-                    q = test_results.objects.filter(sep_id=request.GET[k])
+                    q = test_results.objects.filter(sep_id__iexact=request.GET[k])
                 else:
-                    q = q.filter(sep_id=request.GET[k])
+                    q = q.filter(sep_id__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'rep_id':
                 if q == '':
-                    q = test_results.objects.filter(rep_id=request.GET[k])
+                    q = test_results.objects.filter(rep_id__iexact=request.GET[k])
                 else:
-                    q = q.filter(rep_id=request.GET[k])
+                    q = q.filter(rep_id__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'rsp_id':
                 if q == '':
-                    q = test_results.objects.filter(rsp_id=request.GET[k])
+                    q = test_results.objects.filter(rsp_id__iexact=request.GET[k])
                 else:
-                    q = q.filter(rsp_id=request.GET[k])
+                    q = q.filter(rsp_id__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'rwp_id':
                 if q == '':
-                    q = test_results.objects.filter(rwp_id=request.GET[k])
+                    q = test_results.objects.filter(rwp_id__iexact=request.GET[k])
                 else:
-                    q = q.filter(rwp_id=request.GET[k])
+                    q = q.filter(rwp_id__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'qrp_id':
                 if q == '':
-                    q = test_results.objects.filter(qrp_id=request.GET[k])
+                    q = test_results.objects.filter(qrp_id__iexact=request.GET[k])
                 else:
-                    q = q.filter(qrp_id=request.GET[k])
+                    q = q.filter(qrp_id__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'sampling_extraction_technician':
                 if q == '':
-                    q = test_results.objects.filter(sample_extraction_technician1=request.GET[k])
-                    q = test_results.objects.filter(sample_extraction_technician2=request.GET[k])
+                    q = test_results.objects.filter(sample_extraction_technician1__iexact=request.GET[k])
+                    q = test_results.objects.filter(sample_extraction_technician2__iexact=request.GET[k])
                 else:
-                    q = q.filter(sample_extraction_technician1=request.GET[k])
-                    q = q.filter(sample_extraction_technician2=request.GET[k])
+                    q = q.filter(sample_extraction_technician1__iexact=request.GET[k])
+                    q = q.filter(sample_extraction_technician2__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'rna_extraction_technician':
                 if q == '':
-                    q = test_results.objects.filter(rna_extraction_technician=request.GET[k])
+                    q = test_results.objects.filter(rna_extraction_technician__iexact=request.GET[k])
                 else:
-                    q = q.filter(rna_extraction_technician=request.GET[k])
+                    q = q.filter(rna_extraction_technician__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'qpcr_technician':
                 if q == '':
-                    q = test_results.objects.filter(qpcr_technician=request.GET[k])
+                    q = test_results.objects.filter(qpcr_technician__iexact=request.GET[k])
                 else:
-                    q = q.filter(qpcr_technician=request.GET[k])
+                    q = q.filter(qpcr_technician__iexact=request.GET[k])
             else:
                 continue
 
@@ -400,6 +425,7 @@ def track_samples(request):
     l2 = list()
     for k in l:
         if k in request.GET['track_samples']:
+            print(k)
             l2.append(k)
         else:
             continue
@@ -408,29 +434,29 @@ def track_samples(request):
     for k in l2:
         if k == 'Sample_Plated':
             if q == '':
-                q = test_results.objects.filter(ssp_id='X')
+                q = test_results.objects.filter(~Q(ssp_id = ''))
             else:
-                q = q.filter(ssp_id='X')
+                q = q.filter(~Q(ssp_id = ''))
         elif k == 'Sample_Stored':
             if q == '':
-                q = test_results.objects.filter(sep_id='X')
+                q = test_results.objects.filter(~Q(sep_id = ''))
             else:
-                q = q.filter(sep_id='X')
+                q = q.filter(~Q(sep_id = ''))
         elif k == 'RNA_Extraction':
             if q == '':
-                q = test_results.objects.filter(rep_id='X')
+                q = test_results.objects.filter(~Q(rep_id = ''))
             else:
-                q = q.filter(rep_id='X')
+                q = q.filter(~Q(rep_id = ''))
         elif k == 'Sample_Arrayed':
             if q == '':
-                q = test_results.objects.filter(rsp_id='X')
+                q = test_results.objects.filter(~Q(rsp_id = ''))
             else:
-                q = q.filter(rsp_id='X')
+                q = q.filter(~Q(rsp_id = ''))
         elif k == 'qPCR_BackUp':
             if q == '':
-                q = test_results.objects.filter(rwp_id='X')
+                q = test_results.objects.filter(~Q(rwp_id = ''))
             else:
-                q = q.filter(rwp_id='X')
+                q = q.filter(~Q(rwp_id = ''))
         else:
             q = test_results.objects.all()
             break
