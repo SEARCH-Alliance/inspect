@@ -15,6 +15,8 @@ class test_results(models.Model):
     fake_name = models.CharField(max_length=30, null=False, default='')
 
     # ANDERSSON LAB INFORMATION
+    lrl_id = models.CharField(max_length=15, null=False, default='',
+                              help_text='Lysis Reagent Lot #')
     ssp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Sample Storage Plate (SSP)')
     ssp_well = models.CharField(max_length=3, null=False, default='')
@@ -32,6 +34,7 @@ class test_results(models.Model):
     sample_extraction_technician2 = models.CharField(max_length=20, null=False, default='')
     sample_extraction_technician2_lab = models.CharField(max_length=20, null=False, default='')
     sample_extraction_technician2_institute = models.CharField(max_length=20, null=False, default='')
+    sample_bag_id = models.CharField(max_length=10, null=False, default='')
 
     # KNIGHT LAB INFORMATION
     ms2_lot_id = models.CharField(max_length=15, null=False, default='',
@@ -56,6 +59,9 @@ class test_results(models.Model):
     rna_extraction_technician_institute = models.CharField(max_length=20, null=False, default='')
 
     # LAURENT LAB INFORMATION
+    qsp_id = models.CharField(max_length=15, null=False, default='',
+                              help_text='Scan or Enter Barcode of qPCR_Storage Plate')
+    qsp_well = models.CharField(max_length=3, null=False, default='')
     qrp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of qRTPCR Reaction Plate')
     qrp_well = models.CharField(max_length=3, null=False, default='')
@@ -107,13 +113,22 @@ class test_resultsTable(tables.Table):
 #         model = test_results
 #         fields = ('barcode')
 
+
+class LysisReagentLotForm(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['lrl_id']
+        labels = {'lrl_id': 'Lysis Reagent Lot #'}
+
+
 class SampleStorageAndExtractionWellForm(ModelForm):
     class Meta:
         model = test_results
         fields = ['barcode', 'ssp_well', 'sep_well']
         labels = {'barcode': 'Sample Barcode', 'ssp_well': 'Sample Storage Plate Well',
                   'sep_well': 'Sample Extraction Plate Well'}
-        widgets = {'barcode': TextInput(attrs={'autofocus':'autofocus'}), 'ssp_well': HiddenInput(attrs={'readonly': True}), 'sep_well': HiddenInput(attrs={'readonly': True})}
+        widgets = {'barcode': TextInput(attrs={'autofocus':'autofocus'}), 'ssp_well':
+            HiddenInput(attrs={'readonly': True}), 'sep_well': HiddenInput(attrs={'readonly': True})}
 
 
 class SampleStorageAndExtractionPlateForm(ModelForm):
@@ -123,25 +138,32 @@ class SampleStorageAndExtractionPlateForm(ModelForm):
         labels = {'ssp_id': 'Sample Storage Plate Barcode', 'sep_id': 'Sample Extraction Plate Barcode'}
 
 
-class RNAExtractionAndStoragePlateForm(ModelForm):
+class RNAExtractionPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['rep_id', 'rsp_id']
-        labels = {'rep_id': 'RNA Extraction Plate Barcode', 'rsp_id': 'RNA Storage Plate Barcode'}
+        fields = ['rep_id']
+        labels = {'rep_id': 'RNA Extraction Plate Barcode'}
 
 
-class RNAWorkingPlateForm(ModelForm):
+class MS2LotForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['rwp_id']
-        labels = {'rwp_id': 'RNA Working Plate Barcode'}
+        fields = ['ms2_lot_id']
+        labels = {'ms2_lot_id': 'MS2 Phage Lot #'}
 
 
-class QPCRReactionPlateForm(ModelForm):
+class RNAStorageAndWorkingPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['qrp_id']
-        labels = {'qrp_id': 'qRT-PCR Plate Barcode'}
+        fields = ['rwp_id', 'rsp_id']
+        labels = {'rwp_id': 'RNA Working Plate Barcode', 'rsp_id': 'RNA Storage Plate Barcode'}
+
+
+class QPCRStorageAndReactionPlateForm(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['qsp_id', 'qrp_id']
+        labels = {'qsp_id':'qRDP-PCR Storage Plate Barcode', 'qrp_id': 'qRT-PCR Plate Barcode'}
 
 
 class qpcrResultUploadForm(ModelForm):

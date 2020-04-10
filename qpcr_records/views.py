@@ -27,39 +27,60 @@ def index(request):
     Login page redirects here
     """
     if request.method == 'GET':
+        print(request.GET)
+        # DATA UPDATE IN ANDERSSON LAB
         if 'ssp_id' in request.GET.keys():
             print(list(request.session.keys()))
             l = list()
             for i in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
                 for j in range(1, 13):
-                    if i+str(j) in ['A1', 'H1']:
+                    well = i + str(j)
+                    if well in ['A1', 'H1']:
                         continue
-                    elif i+str(j) not in request.session.keys():
+                    elif well not in request.session.keys():
                         continue
                     else:
-                        l.append(test_results(barcode=request.session[i + str(j)], ssp_id=request.GET['ssp_id'],
-                                              ssp_well=i + str(j), sep_id=request.GET['sep_id'],
-                                              sep_well=i + str(j),
+                        l.append(test_results(barcode=request.session[well],
+                                              ssp_id=request.GET['ssp_id'],
+                                              ssp_well=well,
+                                              sep_id=request.GET['sep_id'],
+                                              sep_well=well,
+                                              sample_extraction_technician1=request.user,
+                                              sample_extraction_technician1_lab='Anderson',
+                                              sample_extraction_technician1_institute='TSRI',
                                               sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
             test_results.objects.bulk_create(l)
+        # DATA UPDATE IN KNIGHT LAB
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
-            objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(rep_id=request.GET['rep_id'])
-            objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(rsp_id=request.GET['rsp_id'])
+            objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(rep_id=request.GET['rep_id'],
+                                                                                    rsp_id=request.GET['rsp_id'],
+                                                                                    rna_extraction_technician=request.user,
+                                                                                    rna_extraction_technician_lab='Knight',
+                                                                                    rna_extraction_technician_institute='UCSD')
         elif 'barcode4' in request.GET.keys():
             objs = test_results.objects.filter(
                 rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
                             request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'])
+        # DATA UPDATE IN LAURENT LAB
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
-            objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']).update(qrp_id=request.GET['qrp_id'])
+            objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']).update(qrp_id=request.GET['qrp_id'],
+                                                                                    qpcr_technician=request.user,
+                                                                                    qpcr_technician_lab='Laurent',
+                                                                                    qpcr_technician_institute='UCSD')
 
-    if request.method == 'POST':
-        if 'Browse' in request.FILES.keys():
+    if request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
+        if 'Browse' in request.FILES.keys():  # qPCR Results file
             file = request.FILES['Browse']
             objs = test_results.objects.filter(qrp_id=file.name.split('_')[0]).update(file_transfer_status='Complete')
             s3 = boto3.resource('s3')
             s3.Bucket('covidtest2').put_object(Key=file.name, Body=file)
+
+            qreaction_plate = file.name.split('.')[0]
+            objs = test_results.objects.filter(qrp_id=qreaction_plate)\
+                .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
             return render(request, 'qpcr_records/index.html')
-        elif 'Select Barcode List File' in request.FILES.keys():
+
+        elif 'Select Barcode List File' in request.FILES.keys():  # Barcodes list
             barcodes = request.FILES['Select Barcode List File'].read().decode("utf-8").splitlines()
             l = list()
             for b in barcodes:
@@ -168,7 +189,7 @@ def check_information(request):
 
 
 @login_required
-def start_sampling_plate(request):
+def perform_safety_check(request):
     """
     Present list of safety checks to user before starting plating.
     :param request: signal call that this function has been called
@@ -183,14 +204,11 @@ def start_sampling_plate(request):
 
         request.session['ssp_well'] = 'X'
         request.session['current_barcodes'] = []
-        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
+        f = LysisReagentLotForm()
         request.session['expected_barcodes'] = list(
             test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
                                         sep_well='').values_list('barcode', flat=True))
-        for k in request.session.keys():
-            print(k)
-            print(request.session[k])
-        return render(request, 'qpcr_records/start_sampling_plate.html', {'form': f, 'barcodes': request.session['current_barcodes']})
+        return render(request, 'qpcr_records/perform_safety_check.html', {'form': f})
 
 
 @login_required
@@ -216,16 +234,19 @@ def barcode_capture(request):
             request.session[request.session['ssp_well']] = request.session['barcode']
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A2', 'sep_well': 'A2'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
-        elif request.session['ssp_well'] == 'H12': # END
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A2'})
+        elif request.session['ssp_well'] == 'H12':  # END
             request.session['current_barcodes'].append(request.session['barcode'])
             request.session[request.session['ssp_well']] = request.session['barcode']
             request.session['last_scan'] = 'H12'
             f = SampleStorageAndExtractionPlateForm()
             return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
         else:
-            request.session['current_barcodes'].append(request.session['barcode'])
-            request.session[request.session['ssp_well']] = request.session['barcode']
+            # Add barcode if not control well
+            if 'barcode' in request.session.keys():
+                request.session['current_barcodes'].append(request.session['barcode'])
+                request.session[request.session['ssp_well']] = request.session['barcode']
+
             request.session['last_scan'] = request.session['ssp_well']
             row = request.session['ssp_well'][0]
             col = int(request.session['ssp_well'][1:])
@@ -241,18 +262,20 @@ def barcode_capture(request):
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': row + str(col), 'sep_well': row + str(col)})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
     else:
-        if request.session['ssp_well'] == 'A1': # Redirect from start
+        if request.session['ssp_well'] == 'A1':  # Redirect from start
             request.session['last_scan'] = request.session['ssp_well']
-            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1'})
+            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1', 'well': 'H1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
-        if request.session['ssp_well'] == 'H1': # Redirect from start
+        if request.session['ssp_well'] == 'H1':  # Redirect from start
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'B1'})
         else:
+            if 'lrl_id' in request.GET.keys():
+                print('Works')
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A1'})
 
 
 @login_required
@@ -297,7 +320,7 @@ def scan_plate_2_3_barcode(request):
     :return:
     """
     f1 = SampleStorageAndExtractionPlateForm()
-    f2 = RNAExtractionAndStoragePlateForm()
+    f2 = RNAExtractionPlateForm()
     return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2})
 
 
@@ -311,7 +334,7 @@ def scan_plate_arrayed_plate_barcode(request):
     :return:
     """
     f1 = ArrayingForm()
-    f2 = RNAWorkingPlateForm()
+    f2 = RNAStorageAndWorkingPlateForm()
     return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2})
 
 
@@ -338,8 +361,8 @@ def scan_plate_5_6_barcode(request):
     :param request:
     :return:
     """
-    f1 = RNAWorkingPlateForm()
-    f2 = QPCRReactionPlateForm()
+    f1 = RNAStorageAndWorkingPlateForm()
+    f2 = QPCRStorageAndReactionPlateForm()
     return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2})
 
 
@@ -492,5 +515,5 @@ def track_samples(request):
         exporter = TableExport(export_format, table)
         return exporter.response('table.{}'.format(export_format))
 
-    #table.columns.hide('id')
+    # table.columns.hide('id')
     return render(request, 'qpcr_records/track_samples.html', {'table': table})

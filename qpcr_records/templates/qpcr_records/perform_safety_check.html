@@ -1,39 +1,38 @@
 {% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+    integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 <div class="container">
-    <br>
-    <h2>Perform Safety Checks</h2>
-    <br>
+    <h2 class="my-3">Perform Safety Checks</h2>
     <form action="/qpcr_records/barcode_capture/" method="GET">
         {% csrf_token %}
         <div class="card mb-3">
             <div class="card-body">
-                <div class="form-check">
+                <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" value="" id="check1" required>
                     <label for="check1" class="form-check-label">
-                Facemask
-            </label>
+                        Facemask
+                    </label>
                 </div>
-                <div class="form-check">
+                <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" value="" id="check2" required>
                     <label for="check2" class="form-check-label">
-                Hood
-            </label>
+                        Hood
+                    </label>
                 </div>
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" value="" id="check3" required>
                     <label for="check3" class="form-check-label">
-                Gloves
-            </label>
+                        Gloves
+                    </label>
                 </div>
             </div>
         </div>
+
+        <div class="form-group col-md-4 mb-0">
+            {{ form.lrl_id|as_crispy_field }}
+        </div>
+
         <button type="submit" class="btn btn-primary">Start</button>
     </form>
-    <br>
-    <br>
-    <form action="/qpcr_records/" method="GET">
-        {% csrf_token %}
-        <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-primary">End Plate</button>
-    </form>
+
     {% endblock %}
