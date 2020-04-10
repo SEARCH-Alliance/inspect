@@ -59,8 +59,9 @@ class test_results(models.Model):
     rna_extraction_technician_institute = models.CharField(max_length=20, null=False, default='')
 
     # LAURENT LAB INFORMATION
-    peter_rwp_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of Thermocycler RNA Working Plate')
+    qsp_id = models.CharField(max_length=15, null=False, default='',
+                              help_text='Scan or Enter Barcode of qPCR_Storage Plate')
+    qsp_well = models.CharField(max_length=3, null=False, default='')
     qrp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of qRTPCR Reaction Plate')
     qrp_well = models.CharField(max_length=3, null=False, default='')
@@ -137,11 +138,11 @@ class SampleStorageAndExtractionPlateForm(ModelForm):
         labels = {'ssp_id': 'Sample Storage Plate Barcode', 'sep_id': 'Sample Extraction Plate Barcode'}
 
 
-class RNAExtractionAndStoragePlateForm(ModelForm):
+class RNAExtractionPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['rep_id', 'rsp_id']
-        labels = {'rep_id': 'RNA Extraction Plate Barcode', 'rsp_id': 'RNA Storage Plate Barcode'}
+        fields = ['rep_id']
+        labels = {'rep_id': 'RNA Extraction Plate Barcode'}
 
 
 class MS2LotForm(ModelForm):
@@ -151,18 +152,18 @@ class MS2LotForm(ModelForm):
         labels = {'ms2_lot_id': 'MS2 Phage Lot #'}
 
 
-class RNAWorkingPlateForm(ModelForm):
+class RNAStorageAndWorkingPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['rwp_id']
-        labels = {'rwp_id': 'RNA Working Plate Barcode'}
+        fields = ['rwp_id', 'rsp_id']
+        labels = {'rwp_id': 'RNA Working Plate Barcode', 'rsp_id': 'RNA Storage Plate Barcode'}
 
 
-class QPCRReactionPlateForm(ModelForm):
+class QPCRStorageAndReactionPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['qrp_id']
-        labels = {'qrp_id': 'qRT-PCR Plate Barcode'}
+        fields = ['qsp_id', 'qrp_id']
+        labels = {'qsp_id':'qRDP-PCR Storage Plate Barcode', 'qrp_id': 'qRT-PCR Plate Barcode'}
 
 
 class qpcrResultUploadForm(ModelForm):
