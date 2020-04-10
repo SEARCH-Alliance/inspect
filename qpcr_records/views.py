@@ -12,6 +12,7 @@ import pandas
 from io import StringIO
 import datetime
 from django.contrib import messages
+from django.db.models import Q
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
@@ -433,29 +434,29 @@ def track_samples(request):
     for k in l2:
         if k == 'Sample_Plated':
             if q == '':
-                q = test_results.objects.filter(ssp_id='X')
+                q = test_results.objects.filter(~Q(ssp_id = ''))
             else:
-                q = q.filter(ssp_id='X')
+                q = q.filter(~Q(ssp_id = ''))
         elif k == 'Sample_Stored':
             if q == '':
-                q = test_results.objects.filter(sep_id='X')
+                q = test_results.objects.filter(~Q(sep_id = ''))
             else:
-                q = q.filter(sep_id='X')
+                q = q.filter(~Q(sep_id = ''))
         elif k == 'RNA_Extraction':
             if q == '':
-                q = test_results.objects.filter(rep_id='X')
+                q = test_results.objects.filter(~Q(rep_id = ''))
             else:
-                q = q.filter(rep_id='X')
+                q = q.filter(~Q(rep_id = ''))
         elif k == 'Sample_Arrayed':
             if q == '':
-                q = test_results.objects.filter(rsp_id='X')
+                q = test_results.objects.filter(~Q(rsp_id = ''))
             else:
-                q = q.filter(rsp_id='X')
+                q = q.filter(~Q(rsp_id = ''))
         elif k == 'qPCR_BackUp':
             if q == '':
-                q = test_results.objects.filter(rwp_id='X')
+                q = test_results.objects.filter(~Q(rwp_id = ''))
             else:
-                q = q.filter(rwp_id='X')
+                q = q.filter(~Q(rwp_id = ''))
         else:
             q = test_results.objects.all()
             break
