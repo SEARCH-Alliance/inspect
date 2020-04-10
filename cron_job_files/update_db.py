@@ -43,7 +43,7 @@ def process_new_entries(conn):
 
     # * Retrieve new entries
     # Read in last read timestamp file
-    # NOTE: make the time_retrieved, read_barcode files
+    # NOTE: make the time_retrieved
 
     with f as open('time_retrieved.txt', 'r'):
         last_retrieved_time = f.read()
@@ -68,7 +68,7 @@ def process_new_entries(conn):
     barcode_dict = {}
     files_to_parse = []
     for row in cur.fetchall():
-        barcode_dict[row['barcode']] = {'file':row['pcr_results_csv'],'position':row['plate_6_well']}
+        barcode_dict[row['barcode']] = {'file':row['pcr_results_csv'],'position':row['qrp_well']}
         files_to_parse.append(row['pcr_results_csv'])
     files_to_parse = list(np.unique())
     for file in files_to_parse:
@@ -105,10 +105,16 @@ def process_new_entries(conn):
                     WHERE barcode = {key})
 
         # Fake name
-        # NOTE: double check fake name columns
         cur.execute(f'UPDATE qpcr_results \
                     SET fake_name = {barc_df['first name'][key] + ' ' + barc_df['last name'][key]} \
                     WHERE barcode = {key})
+
+        # qPCR instrument
+        # NOTE: double check instrument_name columns
+        cur.execute(f'UPDATE qpcr_results \
+                    SET instrument_name = {raw_vals_dict[val['file']]['instrument']} \
+                    WHERE barcode = {key})
+
 
     # * Now pull entries that have been cleared by technician for transfer
     # * but haven't been sent yet
