@@ -179,7 +179,7 @@ def perform_safety_check(request):
         request.session['expected_barcodes'] = list(
             test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
                                         sep_well='').values_list('barcode', flat=True))
-        return render(request, 'qpcr_records/start_sampling_plate.html', {'form': f})
+        return render(request, 'qpcr_records/perform_safety_check.html', {'form': f})
 
 
 @login_required
@@ -205,7 +205,7 @@ def barcode_capture(request):
             request.session[request.session['ssp_well']] = request.session['barcode']
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A2', 'sep_well': 'A2'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A2'})
         elif request.session['ssp_well'] == 'H12': # END
             request.session['current_barcodes'].append(request.session['barcode'])
             request.session[request.session['ssp_well']] = request.session['barcode']
@@ -235,18 +235,18 @@ def barcode_capture(request):
     else:
         if request.session['ssp_well'] == 'A1': # Redirect from start
             request.session['last_scan'] = request.session['ssp_well']
-            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1'})
+            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1', 'well': 'H1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
         if request.session['ssp_well'] == 'H1': # Redirect from start
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'B1'})
         else:
             if 'lrl_id' in request.GET.keys():
                 print('Works')
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A1'})
 
 
 @login_required
@@ -292,7 +292,7 @@ def scan_plate_2_3_barcode(request):
     :return:
     """
     f1 = SampleStorageAndExtractionPlateForm()
-    f2 = RNAExtractionAndStoragePlateForm()
+    f2 = RNAExtractionPlateForm()
     return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2})
 
 
@@ -306,7 +306,7 @@ def scan_plate_arrayed_plate_barcode(request):
     :return:
     """
     f1 = ArrayingForm()
-    f2 = RNAWorkingPlateForm()
+    f2 = RNAStorageAndWorkingPlateForm()
     return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2})
 
 
@@ -333,8 +333,8 @@ def scan_plate_5_6_barcode(request):
     :param request:
     :return:
     """
-    f1 = RNAWorkingPlateForm()
-    f2 = QPCRReactionPlateForm()
+    f1 = RNAStorageAndWorkingPlateForm()
+    f2 = QPCRStorageAndReactionPlateForm()
     return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2})
 
 

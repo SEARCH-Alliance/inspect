@@ -41,29 +41,13 @@ class SearchRecords(forms.Form):
 
 
 class ArrayingForm(forms.Form):
-    barcode1 = forms.CharField(max_length=30, label='First 96-Well Plate', required=True, widget=forms.TextInput(
-        attrs={'placeholder': 'Scan or Enter Barcode of First 96-Well Plate', 'size': 35}))
-    barcode1_array_pos = forms.CharField(max_length=3, label='Array Position 1',
-                                         required=True, widget=forms.TextInput(
-            attrs={'placeholder': 'Enter EpMotion Array Position of First 96-Well Plate', 'size': 35}))
+    barcode1 = forms.CharField(max_length=30, label='First 96-Well Plate and Plate into Array Position B2', required=True)
 
-    barcode2 = forms.CharField(max_length=30, label='Second 96-Well Plate', required=True, widget=forms.TextInput(
-        attrs={'placeholder': 'Scan or Enter Barcode of Second 96-Well Plate', 'size': 35}))
-    barcode2_array_pos = forms.CharField(max_length=3, label='Array Position 2',
-                                         required=True, widget=forms.TextInput(
-            attrs={'placeholder': 'Enter EpMotion Array Position of Second 96-Well Plate', 'size': 35}))
+    barcode2 = forms.CharField(max_length=30, label='Second 96-Well Plate and Plate into Array Position B3', required=True)
 
-    barcode3 = forms.CharField(max_length=30, label='Third 96-Well Plate', required=True, widget=forms.TextInput(
-        attrs={'placeholder': 'Scan or Enter Barcode of Third 96-Well Plate', 'size': 35}))
-    barcode3_array_pos = forms.CharField(max_length=3, label='Array Position 3 ',
-                                         required=True, widget=forms.TextInput(
-            attrs={'placeholder': 'Enter EpMotion Array Position of Third 96-Well Plate', 'size': 35}))
+    barcode3 = forms.CharField(max_length=30, label='Third 96-Well Plate and Plate into Array Position B4', required=True)
 
-    barcode4 = forms.CharField(max_length=30, label='Fourth 96-Well Plate', required=True, widget=forms.TextInput(
-        attrs={'placeholder': 'Scan or Enter Barcode of Fourth 96-Well Plate', 'size': 35}))
-    barcode4_array_pos = forms.CharField(max_length=3, label='Array Position 4 ',
-                                         required=True, widget=forms.TextInput(
-            attrs={'placeholder': 'Enter EpMotion Array Position of Fourth 96-Well Plate', 'size': 35}))
+    barcode4 = forms.CharField(max_length=30, label='Fourth 96-Well Plate and Plate into Array Position B5', required=True)
 
 
 class TrackSamplesForm(forms.Form):

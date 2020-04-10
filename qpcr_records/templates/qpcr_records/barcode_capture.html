@@ -39,7 +39,7 @@
         {% csrf_token %}
         <div class="form-row">
             <!-- Load controls step: hide barcode field -->
-            {% if form.ssp_well.value != 'A1' %}
+            {% if form.ssp_well.value != 'A1' and form.ssp_well.value != 'H1' %}
             <div class="form-group col-md-4 mb-0">
                 {{ form.barcode|as_crispy_field }}
             </div>
