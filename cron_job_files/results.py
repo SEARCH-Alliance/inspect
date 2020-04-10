@@ -16,6 +16,7 @@ class Results:
             # Warning each run of this can take ~30 seconds because reading excel files is super slow and wasteful
             # Find how long the header of the file is to ignore when reading into Pandas
             tmp = pd.read_excel(file_path,sheet_name="Results")
+            self.instrument_id = tmp.iloc[tmp[tmp['Block Type']=='Instrument Serial Number'].index[0],1]
             # Read in the file cleanly
             self.results = pd.read_excel(file_path,sheet_name="Results",skiprows=list(range(0,(list(tmp.iloc[:,0]).index("Well") + 1))))
             print("Results stored")
@@ -51,9 +52,18 @@ class Results:
             df = self.results[self.results['Well Position'] == well].set_index("Target Name")
             r_dict = {}
             for target in targets:
-                r_dict[target] = df.loc[target]["CT"]
+                val = df.loc[target]["CRT"]
+                conf = df.loc[target]["Cq Conf"]
+                # double check confidence score and values
+                if val > 0 and val < 40 and conf > 0.8:
+                    pass
+                else:
+                    val = 'Undetermined'
+                r_dict[target] = val
             r_dict["diagnosis"] = self.diagnosis(r_dict)
             results_dict[well]=r_dict
+        # Finally add instrument id to dictionary
+        results_dict['instrument'] = self.instrument_id
         print("Results successfully parsed")
         return results_dict
 

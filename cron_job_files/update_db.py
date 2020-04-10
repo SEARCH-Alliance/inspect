@@ -43,7 +43,7 @@ def process_new_entries(conn):
 
     # * Retrieve new entries
     # Read in last read timestamp file
-    # NOTE: make the time_retrieved, read_barcode files
+    # NOTE: make the time_retrieved
 
     with f as open('time_retrieved.txt', 'r'):
         last_retrieved_time = f.read()
@@ -68,15 +68,15 @@ def process_new_entries(conn):
     barcode_dict = {}
     files_to_parse = []
     for row in cur.fetchall():
-        barcode_dict[row['barcode']] = {'file':row['pcr_results_csv'],'position':row['plate_6_well']}
+        barcode_dict[row['barcode']] = {'file':row['pcr_results_csv'],'position':row['qrp_well']}
         files_to_parse.append(row['pcr_results_csv'])
     files_to_parse = list(np.unique())
     for file in files_to_parse:
         raw_vals_dict[file] = r.get_results(file)
     # * Update entries in database
     # * Get fake names associated with barcodes
-    # NOTE: double check barcode and fake name csv file name
-    barc_df = pd.read_csv('barcodes.csv')
+    # NOTE: UPLOAD BARCODE FILE TO TSCC
+    barc_df = pd.read_csv('unique_psuedo_names_and_codes_04082020-v2-0_49999.csv')
     barc_df = barc_df.set_index('barcode')
     for key,val in barcode_dict.items():
         # MS2 Ct
@@ -105,10 +105,16 @@ def process_new_entries(conn):
                     WHERE barcode = {key})
 
         # Fake name
-        # NOTE: double check fake name columns
         cur.execute(f'UPDATE qpcr_results \
-                    SET fake_name = {barc_df['first name'][key] + ' ' + barc_df['last name'][key]} \
+                    SET fake_name = {barc_df['Last, First'][key]} \
                     WHERE barcode = {key})
+
+        # qPCR instrument
+        # NOTE: double check instrument_name columns
+        cur.execute(f'UPDATE qpcr_results \
+                    SET instrument_name = {raw_vals_dict[val['file']]['instrument']} \
+                    WHERE barcode = {key})
+
 
     # * Now pull entries that have been cleared by technician for transfer
     # * but haven't been sent yet
