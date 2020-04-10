@@ -71,6 +71,29 @@ def index(request):
     else:
         return render(request, 'qpcr_records/index.html')
 
+    """
+    Sample Counter Display
+    """
+
+    dub_count = 0
+    data_cleared = test_results.objects.filter(~Q(final_results = '')).count() - dub_count
+    dub_count += data_cleared
+    q_processed = test_results.objects.filter(~Q(decision_tree_results = '')).count() - dub_count
+    dub_count += q_processed
+    q_recorded = test_results.objects.filter(~Q(pcr_results_csv = '')).count() - dub_count
+    dub_count += q_recorded
+    q_running = test_results.objects.filter(~Q(qrp_id = '')).count() - dub_count
+    dub_count += q_running
+    rwp_count = test_results.objects.filter(~Q(rwp_id = '')).count() - dub_count
+    dub_count += rwp_count
+    rep_count = test_results.objects.filter(~Q(rep_id = '')).count() - dub_count
+    dub_count += rep_count
+    sep_count = test_results.objects.filter(~Q(sep_id = '')).count() - dub_count
+    dub_count += sep_count
+    unproc_samples = test_results.objects.filter(~Q(barcode = '')).count() - dub_count
+
+    # NOTE: Michelle above is the data for the table for sample counter
+
 
 @login_required
 def barcode_list_upload(request):
