@@ -15,6 +15,8 @@ class test_results(models.Model):
     fake_name = models.CharField(max_length=30, null=False, default='')
 
     # ANDERSSON LAB INFORMATION
+    lrl_id = models.CharField(max_length=15, null=False, default='',
+                              help_text='Lysis Reagent Lot #')
     ssp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Sample Storage Plate (SSP)')
     ssp_well = models.CharField(max_length=3, null=False, default='')
@@ -32,6 +34,7 @@ class test_results(models.Model):
     sample_extraction_technician2 = models.CharField(max_length=20, null=False, default='')
     sample_extraction_technician2_lab = models.CharField(max_length=20, null=False, default='')
     sample_extraction_technician2_institute = models.CharField(max_length=20, null=False, default='')
+    sample_bag_id = models.CharField(max_length=10, null=False, default='')
 
     # KNIGHT LAB INFORMATION
     ms2_lot_id = models.CharField(max_length=15, null=False, default='',
@@ -56,6 +59,8 @@ class test_results(models.Model):
     rna_extraction_technician_institute = models.CharField(max_length=20, null=False, default='')
 
     # LAURENT LAB INFORMATION
+    peter_rwp_id = models.CharField(max_length=15, null=False, default='',
+                              help_text='Scan or Enter Barcode of Thermocycler RNA Working Plate')
     qrp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of qRTPCR Reaction Plate')
     qrp_well = models.CharField(max_length=3, null=False, default='')
@@ -102,6 +107,18 @@ class test_resultsTable(tables.Table):
                   'sample_release')
 
 
+# class BarcodeScanningTable(tables.Table):
+#     class Meta:
+#         model = test_results
+#         fields = ('barcode')
+
+
+class LysisReagentLotForm(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['lrl_id']
+        labels = {'lrl_id': 'Lysis Reagent Lot #'}
+
 
 class SampleStorageAndExtractionWellForm(ModelForm):
     class Meta:
@@ -109,7 +126,8 @@ class SampleStorageAndExtractionWellForm(ModelForm):
         fields = ['barcode', 'ssp_well', 'sep_well']
         labels = {'barcode': 'Sample Barcode', 'ssp_well': 'Sample Storage Plate Well',
                   'sep_well': 'Sample Extraction Plate Well'}
-        widgets = {'barcode': TextInput(attrs={'autofocus':'autofocus'}), 'ssp_well': HiddenInput(attrs={'readonly': True}), 'sep_well': HiddenInput(attrs={'readonly': True})}
+        widgets = {'barcode': TextInput(attrs={'autofocus':'autofocus'}), 'ssp_well':
+            HiddenInput(attrs={'readonly': True}), 'sep_well': HiddenInput(attrs={'readonly': True})}
 
 
 class SampleStorageAndExtractionPlateForm(ModelForm):
@@ -124,6 +142,13 @@ class RNAExtractionAndStoragePlateForm(ModelForm):
         model = test_results
         fields = ['rep_id', 'rsp_id']
         labels = {'rep_id': 'RNA Extraction Plate Barcode', 'rsp_id': 'RNA Storage Plate Barcode'}
+
+
+class MS2LotForm(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['ms2_lot_id']
+        labels = {'ms2_lot_id': 'MS2 Phage Lot #'}
 
 
 class RNAWorkingPlateForm(ModelForm):

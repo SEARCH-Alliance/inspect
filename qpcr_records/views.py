@@ -175,14 +175,11 @@ def perform_safety_check(request):
 
         request.session['ssp_well'] = 'X'
         request.session['current_barcodes'] = []
-        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
+        f = LysisReagentLotForm()
         request.session['expected_barcodes'] = list(
             test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
                                         sep_well='').values_list('barcode', flat=True))
-        for k in request.session.keys():
-            print(k)
-            print(request.session[k])
-        return render(request, 'qpcr_records/start_sampling_plate.html', {'form': f, 'barcodes': request.session['current_barcodes']})
+        return render(request, 'qpcr_records/start_sampling_plate.html', {'form': f})
 
 
 @login_required
@@ -245,6 +242,8 @@ def barcode_capture(request):
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
         else:
+            if 'lrl_id' in request.GET.keys():
+                print('Works')
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
