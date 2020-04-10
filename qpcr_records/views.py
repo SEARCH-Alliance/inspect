@@ -32,13 +32,17 @@ def index(request):
             l = list()
             for i in ['A', 'B', 'C']:
                 for j in range(1, 4):
-                    l.append(test_results(barcode=request.session[i + str(j)], ssp_id=request.GET['ssp_id'],
-                                          ssp_well=i + str(j), sep_id=request.GET['sep_id'],
-                                          sep_well=i + str(j),
-                                          sample_extraction_technician1 = request.user,
-                                          sample_extraction_technician1_lab = 'Anderson',
-                                          sample_extraction_technician1_institute = 'Scripps Research Institute',
-                                          sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
+                    well = i + str(j)
+                    if well != 'A1' and well != 'H1': # skip control wells
+                        l.append(test_results(barcode=request.session[well],
+                                                ssp_id=request.GET['ssp_id'],
+                                                ssp_well=well,
+                                                sep_id=request.GET['sep_id'],
+                                                sep_well=well,
+                                                sample_extraction_technician1 = request.user,
+                                                sample_extraction_technician1_lab = 'Anderson',
+                                                sample_extraction_technician1_institute = 'TSRI',
+                                                sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
             test_results.objects.bulk_create(l)
         # DATA UPDATE IN KNIGHT LAB
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
