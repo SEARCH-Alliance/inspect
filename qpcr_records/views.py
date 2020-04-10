@@ -26,30 +26,46 @@ def index(request):
     Login page redirects here
     """
     if request.method == 'GET':
+        print(request.GET)
+        # DATA UPDATE IN ANDERSSON LAB
         if 'ssp_id' in request.GET.keys():
             print(list(request.session.keys()))
             l = list()
             for i in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
                 for j in range(1, 13):
-                    if i+str(j) in ['A1', 'H1']:
+                    well = i + str(j)
+                    if well in ['A1', 'H1']:
                         continue
-                    elif i+str(j) not in request.session.keys():
+                    elif well not in request.session.keys():
                         continue
                     else:
-                        l.append(test_results(barcode=request.session[i + str(j)], ssp_id=request.GET['ssp_id'],
-                                              ssp_well=i + str(j), sep_id=request.GET['sep_id'],
-                                              sep_well=i + str(j),
+                        l.append(test_results(barcode=request.session[well],
+                                              ssp_id=request.GET['ssp_id'],
+                                              ssp_well=well,
+                                              sep_id=request.GET['sep_id'],
+                                              sep_well=well,
+                                              sample_extraction_technician1 = request.user,
+                                              sample_extraction_technician1_lab = 'Anderson',
+                                              sample_extraction_technician1_institute = 'TSRI',
                                               sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
             test_results.objects.bulk_create(l)
+        # DATA UPDATE IN KNIGHT LAB
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
-            objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(rep_id=request.GET['rep_id'])
-            objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(rsp_id=request.GET['rsp_id'])
+            objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(rep_id=request.GET['rep_id'],
+                                                                                    rsp_id=request.GET['rsp_id'],
+                                                                                    rna_extraction_technician = request.user,
+                                                                                    rna_extraction_technician_lab = 'Knight',
+                                                                                    rna_extraction_technician_institute = 'UCSD')
         elif 'barcode4' in request.GET.keys():
             objs = test_results.objects.filter(
                 rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
                             request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'])
+        # DATA UPDATE IN LAURENT LAB
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
-            objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']).update(qrp_id=request.GET['qrp_id'])
+            objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']).update(qrp_id=request.GET['qrp_id'],
+                                                                                    qpcr_technician = request.user,
+                                                                                    qpcr_technician_lab = 'Laurent',
+                                                                                    qpcr_technician_institute = 'UCSD')
 
     if request.method == 'POST':
         if 'Browse' in request.FILES.keys():
@@ -144,7 +160,7 @@ def check_information(request):
 
 
 @login_required
-def start_sampling_plate(request):
+def perform_safety_check(request):
     """
     Present list of safety checks to user before starting plating.
     :param request: signal call that this function has been called
@@ -197,8 +213,11 @@ def barcode_capture(request):
             f = SampleStorageAndExtractionPlateForm()
             return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
         else:
-            request.session['current_barcodes'].append(request.session['barcode'])
-            request.session[request.session['ssp_well']] = request.session['barcode']
+            # Add barcode if not control well
+            if 'barcode' in request.session.keys():
+                request.session['current_barcodes'].append(request.session['barcode'])
+                request.session[request.session['ssp_well']] = request.session['barcode']
+
             request.session['last_scan'] = request.session['ssp_well']
             row = request.session['ssp_well'][0]
             col = int(request.session['ssp_well'][1:])
@@ -260,6 +279,7 @@ def scan_plate_1_2_barcode(request):
     :return:
     """
     return render(request, 'qpcr_records/index.html')
+
 
 
 @login_required

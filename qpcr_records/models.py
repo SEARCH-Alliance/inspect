@@ -111,6 +111,8 @@ class test_resultsTable(tables.Table):
 #     class Meta:
 #         model = test_results
 #         fields = ('barcode')
+
+
 class LysisReagentLotForm(ModelForm):
     class Meta:
         model = test_results
@@ -124,7 +126,8 @@ class SampleStorageAndExtractionWellForm(ModelForm):
         fields = ['barcode', 'ssp_well', 'sep_well']
         labels = {'barcode': 'Sample Barcode', 'ssp_well': 'Sample Storage Plate Well',
                   'sep_well': 'Sample Extraction Plate Well'}
-        widgets = {'barcode': TextInput(attrs={'autofocus':'autofocus'}), 'ssp_well': HiddenInput(attrs={'readonly': True}), 'sep_well': HiddenInput(attrs={'readonly': True})}
+        widgets = {'barcode': TextInput(attrs={'autofocus':'autofocus'}), 'ssp_well':
+            HiddenInput(attrs={'readonly': True}), 'sep_well': HiddenInput(attrs={'readonly': True})}
 
 
 class SampleStorageAndExtractionPlateForm(ModelForm):
