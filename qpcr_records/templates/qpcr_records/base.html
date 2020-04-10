@@ -9,8 +9,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tailwindcss/ui@latest/dist/tailwind-ui.min.css">
     <link href="https://fonts.googleapis.com/css?family=Nunito:400,700,800" rel="stylesheet">
     <link href="https://unpkg.com/tailwindcss/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
     <script src="https://cdn.zingchart.com/zingchart.min.js"></script>
-
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     <title>
         Covid-19 Test App
     </title>
@@ -53,101 +56,16 @@
           transform: translateY(-2px);
         }
 
-        .row {
-          max-width: 600px;
-          display: flex;
-        }
-
-        .row+.row {
-          margin-top: 1rem;
-        }
-
-        .col {
-          display: flex;
-          flex: 1;
-        }
-             .nunito {
-                font-family: 'nunito', font-sans;
-            }
-
-            .border-b-1 {
-                border-bottom-width: 1px;
-            }
-
-            .border-l-1 {
-                border-left-width: 1px;
-            }
-
-            hover\:border-none:hover {
-                border-style: none;
-            }
-
-            #sidebar {
-                transition: ease-in-out all .3s;
-                z-index: 9999;
-            }
-
-            #sidebar span {
-                opacity: 0;
-                position: absolute;
-                transition: ease-in-out all .1s;
-            }
-
-            #sidebar:hover {
-                width: 150px;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-                /*shadow-2xl*/
-            }
-
-            #sidebar:hover span {
-                opacity: 1;
-            }
-
-
-            .parent
-            {
-                width:100%;
-            }
-            .left
-            {
-                float:left;
-                width:50%;
-                box-sizing:border-box;
-                padding:5px;
-                border:#CCC solid 1px;
-                min-height:200px;
-            }
-
-            .right
-            {
-                float:left;
-                width:50%;
-                box-sizing:border-box;
-                padding:5px;
-                border:#CCC solid 1px;
-                min-height:200px;
-            }
-            .btn
-            {
-                border: none;
-                background-color: inherit;
-                padding: 14px 28px;
-                font-size: 30px;
-                cursor: pointer;
-                display: inline-block;
-            }
-            .btn:hover {background: #eee;}
-            .new_record {color: green;}
-            .search_record {color: dodgerblue;}
     </style>
 </head>
-<body class="flex h-full bg-gray-100 antialiased font-sans">
+<body class="container-fluid flex flex-column h-full px-0 bg-gray-100 antialiased font-sans">
 
 {% block sidebar %}
-    {% include 'qpcr_records/navbars/sidebar.html' %}
+    {% include 'qpcr_records/navbars/navbar.html' %}
 {% endblock %}
 
 <!-- This is the content that our children templates populate (index.html, scan_plate_1_2_barcode.html, etc) -->
+
 {% block content %}
 {% endblock %}
 

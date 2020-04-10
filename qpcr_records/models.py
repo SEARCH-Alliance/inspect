@@ -98,10 +98,6 @@ class test_resultsTable(tables.Table):
                   'sample_release')
 
 
-# class BarcodeScanningTable(tables.Table):
-#     class Meta:
-#         model = test_results
-#         fields = ('barcode')
 
 class SampleStorageAndExtractionWellForm(ModelForm):
     class Meta:
