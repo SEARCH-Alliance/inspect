@@ -333,61 +333,61 @@ def record_search(request):
                   'sampling_extraction_technician', 'rna_extraction_technician', 'qpcr_technician']:
             if request.GET[k] != '' and k == 'barcode':
                 if q == '':
-                    q = test_results.objects.filter(barcode=request.GET[k])
+                    q = test_results.objects.filter(barcode__iexact=request.GET[k])
                 else:
-                    q = q.filter(barcode=request.GET[k])
+                    q = q.filter(barcode__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'sampling_date':
                 if q == '':
-                    q = test_results.objects.filter(sampling_date=request.GET[k])
+                    q = test_results.objects.filter(sampling_date__iexact=request.GET[k])
                 else:
-                    q = q.filter(sampling_date=request.GET[k])
+                    q = q.filter(sampling_date__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'ssp_id':
                 if q == '':
-                    q = test_results.objects.filter(ssp_id=request.GET[k])
+                    q = test_results.objects.filter(ssp_id__iexact=request.GET[k])
                 else:
-                    q = q.filter(ssp_id=request.GET[k])
+                    q = q.filter(ssp_id__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'sep_id':
                 if q == '':
-                    q = test_results.objects.filter(sep_id=request.GET[k])
+                    q = test_results.objects.filter(sep_id__iexact=request.GET[k])
                 else:
-                    q = q.filter(sep_id=request.GET[k])
+                    q = q.filter(sep_id__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'rep_id':
                 if q == '':
-                    q = test_results.objects.filter(rep_id=request.GET[k])
+                    q = test_results.objects.filter(rep_id__iexact=request.GET[k])
                 else:
-                    q = q.filter(rep_id=request.GET[k])
+                    q = q.filter(rep_id__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'rsp_id':
                 if q == '':
-                    q = test_results.objects.filter(rsp_id=request.GET[k])
+                    q = test_results.objects.filter(rsp_id__iexact=request.GET[k])
                 else:
-                    q = q.filter(rsp_id=request.GET[k])
+                    q = q.filter(rsp_id__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'rwp_id':
                 if q == '':
-                    q = test_results.objects.filter(rwp_id=request.GET[k])
+                    q = test_results.objects.filter(rwp_id__iexact=request.GET[k])
                 else:
-                    q = q.filter(rwp_id=request.GET[k])
+                    q = q.filter(rwp_id__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'qrp_id':
                 if q == '':
-                    q = test_results.objects.filter(qrp_id=request.GET[k])
+                    q = test_results.objects.filter(qrp_id__iexact=request.GET[k])
                 else:
-                    q = q.filter(qrp_id=request.GET[k])
+                    q = q.filter(qrp_id__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'sampling_extraction_technician':
                 if q == '':
-                    q = test_results.objects.filter(sample_extraction_technician1=request.GET[k])
-                    q = test_results.objects.filter(sample_extraction_technician2=request.GET[k])
+                    q = test_results.objects.filter(sample_extraction_technician1__iexact=request.GET[k])
+                    q = test_results.objects.filter(sample_extraction_technician2__iexact=request.GET[k])
                 else:
-                    q = q.filter(sample_extraction_technician1=request.GET[k])
-                    q = q.filter(sample_extraction_technician2=request.GET[k])
+                    q = q.filter(sample_extraction_technician1__iexact=request.GET[k])
+                    q = q.filter(sample_extraction_technician2__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'rna_extraction_technician':
                 if q == '':
-                    q = test_results.objects.filter(rna_extraction_technician=request.GET[k])
+                    q = test_results.objects.filter(rna_extraction_technician__iexact=request.GET[k])
                 else:
-                    q = q.filter(rna_extraction_technician=request.GET[k])
+                    q = q.filter(rna_extraction_technician__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'qpcr_technician':
                 if q == '':
-                    q = test_results.objects.filter(qpcr_technician=request.GET[k])
+                    q = test_results.objects.filter(qpcr_technician__iexact=request.GET[k])
                 else:
-                    q = q.filter(qpcr_technician=request.GET[k])
+                    q = q.filter(qpcr_technician__iexact=request.GET[k])
             else:
                 continue
 
