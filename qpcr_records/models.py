@@ -2,8 +2,16 @@ from django.db import models
 from django.forms import ModelForm, HiddenInput, TextInput
 import datetime
 import django_tables2 as tables
+from django.utils import timezone
 
-sample_release_choices = (('Yes', 'Yes'), ('No', 'No'), ('NA', 'NA'))
+
+class personnel_list(models.Model):
+    technician_name = models.CharField(max_length=20, null=False, default='', primary_key=True)
+    technician_lab = models.CharField(max_length=20, null=False, default='')
+    technician_institute = models.CharField(max_length=20, null=False, default='')
+
+
+sample_release_choices = (('Yes', 'Yes'), ('No', 'No'))
 sample_result_choices = (('Undetermined', 'Undetermined'), ('Invalid', 'Invalid'), ('Inconclusive', 'Inconclusive'),
                          ('Positive', 'Positive'), ('Negative', 'Negative'))
 file_transfer_status_choices = (('Complete', 'Complete'), ('Not Complete', 'Not Complete'))
@@ -20,20 +28,16 @@ class test_results(models.Model):
     ssp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Sample Storage Plate (SSP)')
     ssp_well = models.CharField(max_length=3, null=False, default='')
-    sampling_date = models.DateField(max_length=20, null=False, default=datetime.date.today)
+    sampling_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
 
     sep_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of Sample Extraction Plate (SEP)')
     sep_well = models.CharField(max_length=3, null=False, default='')
     andersson_lab_frz_id = models.CharField(max_length=15, null=False, default='',
                                             help_text='Enter Sample Storage Freezer Number')
-    sample_extraction_technician1 = models.CharField(max_length=20, null=False, default='')
-    sample_extraction_technician1_lab = models.CharField(max_length=20, null=False, default='')
-    sample_extraction_technician1_institute = models.CharField(max_length=20, null=False, default='')
-
-    sample_extraction_technician2 = models.CharField(max_length=20, null=False, default='')
-    sample_extraction_technician2_lab = models.CharField(max_length=20, null=False, default='')
-    sample_extraction_technician2_institute = models.CharField(max_length=20, null=False, default='')
+    personnel1_andersen_lab = models.CharField(max_length=25, null=False, default='')
+    personnel2_andersen_lab = models.CharField(max_length=25, null=False, default='',
+                                               help_text='Name of Assisting Technician')
     sample_bag_id = models.CharField(max_length=10, null=False, default='')
 
     # KNIGHT LAB INFORMATION
@@ -54,9 +58,8 @@ class test_results(models.Model):
     rwp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of RNA Working Plate')
     rwp_well = models.CharField(max_length=3, null=False, default='')
-    rna_extraction_technician = models.CharField(max_length=20, null=False, default='')
-    rna_extraction_technician_lab = models.CharField(max_length=20, null=False, default='')
-    rna_extraction_technician_institute = models.CharField(max_length=20, null=False, default='')
+    personnel_knight_lab = models.CharField(max_length=25, null=False, default='')
+    re_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
 
     # LAURENT LAB INFORMATION
     qsp_id = models.CharField(max_length=15, null=False, default='',
@@ -75,9 +78,8 @@ class test_results(models.Model):
                               help_text='Enter QS5 Number')
     laurent_lab_frz_id = models.CharField(max_length=15, null=False, default='',
                                           help_text='Enter RNA Storage Freezer Number')
-    qpcr_technician = models.CharField(max_length=20, null=False, default='')
-    qpcr_technician_lab = models.CharField(max_length=20, null=False, default='')
-    qpcr_technician_institute = models.CharField(max_length=20, null=False, default='')
+    personnel_laurent_lab = models.CharField(max_length=25, null=False, default='')
+    qpcr_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
 
     # RESULTS INFORMATION
     ms2_ct_value = models.FloatField(null=False, default=-1)
@@ -93,7 +95,7 @@ class test_results(models.Model):
 
     file_transfer_status = models.CharField(max_length=15, null=False, default='Not Complete',
                                             choices=file_transfer_status_choices)
-    sample_release = models.CharField(max_length=15, null=False, default='NA', choices=sample_release_choices)
+    sample_release = models.CharField(max_length=15, null=False, default='No', choices=sample_release_choices)
 
     class Meta:
         indexes = [
