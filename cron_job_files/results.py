@@ -54,11 +54,15 @@ class Results:
             for target in targets:
                 val = df.loc[target]["CRT"]
                 conf = df.loc[target]["Cq Conf"]
+                amp = df.loc[target]["Amp Status"]
                 # double check confidence score and values
-                if val > 0 and val < 40 and conf > 0.8:
-                    pass
+                if val != 'Undetermined':
+                    if val > 0 and val < 40 and conf > 0.8 and amp == 'Amp':
+                        pass
+                    else:
+                        val = 'Undetermined'
                 else:
-                    val = 'Undetermined'
+                    pass
                 r_dict[target] = val
             r_dict["diagnosis"] = self.diagnosis(r_dict)
             results_dict[well]=r_dict

@@ -4,7 +4,7 @@
 <div class="container">
     <form action="/qpcr_records/" method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <input type="file" name="Browse">
+        <input type="file" accept=".xls,.xlsx"  name="Browse">
         <br>
         <br>
         <button type="submit" class="btn btn-primary">Upload qPCR Results</button>
