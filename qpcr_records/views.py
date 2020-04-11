@@ -43,13 +43,16 @@ def sample_counter_display():
     dub_count += q_recorded
 
     q_running = test_results.objects.filter(~Q(qrp_id=''),sampling_date > time_thresh).count() - dub_count
+    qrp_id = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).values_list('qrp_id')
     dub_count += q_running
 
     # RNA plate counters
     rwp_count = test_results.objects.filter(~Q(rwp_id=''),sampling_date > time_thresh).count() - dub_count  # rna working plate
+    rwp_id = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).values_list('rwp_id')
     dub_count += rwp_count
 
     rep_count = test_results.objects.filter(~Q(rep_id=''),sampling_date > time_thresh).count() - dub_count  # rna extraction plate
+    rep_id = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).values_list('rep_id')
     dub_count += rep_count
 
     # Sample extraction plate counter
