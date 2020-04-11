@@ -100,7 +100,8 @@ def index(request):
                                               sample_extraction_technician1_lab='Anderson',
                                               sample_extraction_technician1_institute='TSRI',
                                               sampling_date=datetime.date.today().strftime('%Y-%m-%d'),
-                                              lrl_id = request.session['lrl_id']))
+                                              lrl_id=request.session['lrl_id'],
+                                              sample_bag_id=request.GET['sample_bag_id']))
             test_results.objects.bulk_create(l)
         # DATA UPDATE IN KNIGHT LAB
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
