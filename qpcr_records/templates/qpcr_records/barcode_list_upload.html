@@ -6,7 +6,7 @@
     <br>
     <form action="/qpcr_records/" method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <input type="file" name="Select Barcode List File">
+        <input type="file" accept=".txt" name="Select Barcode List File">
         <br>
         <br>
         <button type="submit" class="btn btn-primary">Submit</button>
