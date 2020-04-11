@@ -1,4 +1,3 @@
-import subprocess
 from django.shortcuts import render
 from qpcr_records.models import *
 from qpcr_records.forms import SearchRecords, ArrayingForm, TrackSamplesForm
@@ -8,8 +7,6 @@ from django_tables2.export.export import TableExport
 from decouple import config
 from datetime import date
 import boto3
-import pandas
-from io import StringIO
 import datetime
 from django.contrib import messages
 from django.db.models import Q
@@ -30,36 +27,36 @@ def sample_counter_display():
 
     # We are calculating the plates from each stage backwards by
     # subtracting the number of plates in the current stage being evaluated
-    
-    dub_count = 0 # tracks plates in previous stages
+
+    dub_count = 0  # tracks plates in previous stages
 
     # Cleared plate counter
-    data_cleared = test_results.objects.filter(~Q(final_results = '')).count() - dub_count
+    data_cleared = test_results.objects.filter(~Q(final_results='')).count() - dub_count
     dub_count += data_cleared
 
     # qPCR plate counters
-    q_processed = test_results.objects.filter(~Q(decision_tree_results = '')).count() - dub_count
+    q_processed = test_results.objects.filter(~Q(decision_tree_results='')).count() - dub_count
     dub_count += q_processed
 
-    q_recorded = test_results.objects.filter(~Q(pcr_results_csv = '')).count() - dub_count
+    q_recorded = test_results.objects.filter(~Q(pcr_results_csv='')).count() - dub_count
     dub_count += q_recorded
 
-    q_running = test_results.objects.filter(~Q(qrp_id = '')).count() - dub_count
+    q_running = test_results.objects.filter(~Q(qrp_id='')).count() - dub_count
     dub_count += q_running
 
     # RNA plate counters
-    rwp_count = test_results.objects.filter(~Q(rwp_id = '')).count() - dub_count # rna working plate
+    rwp_count = test_results.objects.filter(~Q(rwp_id='')).count() - dub_count  # rna working plate
     dub_count += rwp_count
 
-    rep_count = test_results.objects.filter(~Q(rep_id = '')).count() - dub_count # rna extraction plate
+    rep_count = test_results.objects.filter(~Q(rep_id='')).count() - dub_count  # rna extraction plate
     dub_count += rep_count
 
     # Sample extraction plate counter
-    sep_count = test_results.objects.filter(~Q(sep_id = '')).count() - dub_count
+    sep_count = test_results.objects.filter(~Q(sep_id='')).count() - dub_count
     dub_count += sep_count
 
     # Unprocessed sample counter
-    unproc_samples = test_results.objects.filter(~Q(barcode = '')).count() - dub_count
+    unproc_samples = test_results.objects.filter(~Q(barcode='')).count() - dub_count
 
     # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
@@ -69,7 +66,8 @@ def sample_counter_display():
         'sep_count': sep_count,
         'unproc_samples': unproc_samples
     }
-    return(counter_information)
+    return counter_information
+
 
 @login_required
 def index(request):
@@ -99,7 +97,6 @@ def index(request):
                                               ssp_well=well,
                                               sep_id=request.GET['sep_id'],
                                               sep_well=well,
-                                              sample_extraction_technician1=request.user,
                                               sample_extraction_technician1_lab='Anderson',
                                               sample_extraction_technician1_institute='TSRI',
                                               sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
@@ -108,7 +105,6 @@ def index(request):
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
             objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(rep_id=request.GET['rep_id'],
                                                                                     rsp_id=request.GET['rsp_id'],
-                                                                                    rna_extraction_technician=request.user,
                                                                                     rna_extraction_technician_lab='Knight',
                                                                                     rna_extraction_technician_institute='UCSD')
         elif 'barcode4' in request.GET.keys():
@@ -118,7 +114,6 @@ def index(request):
         # DATA UPDATE IN LAURENT LAB
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
             objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']).update(qrp_id=request.GET['qrp_id'],
-                                                                                    qpcr_technician=request.user,
                                                                                     qpcr_technician_lab='Laurent',
                                                                                     qpcr_technician_institute='UCSD')
 
@@ -130,7 +125,7 @@ def index(request):
             s3.Bucket('covidtest2').put_object(Key=file.name, Body=file)
 
             qreaction_plate = file.name.split('.')[0]
-            objs = test_results.objects.filter(qrp_id=qreaction_plate)\
+            objs = test_results.objects.filter(qrp_id=qreaction_plate) \
                 .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
             return render(request, 'qpcr_records/index.html', counter_information)
 
@@ -372,20 +367,6 @@ def scan_plate_arrayed_plate_barcode(request):
 
 
 @login_required
-def scan_plate_4_5_barcode(request):
-    """
-    Redirected here after the barcode for the last well is scanned. Create a platemap for display with the barcodes
-    specified along the corresponding well.
-    Also, records for each barcode will be created.
-    :param request:
-    :return:
-    """
-    f1 = Plate_4_Form()
-    f2 = Plate_5_Form()
-    return render(request, 'qpcr_records/scan_plate_4_5_barcode.html', {'form1': f1, 'form2': f2})
-
-
-@login_required
 def scan_plate_5_6_barcode(request):
     """
     Redirected here after the barcode for the last well is scanned. Create a platemap for display with the barcodes
@@ -513,29 +494,29 @@ def track_samples(request):
     for k in l2:
         if k == 'Sample_Plated':
             if q == '':
-                q = test_results.objects.filter(~Q(ssp_id = ''))
+                q = test_results.objects.filter(~Q(ssp_id=''))
             else:
-                q = q.filter(~Q(ssp_id = ''))
+                q = q.filter(~Q(ssp_id=''))
         elif k == 'Sample_Stored':
             if q == '':
-                q = test_results.objects.filter(~Q(sep_id = ''))
+                q = test_results.objects.filter(~Q(sep_id=''))
             else:
-                q = q.filter(~Q(sep_id = ''))
+                q = q.filter(~Q(sep_id=''))
         elif k == 'RNA_Extraction':
             if q == '':
-                q = test_results.objects.filter(~Q(rep_id = ''))
+                q = test_results.objects.filter(~Q(rep_id=''))
             else:
-                q = q.filter(~Q(rep_id = ''))
+                q = q.filter(~Q(rep_id=''))
         elif k == 'Sample_Arrayed':
             if q == '':
-                q = test_results.objects.filter(~Q(rsp_id = ''))
+                q = test_results.objects.filter(~Q(rsp_id=''))
             else:
-                q = q.filter(~Q(rsp_id = ''))
+                q = q.filter(~Q(rsp_id=''))
         elif k == 'qPCR_BackUp':
             if q == '':
-                q = test_results.objects.filter(~Q(rwp_id = ''))
+                q = test_results.objects.filter(~Q(rwp_id=''))
             else:
-                q = q.filter(~Q(rwp_id = ''))
+                q = q.filter(~Q(rwp_id=''))
         else:
             q = test_results.objects.all()
             break
