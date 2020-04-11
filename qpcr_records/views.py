@@ -1,4 +1,3 @@
-import subprocess
 from django.shortcuts import render
 from qpcr_records.models import *
 from qpcr_records.forms import SearchRecords, ArrayingForm, TrackSamplesForm
@@ -8,10 +7,7 @@ from django_tables2.export.export import TableExport
 from decouple import config
 from datetime import date
 import boto3
-import pandas
-from io import StringIO
 import datetime
-from django.contrib import messages
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
@@ -44,7 +40,6 @@ def index(request):
                                               ssp_well=well,
                                               sep_id=request.GET['sep_id'],
                                               sep_well=well,
-                                              sample_extraction_technician1=request.user,
                                               sample_extraction_technician1_lab='Anderson',
                                               sample_extraction_technician1_institute='TSRI',
                                               sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
@@ -53,7 +48,6 @@ def index(request):
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
             objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(rep_id=request.GET['rep_id'],
                                                                                     rsp_id=request.GET['rsp_id'],
-                                                                                    rna_extraction_technician=request.user,
                                                                                     rna_extraction_technician_lab='Knight',
                                                                                     rna_extraction_technician_institute='UCSD')
         elif 'barcode4' in request.GET.keys():
@@ -63,7 +57,6 @@ def index(request):
         # DATA UPDATE IN LAURENT LAB
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
             objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']).update(qrp_id=request.GET['qrp_id'],
-                                                                                    qpcr_technician=request.user,
                                                                                     qpcr_technician_lab='Laurent',
                                                                                     qpcr_technician_institute='UCSD')
 
@@ -312,20 +305,6 @@ def scan_plate_arrayed_plate_barcode(request):
     f1 = ArrayingForm()
     f2 = RNAStorageAndWorkingPlateForm()
     return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2})
-
-
-@login_required
-def scan_plate_4_5_barcode(request):
-    """
-    Redirected here after the barcode for the last well is scanned. Create a platemap for display with the barcodes
-    specified along the corresponding well.
-    Also, records for each barcode will be created.
-    :param request:
-    :return:
-    """
-    f1 = Plate_4_Form()
-    f2 = Plate_5_Form()
-    return render(request, 'qpcr_records/scan_plate_4_5_barcode.html', {'form1': f1, 'form2': f2})
 
 
 @login_required
