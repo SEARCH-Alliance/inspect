@@ -235,7 +235,7 @@ def perform_safety_check(request):
         request.session['expected_barcodes'] = list(
             test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
                                         sep_well='').values_list('barcode', flat=True))
-        return render(request, 'qpcr_records/perform_safety_check.html', {'form': f})
+        return render(request, 'qpcr_records/perform_safety_check.html', {'form': f, 'well': 'A1'})
 
 
 @login_required
@@ -287,12 +287,13 @@ def barcode_capture(request):
                 row = d1[row]
 
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': row + str(col), 'sep_well': row + str(col)})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes,
+                                                                         'well': row + str(col)})
     else:
         if request.session['ssp_well'] == 'A1':  # Redirect from start
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1', 'well': 'H1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'H1'})
         if request.session['ssp_well'] == 'H1':  # Redirect from start
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
