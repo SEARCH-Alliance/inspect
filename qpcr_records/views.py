@@ -1,4 +1,3 @@
-import subprocess
 from django.shortcuts import render
 from qpcr_records.models import *
 from qpcr_records.forms import SearchRecords, ArrayingForm, TrackSamplesForm
@@ -8,9 +7,6 @@ from django_tables2.export.export import TableExport
 from decouple import config
 from datetime import date, datetime, timedelta
 import boto3
-import pandas
-from io import StringIO
-from django.contrib import messages
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
@@ -60,18 +56,22 @@ def index(request):
         # DATA UPDATE IN LAURENT LAB
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
             objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']).update(qrp_id=request.GET['qrp_id'],
-                                                                                    qpcr_technician = request.user,
-                                                                                    qpcr_technician_lab = 'Laurent',
-                                                                                    qpcr_technician_institute = 'UCSD')
+                                                                                    qpcr_technician_lab='Laurent',
+                                                                                    qpcr_technician_institute='UCSD')
 
-    if request.method == 'POST':
-        if 'Browse' in request.FILES.keys():
+    if request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
+        if 'Browse' in request.FILES.keys():  # qPCR Results file
             file = request.FILES['Browse']
             objs = test_results.objects.filter(qrp_id=file.name.split('_')[0]).update(file_transfer_status='Complete')
             s3 = boto3.resource('s3')
             s3.Bucket('covidtest2').put_object(Key=file.name, Body=file)
+
+            qreaction_plate = file.name.split('.')[0]
+            objs = test_results.objects.filter(qrp_id=qreaction_plate)\
+                .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
             return render(request, 'qpcr_records/index.html')
-        elif 'Select Barcode List File' in request.FILES.keys():
+
+        elif 'Select Barcode List File' in request.FILES.keys():  # Barcodes list
             barcodes = request.FILES['Select Barcode List File'].read().decode("utf-8").splitlines()
             l = list()
             for b in barcodes:
@@ -210,9 +210,8 @@ def barcode_capture(request):
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A2', 'sep_well': 'A2'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A2'})
-        # End
-        elif request.session['ssp_well'] == 'D1':
-            request.session['last_scan'] = 'D1'
+        elif request.session['ssp_well'] == 'H12':  # END
+            request.session['last_scan'] = 'H12'
             f = SampleStorageAndExtractionPlateForm()
             return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
         else:
@@ -274,7 +273,6 @@ def scan_plate_1_2_barcode(request):
     :return:
     """
     return render(request, 'qpcr_records/index.html')
-
 
 
 @login_required
@@ -471,5 +469,4 @@ def track_samples(request):
         exporter = TableExport(export_format, table)
         return exporter.response('table.{}'.format(export_format))
 
-    #table.columns.hide('id')
     return render(request, 'qpcr_records/track_samples.html', {'table': table})
