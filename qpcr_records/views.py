@@ -174,7 +174,7 @@ def perform_safety_check(request):
             request.session[k] = request.GET[k]
 
         request.session['ssp_well'] = 'X'
-        request.session['current_barcodes'] = []
+        request.session['current_barcodes'] = dict()
         f = LysisReagentLotForm()
         request.session['expected_barcodes'] = list(
             test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
@@ -196,28 +196,29 @@ def barcode_capture(request):
     for k in request.GET.keys():
         request.session[k] = request.GET[k]
 
-    barcodes = request.session['current_barcodes']
-
     # Checks if the last scanned barcode was for a plate. In that case, the current scan is for the first well 'A1'.
+
+    # Add well barcodes
     if 'barcode' in request.GET.keys():
+
+        # Add barcode if not control well
+        if 'barcode' in request.session.keys():
+            well = request.session['ssp_well']
+            request.session['current_barcodes'][well] = request.session['barcode']
+            request.session[well] = request.session['barcode']
+
+        barcodes = request.session['current_barcodes']
+        # Skip second control well
         if request.session['ssp_well'] == 'G1':
-            request.session['current_barcodes'].append(request.session['barcode'])
-            request.session[request.session['ssp_well']] = request.session['barcode']
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A2', 'sep_well': 'A2'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A2'})
-        elif request.session['ssp_well'] == 'H12': # END
-            request.session['current_barcodes'].append(request.session['barcode'])
-            request.session[request.session['ssp_well']] = request.session['barcode']
-            request.session['last_scan'] = 'H12'
+        # End
+        elif request.session['ssp_well'] == 'D1':
+            request.session['last_scan'] = 'D1'
             f = SampleStorageAndExtractionPlateForm()
             return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
         else:
-            # Add barcode if not control well
-            if 'barcode' in request.session.keys():
-                request.session['current_barcodes'].append(request.session['barcode'])
-                request.session[request.session['ssp_well']] = request.session['barcode']
-
             request.session['last_scan'] = request.session['ssp_well']
             row = request.session['ssp_well'][0]
             col = int(request.session['ssp_well'][1:])
@@ -233,18 +234,15 @@ def barcode_capture(request):
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': row + str(col), 'sep_well': row + str(col)})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
     else:
+        barcodes = request.session['current_barcodes']
+        request.session['last_scan'] = request.session['ssp_well']
         if request.session['ssp_well'] == 'A1': # Redirect from start
-            request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1', 'well': 'H1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
         if request.session['ssp_well'] == 'H1': # Redirect from start
-            request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'B1'})
         else:
-            if 'lrl_id' in request.GET.keys():
-                print('Works')
-            request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A1'})
 
