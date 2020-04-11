@@ -99,7 +99,8 @@ def index(request):
                                               sep_well=well,
                                               sample_extraction_technician1_lab='Anderson',
                                               sample_extraction_technician1_institute='TSRI',
-                                              sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
+                                              sampling_date=datetime.date.today().strftime('%Y-%m-%d'),
+                                              lrl_id = request.session['lrl_id']))
             test_results.objects.bulk_create(l)
         # DATA UPDATE IN KNIGHT LAB
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
@@ -299,6 +300,8 @@ def barcode_capture(request):
         else:
             if 'lrl_id' in request.GET.keys():
                 print('Works')
+            request.session['lrl_id'] = request.GET['lrl_id']
+            print(request.session['lrl_id'])
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A1'})
