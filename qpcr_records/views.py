@@ -6,19 +6,15 @@ from django.contrib.auth.decorators import login_required
 from django_tables2 import RequestConfig
 from django_tables2.export.export import TableExport
 from decouple import config
-from datetime import date
+from datetime import date, datetime, timedelta
 import boto3
 import pandas
 from io import StringIO
-import datetime
 from django.contrib import messages
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
 # for user logins. If the check returns False, user will be automatically redirected to the login page
-
-# barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
-# barcode = barcode.rstrip()
 
 @login_required
 def index(request):
@@ -47,7 +43,7 @@ def index(request):
                                               sample_extraction_technician1 = request.user,
                                               sample_extraction_technician1_lab = 'Anderson',
                                               sample_extraction_technician1_institute = 'TSRI',
-                                              sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
+                                              sampling_date=date.today().strftime('%Y-%m-%d')))
             test_results.objects.bulk_create(l)
         # DATA UPDATE IN KNIGHT LAB
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
@@ -56,6 +52,7 @@ def index(request):
                                                                                     rna_extraction_technician = request.user,
                                                                                     rna_extraction_technician_lab = 'Knight',
                                                                                     rna_extraction_technician_institute = 'UCSD')
+        # 4 96-well plates combine to 384-well plate
         elif 'barcode4' in request.GET.keys():
             objs = test_results.objects.filter(
                 rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
@@ -78,7 +75,7 @@ def index(request):
             barcodes = request.FILES['Select Barcode List File'].read().decode("utf-8").splitlines()
             l = list()
             for b in barcodes:
-                l.append(test_results(barcode=b, sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
+                l.append(test_results(barcode=b, sampling_date=date.today().strftime('%Y-%m-%d')))
             test_results.objects.bulk_create(l)
             return render(request, 'qpcr_records/index.html')
         else:
@@ -306,20 +303,6 @@ def scan_plate_arrayed_plate_barcode(request):
     f1 = ArrayingForm()
     f2 = RNAStorageAndWorkingPlateForm()
     return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2})
-
-
-@login_required
-def scan_plate_4_5_barcode(request):
-    """
-    Redirected here after the barcode for the last well is scanned. Create a platemap for display with the barcodes
-    specified along the corresponding well.
-    Also, records for each barcode will be created.
-    :param request:
-    :return:
-    """
-    f1 = Plate_4_Form()
-    f2 = Plate_5_Form()
-    return render(request, 'qpcr_records/scan_plate_4_5_barcode.html', {'form1': f1, 'form2': f2})
 
 
 @login_required

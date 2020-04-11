@@ -17,7 +17,6 @@ urlpatterns = [
     path('update_existing_records/', views.update_existing_records, name='update_existing_records'),
     path('scan_plate_2_3_barcode/', views.scan_plate_2_3_barcode, name='scan_plate_2_3_barcode'),
     path('scan_plate_arrayed_plate_barcode/', views.scan_plate_arrayed_plate_barcode, name='scan_plate_arrayed_plate_barcode'),
-    path('scan_plate_4_5_barcode/', views.scan_plate_4_5_barcode, name='scan_plate_4_5_barcode'),
     path('scan_plate_5_6_barcode/', views.scan_plate_5_6_barcode, name='scan_plate_5_6_barcode'),
     path('track_samples_form/', views.track_samples_form, name='track_samples_form'),
     path('track_samples/', views.track_samples, name='track_samples'),
