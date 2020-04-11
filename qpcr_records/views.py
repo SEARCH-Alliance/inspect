@@ -22,12 +22,22 @@ from django.db.models import Q
 # barcode = barcode.rstrip()
 
 def sample_counter_display():
-    # Sample Counter Display - Will appear every time the home page is loaded
-    dub_count = 0 # tracks the plates from a previous stage to subtract from the current stage being evaluated
+    """
+    Performs queries to determine the number of unprocessed samples, sample extraction plates,
+    RNA extraction plates, RNA working plates, running qPCR plates, qPCR plates with results,
+    processed qPCR plates, and cleared results. Returns a dictionary with these values.
+    """
 
+    # We are calculating the plates from each stage backwards by
+    # subtracting the number of plates in the current stage being evaluated
+    
+    dub_count = 0 # tracks plates in previous stages
+
+    # Cleared plate counter
     data_cleared = test_results.objects.filter(~Q(final_results = '')).count() - dub_count
     dub_count += data_cleared
 
+    # qPCR plate counters
     q_processed = test_results.objects.filter(~Q(decision_tree_results = '')).count() - dub_count
     dub_count += q_processed
 
@@ -37,24 +47,25 @@ def sample_counter_display():
     q_running = test_results.objects.filter(~Q(qrp_id = '')).count() - dub_count
     dub_count += q_running
 
-    rwp_count = test_results.objects.filter(~Q(rwp_id = '')).count() - dub_count
+    # RNA plate counters
+    rwp_count = test_results.objects.filter(~Q(rwp_id = '')).count() - dub_count # rna working plate
     dub_count += rwp_count
 
-    rep_count = test_results.objects.filter(~Q(rep_id = '')).count() - dub_count
+    rep_count = test_results.objects.filter(~Q(rep_id = '')).count() - dub_count # rna extraction plate
     dub_count += rep_count
 
+    # Sample extraction plate counter
     sep_count = test_results.objects.filter(~Q(sep_id = '')).count() - dub_count
     dub_count += sep_count
 
+    # Unprocessed sample counter
     unproc_samples = test_results.objects.filter(~Q(barcode = '')).count() - dub_count
 
+    # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
         'data_cleared': data_cleared,
-        'q_processed': q_processed,
-        'q_recorded': q_recorded,
-        'q_running': q_running,
-        'rwp_count': rwp_count,
-        'rep_count': rep_count,
+        'q_processed': q_processed, 'q_recorded': q_recorded, 'q_running': q_running,
+        'rwp_count': rwp_count, 'rep_count': rep_count,
         'sep_count': sep_count,
         'unproc_samples': unproc_samples
     }
@@ -307,7 +318,6 @@ def unknown_barcode(request):
 def update_existing_records(request):
     # Sample Counter Display - Will appear every time the home page is loaded
     counter_information = sample_counter_display()
-
     return render(request, 'qpcr_records/update_existing_records.html', counter_information)
 
 
