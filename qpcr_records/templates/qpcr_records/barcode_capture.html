@@ -6,10 +6,10 @@
     <div class="card my-3">
         <div class="card-body">
             <h5 class="card-title">Instructions</h5>
-            {% if form.ssp_well.value != 'A1' %}
-            <p class="card-text">Scan sample barcode and load sample into the indicated well.</p>
+            {% if form.ssp_well.value != 'A1' and form.ssp_well.value != 'H1' %}
+            <p class="card-text">Scan the sample barcode and load sample into the indicated well.</p>
             {% else %}
-            <p class="card-text">Load controls into indicated wells.</p>
+            <p class="card-text">Load controls <code>(A1 and H1)</code> into indicated wells.</p>
             {% endif %}
         </div>
     </div>
@@ -106,7 +106,7 @@
     // Create plate elements
     function renderPlate() {
         var plate = document.getElementById("platemap");
-        var activeWell = "{{ form.ssp_well.value|safe }}"
+        var activeWell = "{{ form.ssp_well.value|safe }}";
 
         var wellSize = getWellSize();
 
@@ -140,9 +140,11 @@
                 }
                 var activeRow = activeWell[0];
                 var activeCol = activeWell.substring(1);
-                if ((row < activeRow & col == activeCol) | col < activeCol) {
-                    well.classList.add("loaded-well");
+
+                for (const loadedWell in {{ barcodes|safe }}) {
+                    $("#"+loadedWell).addClass("loaded-well");
                 }
+
                 if (label == activeWell) {
                     well.classList.add("active-well");
                     well.classList.add("active");
@@ -269,7 +271,7 @@
 
     .control-well {
         background: lightcoral !important;
-        font-weight: normal !important;
+        font-weight: normal;
     }
 
     .control-well div {
