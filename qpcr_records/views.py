@@ -31,11 +31,11 @@ def sample_counter_display():
     dub_count = 0  # tracks plates in previous stages
 
     # Cleared plate counter
-    data_cleared = test_results.objects.filter(~Q(final_results='')).count() - dub_count
+    data_cleared = test_results.objects.filter(~Q(final_results='Undetermined')).count() - dub_count
     dub_count += data_cleared
 
     # qPCR plate counters
-    q_processed = test_results.objects.filter(~Q(decision_tree_results='')).count() - dub_count
+    q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined')).count() - dub_count
     dub_count += q_processed
 
     q_recorded = test_results.objects.filter(~Q(pcr_results_csv='')).count() - dub_count
@@ -97,25 +97,22 @@ def index(request):
                                               ssp_well=well,
                                               sep_id=request.GET['sep_id'],
                                               sep_well=well,
-                                              sample_extraction_technician1_lab='Anderson',
-                                              sample_extraction_technician1_institute='TSRI',
-                                              sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
+                                              sampling_date=datetime.date.today().strftime('%Y-%m-%d'),
+                                              lrl_id=request.session['lrl_id'],
+                                              sample_bag_id=request.GET['sample_bag_id']))
             test_results.objects.bulk_create(l)
         # DATA UPDATE IN KNIGHT LAB
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
-            objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(rep_id=request.GET['rep_id'],
-                                                                                    rsp_id=request.GET['rsp_id'],
-                                                                                    rna_extraction_technician_lab='Knight',
-                                                                                    rna_extraction_technician_institute='UCSD')
+            objs = test_results.objects.filter(sep_id=request.GET['sep_id'])\
+                .update(rep_id=request.GET['rep_id'], re_date=datetime.date.today().strftime('%Y-%m-%d'),)
         elif 'barcode4' in request.GET.keys():
             objs = test_results.objects.filter(
                 rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
-                            request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'])
+                            request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'], rsp_id=request.GET['rsp_id'],)
         # DATA UPDATE IN LAURENT LAB
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
-            objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']).update(qrp_id=request.GET['qrp_id'],
-                                                                                    qpcr_technician_lab='Laurent',
-                                                                                    qpcr_technician_institute='UCSD')
+            objs = test_results.objects.filter(rwp_id=request.GET['rwp_id'])\
+                .update(qrp_id=request.GET['qrp_id'], qpcr_date=datetime.date.today().strftime('%Y-%m-%d'),)
 
     if request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
         if 'Browse' in request.FILES.keys():  # qPCR Results file
@@ -234,7 +231,7 @@ def perform_safety_check(request):
         request.session['expected_barcodes'] = list(
             test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
                                         sep_well='').values_list('barcode', flat=True))
-        return render(request, 'qpcr_records/perform_safety_check.html', {'form': f})
+        return render(request, 'qpcr_records/perform_safety_check.html', {'form': f, 'well': 'A1'})
 
 
 @login_required
@@ -286,12 +283,13 @@ def barcode_capture(request):
                 row = d1[row]
 
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': row + str(col), 'sep_well': row + str(col)})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes,
+                                                                         'well': row + str(col)})
     else:
         if request.session['ssp_well'] == 'A1':  # Redirect from start
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1', 'well': 'H1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'H1'})
         if request.session['ssp_well'] == 'H1':  # Redirect from start
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
@@ -299,6 +297,8 @@ def barcode_capture(request):
         else:
             if 'lrl_id' in request.GET.keys():
                 print('Works')
+            request.session['lrl_id'] = request.GET['lrl_id']
+            print(request.session['lrl_id'])
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A1'})
