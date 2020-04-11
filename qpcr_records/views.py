@@ -21,11 +21,54 @@ from django.db.models import Q
 # barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
 # barcode = barcode.rstrip()
 
+def sample_counter_display():
+    # Sample Counter Display - Will appear every time the home page is loaded
+    dub_count = 0 # tracks the plates from a previous stage to subtract from the current stage being evaluated
+
+    data_cleared = test_results.objects.filter(~Q(final_results = '')).count() - dub_count
+    dub_count += data_cleared
+
+    q_processed = test_results.objects.filter(~Q(decision_tree_results = '')).count() - dub_count
+    dub_count += q_processed
+
+    q_recorded = test_results.objects.filter(~Q(pcr_results_csv = '')).count() - dub_count
+    dub_count += q_recorded
+
+    q_running = test_results.objects.filter(~Q(qrp_id = '')).count() - dub_count
+    dub_count += q_running
+
+    rwp_count = test_results.objects.filter(~Q(rwp_id = '')).count() - dub_count
+    dub_count += rwp_count
+
+    rep_count = test_results.objects.filter(~Q(rep_id = '')).count() - dub_count
+    dub_count += rep_count
+
+    sep_count = test_results.objects.filter(~Q(sep_id = '')).count() - dub_count
+    dub_count += sep_count
+
+    unproc_samples = test_results.objects.filter(~Q(barcode = '')).count() - dub_count
+
+    counter_information = {
+        'data_cleared': data_cleared,
+        'q_processed': q_processed,
+        'q_recorded': q_recorded,
+        'q_running': q_running,
+        'rwp_count': rwp_count,
+        'rep_count': rep_count,
+        'sep_count': sep_count,
+        'unproc_samples': unproc_samples
+    }
+    return(counter_information)
+
 @login_required
 def index(request):
     """
     Login page redirects here
     """
+
+    # Sample Counter Display - Will appear every time the home page is loaded
+    counter_information = sample_counter_display()
+
     if request.method == 'GET':
         print(request.GET)
         # DATA UPDATE IN ANDERSSON LAB
@@ -78,7 +121,7 @@ def index(request):
             qreaction_plate = file.name.split('.')[0]
             objs = test_results.objects.filter(qrp_id=qreaction_plate)\
                 .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
-            return render(request, 'qpcr_records/index.html')
+            return render(request, 'qpcr_records/index.html', counter_information)
 
         elif 'Select Barcode List File' in request.FILES.keys():  # Barcodes list
             barcodes = request.FILES['Select Barcode List File'].read().decode("utf-8").splitlines()
@@ -86,34 +129,11 @@ def index(request):
             for b in barcodes:
                 l.append(test_results(barcode=b, sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
             test_results.objects.bulk_create(l)
-            return render(request, 'qpcr_records/index.html')
+            return render(request, 'qpcr_records/index.html', counter_information)
         else:
-            return render(request, 'qpcr_records/index.html')
+            return render(request, 'qpcr_records/index.html', counter_information)
     else:
-        return render(request, 'qpcr_records/index.html')
-
-    """
-    Sample Counter Display
-    """
-
-    dub_count = 0
-    data_cleared = test_results.objects.filter(~Q(final_results = '')).count() - dub_count
-    dub_count += data_cleared
-    q_processed = test_results.objects.filter(~Q(decision_tree_results = '')).count() - dub_count
-    dub_count += q_processed
-    q_recorded = test_results.objects.filter(~Q(pcr_results_csv = '')).count() - dub_count
-    dub_count += q_recorded
-    q_running = test_results.objects.filter(~Q(qrp_id = '')).count() - dub_count
-    dub_count += q_running
-    rwp_count = test_results.objects.filter(~Q(rwp_id = '')).count() - dub_count
-    dub_count += rwp_count
-    rep_count = test_results.objects.filter(~Q(rep_id = '')).count() - dub_count
-    dub_count += rep_count
-    sep_count = test_results.objects.filter(~Q(sep_id = '')).count() - dub_count
-    dub_count += sep_count
-    unproc_samples = test_results.objects.filter(~Q(barcode = '')).count() - dub_count
-
-    # NOTE: Michelle above is the data for the table for sample counter
+        return render(request, 'qpcr_records/index.html', counter_information)
 
 
 @login_required
@@ -285,7 +305,10 @@ def unknown_barcode(request):
 
 @login_required
 def update_existing_records(request):
-    return render(request, 'qpcr_records/update_existing_records.html')
+    # Sample Counter Display - Will appear every time the home page is loaded
+    counter_information = sample_counter_display()
+
+    return render(request, 'qpcr_records/update_existing_records.html', counter_information)
 
 
 @login_required
