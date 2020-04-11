@@ -106,6 +106,7 @@ def index(request):
             objs = test_results.objects.filter(sep_id=request.GET['sep_id'])\
                 .update(rep_id=request.GET['rep_id'], re_date=datetime.date.today().strftime('%Y-%m-%d'),)
         elif 'barcode4' in request.GET.keys():
+
             objs = test_results.objects.filter(
                 rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
                             request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'], rsp_id=request.GET['rsp_id'],)
@@ -118,8 +119,10 @@ def index(request):
         if 'Browse' in request.FILES.keys():  # qPCR Results file
             file = request.FILES['Browse']
             objs = test_results.objects.filter(qrp_id=file.name.split('_')[0]).update(file_transfer_status='Complete')
-            s3 = boto3.resource('s3')
-            s3.Bucket('covidtest2').put_object(Key=file.name, Body=file)
+            s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
+                                aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
+                                aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
+            s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=file.name, Body=file)
 
             qreaction_plate = file.name.split('.')[0]
             objs = test_results.objects.filter(qrp_id=qreaction_plate) \
