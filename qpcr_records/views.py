@@ -32,36 +32,36 @@ def sample_counter_display():
     dub_count = 0  # tracks plates in previous stages
 
     # Cleared plate counter
-    data_cleared = test_results.objects.filter(~Q(final_results='Undetermined'),sampling_date > time_thresh).count() - dub_count
+    data_cleared = test_results.objects.filter(~Q(final_results='Undetermined'),sampling_date__gte=time_thresh).count() - dub_count
     dub_count += data_cleared
 
     # qPCR plate counters
-    q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined'),sampling_date > time_thresh).count() - dub_count
+    q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined'),sampling_date__gte=time_thresh).count() - dub_count
     dub_count += q_processed
 
-    q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''),sampling_date > time_thresh).count() - dub_count
+    q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''),sampling_date__gte=time_thresh).count() - dub_count
     dub_count += q_recorded
 
-    q_running = test_results.objects.filter(~Q(qrp_id=''),sampling_date > time_thresh).count() - dub_count
-    qrp_id = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).values_list('qrp_id')
+    q_running = test_results.objects.filter(~Q(qrp_id=''),sampling_date__gte=time_thresh).count() - dub_count
+    qrp_id = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).values_list('qrp_id')
     dub_count += q_running
 
     # RNA plate counters
-    rwp_count = test_results.objects.filter(~Q(rwp_id=''),sampling_date > time_thresh).count() - dub_count  # rna working plate
-    rwp_id = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).values_list('rwp_id')
+    rwp_count = test_results.objects.filter(~Q(rwp_id=''),sampling_date__gte=time_thresh).count() - dub_count  # rna working plate
+    rwp_id = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).values_list('rwp_id')
     dub_count += rwp_count
 
-    rep_count = test_results.objects.filter(~Q(rep_id=''),sampling_date > time_thresh).count() - dub_count  # rna extraction plate
-    rep_id = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).values_list('rep_id')
+    rep_count = test_results.objects.filter(~Q(rep_id=''),sampling_date__gte=time_thresh).count() - dub_count  # rna extraction plate
+    rep_id = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).values_list('rep_id')
     dub_count += rep_count
 
     # Sample extraction plate counter
-    sep_count = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).count() - dub_count
-    sep_id = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).values_list('sep_id')
+    sep_count = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).count() - dub_count
+    sep_id = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).values_list('sep_id')
     dub_count += sep_count
 
     # Unprocessed sample counter
-    unproc_samples = test_results.objects.filter(~Q(barcode=''),sampling_date > time_thresh).count() - dub_count
+    unproc_samples = test_results.objects.filter(~Q(barcode=''),sampling_date__gte=time_thresh).count() - dub_count
 
     # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
