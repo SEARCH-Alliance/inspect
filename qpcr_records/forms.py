@@ -40,3 +40,4 @@ class ArrayingForm(forms.Form):
 class TrackSamplesForm(forms.Form):
     track_samples = forms.MultipleChoiceField(required=True, widget=forms.CheckboxSelectMultiple,
                                               choices=sample_tracking_choice)
+

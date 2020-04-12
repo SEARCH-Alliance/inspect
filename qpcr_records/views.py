@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from qpcr_records.models import *
-from qpcr_records.forms import SearchRecords, ArrayingForm, TrackSamplesForm
+from qpcr_records.forms import *
 from qpcr_records.data_processing.results import Results
 from django.contrib.auth.decorators import login_required
 from django_tables2 import RequestConfig
@@ -115,6 +115,7 @@ def index(request):
                                               sep_well=well,
                                               sampling_date=date.today().strftime('%Y-%m-%d'),
                                               lrl_id=request.session['lrl_id'],
+                                              personnel2_andersen_lab=request.session['personnel2_andersen_lab'],
                                               sample_bag_id=request.GET['sample_bag_id']))
             test_results.objects.bulk_create(l)
         # DATA UPDATE IN KNIGHT LAB
@@ -319,11 +320,12 @@ def perform_safety_check(request):
 
         request.session['ssp_well'] = 'X'
         request.session['current_barcodes'] = dict()
-        f = LysisReagentLotForm()
-        request.session['expected_barcodes'] = list(
-            test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
-                                        sep_well='').values_list('barcode', flat=True))
-        return render(request, 'qpcr_records/perform_safety_check.html', {'form': f, 'well': 'A1'})
+        f1 = LysisReagentLotForm()
+        f2 = PersonnelForm()
+        #request.session['expected_barcodes'] = list(
+        #    test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
+        #                                sep_well='').values_list('barcode', flat=True))
+        return render(request, 'qpcr_records/perform_safety_check.html', {'form1': f1, 'form2': f2, 'well': 'A1'})
 
 
 @login_required
