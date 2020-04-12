@@ -29,12 +29,12 @@ class Results:
         MS2 = r_dict["MS2"]
         covid_targets = ["N gene","ORF1ab","S gene"]
         # how many covid gene targets are positive?
-        target_count = 3 - [r_dict[x] for x in covid_targets].count("Undetermined")
+        target_count = 3 - [r_dict[x] for x in covid_targets].count(-1.0)
         # Test is NA if no targets are positive AND MS2 is NEGATIVE
-        if target_count == 0 and MS2 == "Undetermined":
+        if target_count == 0 and MS2 == -1.0:
             return "Invalid"
         # Test is NEGATIVE if no targets are positive AND MS2 is POSITIVE
-        elif target_count == 0 and MS2 != "Undetermined":
+        elif target_count == 0 and MS2 != -1.0:
             return "Negative"
         # Test is INCONCLUSIVE if ONLY ONE target is positive (regardless of MS2 status)
         elif target_count == 1:
@@ -58,11 +58,11 @@ class Results:
                 # double check confidence score and values
                 if val != 'Undetermined':
                     if val > 0 and val < 40 and conf > 0.8 and amp == 'Amp':
-                        pass
+                        val = round(val,3)
                     else:
-                        val = 'Undetermined'
+                        val = -1.0
                 else:
-                    pass
+                    val = -1.0
                 r_dict[target] = val
             r_dict["diagnosis"] = self.diagnosis(r_dict)
             results_dict[well]=r_dict
@@ -74,19 +74,33 @@ class Results:
     # Call this function to get a nested dictionary of results indexed as follows:
     # {well position: {target1:value,target2:value,...,'diagnosis':value}}
     def get_results(self,object_key):
-        self.pull_from_s3(object_key)
+        #self.pull_from_s3(object_key)
+        self.pull_from_django(object_key)
         return self.parse_results()
 
-    def pull_from_s3(self,object_key):
+    def pull_from_s3(self,file_name):
         # get AWS credentials
         # NOTE: double check credentials
-        aws_id = os.environ['AWS_ID']
-        aws_secret = os.environ['AWS_SECRET']
-        client = boto3.client('s3',aws_access_key_id=aws_id,
-                              aws_secret_access_key=aws_secret)
-        # NOTE: set proper bucket name
-        bucket_name = 'put_bucket_name_here'
-        excel_obj = client.get_object(Bucket=bucket_name,Key=object_key)
-        body = csv_obj['Body']
-        excel_string = body.read().decode('utf-8')
-        self.read_file(StringIO(excel_string))
+        s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
+                            aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
+                            aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
+        bucket = s3.Bucket(config('AWS_STORAGE_BUCKET_NAME'))
+        obj = bucket.Object(key=file_name)
+        self.read_file(obj['Body'])
+
+    def pull_from_django(self,file):
+        print("Reading file")
+        tmp = pd.read_excel(file,sheet_name="Results")
+        self.instrument_id = tmp.iloc[tmp[tmp['Block Type']=='Instrument Serial Number'].index[0],1]
+        # Read in the file cleanly
+        self.results = pd.read_excel(file,sheet_name="Results",skiprows=list(range(0,(list(tmp.iloc[:,0]).index("Well") + 1))))
+        print("Results stored")
+
+    def read_fake_names(self):
+        self.names_df = pd.read_csv('qpcr_records/data_processing/unique_psuedo_names_and_codes_04082020-v2-0_49999.csv').set_index('Barcode')
+
+    def get_fake_name(self,barcode):
+        try:
+            return self.names_df.loc[barcode]['Last, First']
+        except:
+            return 'None'
