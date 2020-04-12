@@ -1,14 +1,14 @@
 {% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
 
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-<div class="jumbotron jumbotron-fluid">
+<div class="jumbotron jumbotron-fluid mb-0">
     <!-- Header Information -->
     <div class="container">
         <div class="row">
-            <div class="col">
-                <!-- Platemap Diagram -->
-                <h2>Input Sample Plate</h2>
-                <div class="my-3">
+            <h2 class="display-4">Input Sample Plate</h2>
+            <div class="col-md-8 px-0">
+                <!-- Instruction card -->
+                <div class="mb-3 mr-3">
                     <div class="card">
                         <div class="card-header"><h4>Instructions</h4></div>
                         <div class="card-body">
@@ -21,34 +21,36 @@
                         </div>
                     </div>
                 </div>
-                <div class="d-flex flex-row flex-wrap align-items-start justify-content-between">
-                    <div id="platemap" class="table table-sm"></div>
-                </div>
+                <div class="d-flex flex-row">
+                    <div id="platemap" class="col-8 px-0"></div>
 
                 <!-- Platemap Legend Information -->
-                <h4>Plate Well Legend</h4>
-                <p></p>
-                <div class="d-flex flex-row flex-wrap align-items-start justify-content-between"">
-                    <ul id="legend" class="list-group flex-md-row">
-                        <li class="list-group-item d-flex flex-row">
-                            <div class="well"></div>
-                            <span class="mx-3 my-auto">Sample</span>
-                        </li>
-                        <li class="list-group-item d-flex flex-row">
-                            <div class="well control-well"></div>
-                            <span class="mx-3 my-auto">Control</span>
-                        </li>
-                        <li class="list-group-item d-flex flex-row">
-                            <div class="well active-well"></div>
-                            <span class="mx-3 my-auto">Current Sample</span>
-                        </li>
-                    </ul>
+                    <div class="col-4">
+                        <h4>Plate Well Legend</h4>
+                        <ul id="legend" class="list-group">
+                            <li class="list-group-item d-flex flex-row">
+                                <div class="well"></div>
+                                <span class="px-3 my-auto">Sample</span>
+                            </li>
+                            <li class="list-group-item d-flex flex-row">
+                                <div class="well control-well"></div>
+                                <span class="px-3 my-auto">Control</span>
+                            </li>
+                            <li class="list-group-item d-flex flex-row">
+                                <div class="well active-well"></div>
+                                <span class="px-3 my-auto">Current Sample</span>
+                            </li>
+                            <li class="list-group-item d-flex flex-row">
+                                <div class="well loaded-well"></div>
+                                <span class="px-3 my-auto">Loaded Samples</span>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
-            <div class="col">
+            <div class="col-md-4 px-0">
                 <!-- Previously Scanned Barcode List -->
-                <br>
                 <div class="card">
                     <h4 class="card-header">
                         Previously Scanned Barcodes
@@ -167,8 +169,8 @@
 
         var cols = document.querySelectorAll('.plate-col');
         cols.forEach(c => {
-            c.style.marginLeft = wellSize / 10 + "px";
-            c.style.marginRight = wellSize / 10 + "px";
+            c.style.marginLeft = wellSize / 10 - .1 + "px";
+            c.style.marginRight = wellSize / 10 - .1 + "px";
         });
 
         var wells = document.querySelectorAll('.well');
@@ -227,8 +229,6 @@
         overflow-y: auto;
     }
     #platemap {
-        max-width: 600px;
-        min-width: 400px;
         background: lightblue;
         border-radius: 4px;
     }
