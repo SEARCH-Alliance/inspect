@@ -45,23 +45,26 @@ def sample_counter_display():
     dub_count += q_recorded
 
     q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).count() - dub_count
-    qrp_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('qrp_id')
+    s = list(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list(
+        'qrp_id', flat=True).order_by('qrp_id')))
+    qrp_id = ', '.join(s)
     dub_count += q_running
 
     # RNA plate counters
-    rwp_count = test_results.objects.filter(~Q(rwp_id=''),
-                                            sampling_date__gte=time_thresh).count() - dub_count  # rna working plate
-    rwp_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rwp_id')
+    rwp_count = test_results.objects.filter(~Q(rwp_id=''), sampling_date__gte=time_thresh).count() - dub_count  # rna working plate
+    s = list(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True)))
+    rwp_id = ', '.join(s)
     dub_count += rwp_count
 
-    rep_count = test_results.objects.filter(~Q(rep_id=''),
-                                            sampling_date__gte=time_thresh).count() - dub_count  # rna extraction plate
-    rep_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rep_id')
+    rep_count = test_results.objects.filter(~Q(rep_id=''), sampling_date__gte=time_thresh).count() - dub_count  # rna extraction plate
+    s = list(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True)))
+    rep_id = ', '.join(s)
     dub_count += rep_count
 
     # Sample extraction plate counter
     sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).count() - dub_count
-    sep_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id')
+    s = list(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id', flat=True)))
+    sep_id = ', '.join(s)
     dub_count += sep_count
 
     # Unprocessed sample counter
@@ -71,8 +74,12 @@ def sample_counter_display():
     counter_information = {
         'data_cleared': data_cleared,
         'q_processed': q_processed, 'q_recorded': q_recorded, 'q_running': q_running,
+        'q_running_ids': qrp_id,
+        'qrp_ids': qrp_id,
         'rwp_count': rwp_count, 'rep_count': rep_count,
+        'rwp_ids': rwp_id, 'rep_ids': rep_id,
         'sep_count': sep_count,
+        'sep_ids': sep_id,
         'unproc_samples': unproc_samples
     }
     return counter_information
@@ -392,6 +399,8 @@ def unknown_barcode(request):
 def update_existing_records(request):
     # Sample Counter Display - Will appear every time the home page is loaded
     counter_information = sample_counter_display()
+    print('counter_infor')
+    print(counter_information)
     return render(request, 'qpcr_records/update_existing_records.html', counter_information)
 
 
@@ -439,10 +448,11 @@ def scan_plate_arrayed_plate_barcode(request):
     f1 = ArrayingForm()
     f2 = RNAStorageAndWorkingPlateForm()
 
-    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2))\
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)) \
         .values_list("rep_id", flat=True)
     plates = list(recent_plate_query)
-    return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
+    return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html',
+                  {'form1': f1, 'form2': f2, 'plates': plates})
 
 
 @login_required
@@ -457,7 +467,7 @@ def scan_plate_5_6_barcode(request):
     f1 = RNAStorageAndWorkingPlateForm()
     f2 = QPCRStorageAndReactionPlateForm()
 
-    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2))\
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)) \
         .values_list("rwp_id", flat=True)
     plates = list(recent_plate_query)
     return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
@@ -537,7 +547,8 @@ def upload_qpcr_results(request):
 
 @login_required
 def review_results(request):
-    q = test_results.objects.filter(final_results__iexact='Undetermined', sampling_date__gte=date.today() - timedelta(days=2))
+    q = test_results.objects.filter(final_results__iexact='Undetermined',
+                                    sampling_date__gte=date.today() - timedelta(days=2))
     table = review_resultsTable(q)
     RequestConfig(request).configure(table)
     return render(request, 'qpcr_records/review_results.html', {'table': table, "choices": sample_result_choices})
