@@ -44,7 +44,6 @@ def sample_counter_display():
     q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gte=time_thresh).count() - dub_count
     dub_count += q_recorded
 
-<<<<<<< HEAD
     q_running = test_results.objects.filter(~Q(qrp_id=''),sampling_date__gte=time_thresh).count() - dub_count
     qrp_id = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).values_list('qrp_id', flat=True).order_by('qrp_id')
     dub_count += q_running
@@ -61,7 +60,6 @@ def sample_counter_display():
     # Sample extraction plate counter
     sep_count = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).count() - dub_count
     sep_id = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).values_list('sep_id', flat=True).order_by('sep_id')
-=======
     q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).count() - dub_count
     qrp_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('qrp_id')
     dub_count += q_running
@@ -80,7 +78,6 @@ def sample_counter_display():
     # Sample extraction plate counter
     sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).count() - dub_count
     sep_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id')
->>>>>>> master
     dub_count += sep_count
 
     # Unprocessed sample counter
