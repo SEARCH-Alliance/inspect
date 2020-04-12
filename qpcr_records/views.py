@@ -329,8 +329,11 @@ def plate_termination(request):
     print(request.session.keys())
     if 'barcode' in request.session.keys():
         request.session[request.session['ssp_well']] = request.session['barcode']
+
+    barcodes = request.session['current_barcodes']
+
     f = SampleStorageAndExtractionPlateForm()
-    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
+    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f, 'barcodes': barcodes})
 
 
 @login_required
