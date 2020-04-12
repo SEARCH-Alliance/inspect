@@ -29,7 +29,7 @@ def sample_counter_display():
     # We are calculating the plates from each stage backwards by
     # subtracting the number of plates in the current stage being evaluated
     # timestamp threshold
-    time_thresh = datetime.now() - timedelta(days=2)
+    time_thresh = date.today() - timedelta(days=2)
     dub_count = 0  # tracks plates in previous stages
 
     # Cleared plate counter
@@ -85,7 +85,7 @@ def index(request):
     counter_information = sample_counter_display()
 
     if request.method == 'GET':
-        print(request.GET)
+        print(request.GET.keys())
         # DATA UPDATE IN ANDERSSON LAB
         if 'ssp_id' in request.GET.keys():
             print(list(request.session.keys()))
@@ -395,8 +395,11 @@ def plate_termination(request):
     print(request.session.keys())
     if 'barcode' in request.session.keys():
         request.session[request.session['ssp_well']] = request.session['barcode']
+
+    barcodes = request.session['current_barcodes']
+
     f = SampleStorageAndExtractionPlateForm()
-    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
+    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f, 'barcodes': barcodes})
 
 
 @login_required
@@ -423,8 +426,8 @@ def scan_plate_2_3_barcode(request):
     f1 = SampleStorageAndExtractionPlateForm()
     f2 = RNAExtractionPlateForm()
 
-    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.now() - timedelta(days=2)).values("sep_id")
-    plates = list(recent_plate_query.values())
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    plates = list(recent_plate_query)
     return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
 
@@ -439,7 +442,10 @@ def scan_plate_arrayed_plate_barcode(request):
     """
     f1 = ArrayingForm()
     f2 = RNAStorageAndWorkingPlateForm()
-    return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2})
+
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    plates = list(recent_plate_query)
+    return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
 
 @login_required
@@ -453,7 +459,10 @@ def scan_plate_5_6_barcode(request):
     """
     f1 = RNAStorageAndWorkingPlateForm()
     f2 = QPCRStorageAndReactionPlateForm()
-    return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2})
+
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    plates = list(recent_plate_query)
+    return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
 
 @login_required
@@ -513,7 +522,6 @@ def record_search(request):
         else:
             table = test_resultsTable(q)
             RequestConfig(request).configure(table)
-
             export_format = request.GET.get('_export', None)
             if TableExport.is_valid_format(export_format):
                 exporter = TableExport(export_format, table)
@@ -527,6 +535,14 @@ def record_search(request):
 def upload_qpcr_results(request):
     f = qpcrResultUploadForm()
     return render(request, 'qpcr_records/upload_qpcr_results.html', {'form': f})
+
+
+@login_required
+def review_results(request):
+    q = test_results.objects.filter(final_results__iexact='Undetermined', sampling_date__gte=date.today() - timedelta(days=2))
+    table = review_resultsTable(q)
+    RequestConfig(request).configure(table)
+    return render(request, 'qpcr_records/review_results.html', {'table': table, "choices": sample_result_choices})
 
 
 @login_required

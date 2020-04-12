@@ -62,9 +62,6 @@ class test_results(models.Model):
     re_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
 
     # LAURENT LAB INFORMATION
-    qsp_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of qPCR_Storage Plate (QSP)')
-    qsp_well = models.CharField(max_length=3, null=False, default='')
     qrp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of qRTPCR Reaction Plate (QRP)')
     qrp_well = models.CharField(max_length=3, null=False, default='')
@@ -105,11 +102,18 @@ class test_results(models.Model):
 class test_resultsTable(tables.Table):
     class Meta:
         model = test_results
-        fields = (
-            'barcode', 'ssp_id', 'ssp_well', 'sampling_date', 'sep_id', 'sep_well', 'rep_id', 'rep_well', 'rsp_id',
-            'rsp_well', 'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
-            'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'pcr_results_csv',
-            'sample_release')
+        fields = ['barcode', 'ssp_id', 'ssp_well', 'sampling_date', 'sep_id', 'sep_well', 'rep_id', 'rep_well', 'rsp_id',
+        'rsp_well', 'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
+        'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'pcr_results_csv',
+        'sample_release']
+
+
+class review_resultsTable(tables.Table):
+    class Meta:
+        model = test_results
+        fields = ['sampling_date', 'barcode', 'sep_id', 'sep_well', 'rep_id', 'rep_well',
+        'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
+        'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'pcr_results_csv']
 
 
 class LysisReagentLotForm(ModelForm):
@@ -161,8 +165,8 @@ class RNAStorageAndWorkingPlateForm(ModelForm):
 class QPCRStorageAndReactionPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['qsp_id', 'qrp_id']
-        labels = {'qsp_id': 'qRDP-PCR Storage Plate Barcode', 'qrp_id': 'qRT-PCR Plate Barcode'}
+        fields = ['qrp_id']
+        labels = {'qrp_id': 'qRT-PCR Plate Barcode'}
 
 
 class qpcrResultUploadForm(ModelForm):
