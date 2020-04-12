@@ -431,11 +431,7 @@ def scan_plate_2_3_barcode(request):
     f1 = SampleStorageAndExtractionPlateForm()
     f2 = RNAExtractionPlateForm()
 
-    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.now() - timedelta(days=2)).values(
-        "sep_id")
-    plates = list(recent_plate_query.values())
-    recent_plate_query = test_results.objects.filter(
-        sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
     plates = list(recent_plate_query)
     return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
