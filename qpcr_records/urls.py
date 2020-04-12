@@ -22,4 +22,5 @@ urlpatterns = [
     path('track_samples/', views.track_samples, name='track_samples'),
     path('check_information/', views.check_information, name='check_information'),
     path('upload_qpcr_results/', views.upload_qpcr_results, name='upload_qpcr_results'),
+    path('review_results/', views.review_results, name='review_results'),
 ]
