@@ -63,7 +63,7 @@
         <button type="submit" class="btn btn-primary">Proceed To Next Well</button>
     </form>
     <hr>
-    <form class="my-3" action="/qpcr_records/plate_termination/" method="GET">
+    <form class="my-3" action="/qpcr_records/scan_plate_1_2_barcode/" method="GET">
         {% csrf_token %}
         <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-primary">End Plate</button>
     </form>
@@ -179,12 +179,23 @@
     }
 
     function validateBarcodeForm() {
+        var activeWell = "{{ form.ssp_well.value|safe }}";
+        if (activeWell == 'A1' || activeWell == 'H1')
+            return;
+
         var well2barcode = {{ barcodes|safe }};
         var barcodes = [];
         for (const loadedWell in well2barcode) {
             barcodes.push(well2barcode[loadedWell]);
         }
-        validateForm({{ form.barcode.id_for_label }}, barcodes, false, "Barcode already exists!");
+
+        validateForm({{ form.barcode.id_for_label }}, function() {
+            // return false if barcode already exists
+            var value = {{ form.barcode.id_for_label }}.value.trim();
+            console.log(barcodes);
+            console.log(value);
+            return !barcodes.includes(value);
+        }, "Barcode already exists!");
     };
 
     // Add window event hooks

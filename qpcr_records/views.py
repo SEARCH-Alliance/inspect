@@ -324,7 +324,7 @@ def update_existing_records(request):
 
 
 @login_required
-def plate_termination(request):
+def scan_plate_1_2_barcode(request):
     print(request.GET.keys())
     print(request.session.keys())
     if 'barcode' in request.session.keys():
@@ -333,19 +333,9 @@ def plate_termination(request):
     barcodes = request.session['current_barcodes']
 
     f = SampleStorageAndExtractionPlateForm()
-    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f, 'barcodes': barcodes})
-
-
-@login_required
-def scan_plate_1_2_barcode(request):
-    """
-    Redirected here after the barcode for the last well is scanned. Create a platemap for display with the barcodes
-    specified along the corresponding well.
-    Also, records for each barcode will be created.
-    :param request:
-    :return:
-    """
-    return render(request, 'qpcr_records/index.html')
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    plates = list(recent_plate_query)
+    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f, 'barcodes': barcodes, 'plates': plates})
 
 
 @login_required
