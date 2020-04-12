@@ -110,10 +110,38 @@ def index(request):
             objs = test_results.objects.filter(sep_id=request.GET['sep_id'])\
                 .update(rep_id=request.GET['rep_id'], re_date=date.today().strftime('%Y-%m-%d'),)
         elif 'barcode4' in request.GET.keys():
-
             objs = test_results.objects.filter(
                 rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
                             request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'], rsp_id=request.GET['rsp_id'],)
+
+            # CONVERT 4X96-WELL PLATE LAYOUT TO 1X384-WELL PLATE LAYOUT
+            d = dict()
+            rows_384 = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P']
+            cols_384 = range(1, 25)
+            col_index = 0
+            row_index = 0
+            for z in range(0, 4):
+                for col1, col2 in zip([1, 3, 5, 7, 9, 11], [2, 4, 6, 8, 10, 12]):
+                    for row in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+                        d[str(z) + row + str(col1)] = rows_384[row_index] + str(cols_384[col_index])
+                        row_index = row_index + 1
+                        d[str(z) + row + str(col2)] = rows_384[row_index] + str(cols_384[col_index])
+                        row_index = row_index + 1
+
+                    col_index = col_index + 1
+                    row_index = 0
+
+            barcode_list = list()
+            i = 0
+            for b in [request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'], request.GET['barcode4']]:
+                if b in barcode_list:
+                    continue
+                else:
+                    for z in test_results.objects.filter(rep_id=b).values_list('sep_well', flat=True):
+                        test_results.objects.filter(rep_id=b).update(rwp_well=d[str(i)+z], rsp_id=d[str(i)+z])
+                    i = i+1
+
+                barcode_list.append(b)
         # DATA UPDATE IN LAURENT LAB
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
             objs = test_results.objects.filter(rwp_id=request.GET['rwp_id'])\
