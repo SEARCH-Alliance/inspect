@@ -12,7 +12,6 @@ from django.contrib import messages
 from django.db.models import Q
 
 
-
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
 # for user logins. If the check returns False, user will be automatically redirected to the login page
 
@@ -29,20 +28,23 @@ def sample_counter_display():
     # We are calculating the plates from each stage backwards by
     # subtracting the number of plates in the current stage being evaluated
     # timestamp threshold
-    time_thresh = datetime.now() - timedelta(days=2)
+    time_thresh = date.today() - timedelta(days=2)
     dub_count = 0  # tracks plates in previous stages
 
     # Cleared plate counter
-    data_cleared = test_results.objects.filter(~Q(final_results='Undetermined'),sampling_date__gte=time_thresh).count() - dub_count
+    data_cleared = test_results.objects.filter(~Q(final_results='Undetermined'),
+                                               sampling_date__gte=time_thresh).count() - dub_count
     dub_count += data_cleared
 
     # qPCR plate counters
-    q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined'),sampling_date__gte=time_thresh).count() - dub_count
+    q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined'),
+                                              sampling_date__gte=time_thresh).count() - dub_count
     dub_count += q_processed
 
-    q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''),sampling_date__gte=time_thresh).count() - dub_count
+    q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gte=time_thresh).count() - dub_count
     dub_count += q_recorded
 
+<<<<<<< HEAD
     q_running = test_results.objects.filter(~Q(qrp_id=''),sampling_date__gte=time_thresh).count() - dub_count
     qrp_id = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).values_list('qrp_id', flat=True).order_by('qrp_id')
     dub_count += q_running
@@ -59,10 +61,30 @@ def sample_counter_display():
     # Sample extraction plate counter
     sep_count = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).count() - dub_count
     sep_id = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).values_list('sep_id', flat=True).order_by('sep_id')
+=======
+    q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).count() - dub_count
+    qrp_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('qrp_id')
+    dub_count += q_running
+
+    # RNA plate counters
+    rwp_count = test_results.objects.filter(~Q(rwp_id=''),
+                                            sampling_date__gte=time_thresh).count() - dub_count  # rna working plate
+    rwp_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rwp_id')
+    dub_count += rwp_count
+
+    rep_count = test_results.objects.filter(~Q(rep_id=''),
+                                            sampling_date__gte=time_thresh).count() - dub_count  # rna extraction plate
+    rep_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rep_id')
+    dub_count += rep_count
+
+    # Sample extraction plate counter
+    sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).count() - dub_count
+    sep_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id')
+>>>>>>> master
     dub_count += sep_count
 
     # Unprocessed sample counter
-    unproc_samples = test_results.objects.filter(~Q(barcode=''),sampling_date__gte=time_thresh).count() - dub_count
+    unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh).count() - dub_count
 
     # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
@@ -89,7 +111,7 @@ def index(request):
     counter_information = sample_counter_display()
 
     if request.method == 'GET':
-        print(request.GET)
+        print(request.GET.keys())
         # DATA UPDATE IN ANDERSSON LAB
         if 'ssp_id' in request.GET.keys():
             print(list(request.session.keys()))
@@ -113,13 +135,14 @@ def index(request):
             test_results.objects.bulk_create(l)
         # DATA UPDATE IN KNIGHT LAB
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
-            objs = test_results.objects.filter(sep_id=request.GET['sep_id'])\
-                .update(rep_id=request.GET['rep_id'], re_date=date.today().strftime('%Y-%m-%d'),)
+            objs = test_results.objects.filter(sep_id=request.GET['sep_id']) \
+                .update(rep_id=request.GET['rep_id'], re_date=date.today().strftime('%Y-%m-%d'), )
         elif 'barcode4' in request.GET.keys():
             print(request.GET)
             objs = test_results.objects.filter(
                 rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
-                            request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'], rsp_id=request.GET['rsp_id'],)
+                            request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'],
+                                                             rsp_id=request.GET['rsp_id'], )
 
             # CONVERT 4X96-WELL PLATE LAYOUT TO 1X384-WELL PLATE LAYOUT
             d = dict()
@@ -148,51 +171,68 @@ def index(request):
                     continue
                 else:
                     for z in test_results.objects.filter(rep_id=b).values_list('sep_well', flat=True):
-                        test_results.objects.filter(rep_id=b, sep_well=z).update(rwp_well=d[str(i)+z], rsp_well=d[str(i)+z])
-                    i = i+1
+                        test_results.objects.filter(rep_id=b, sep_well=z).update(rwp_well=d[str(i) + z],
+                                                                                 rsp_well=d[str(i) + z])
+                    i = i + 1
 
                 barcode_list.append(b)
         # DATA UPDATE IN LAURENT LAB
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
-            objs = test_results.objects.filter(rwp_id=request.GET['rwp_id'])\
-                .update(qrp_id=request.GET['qrp_id'], qpcr_date=date.today().strftime('%Y-%m-%d'),)
+            objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']) \
+                .update(qrp_id=request.GET['qrp_id'], qpcr_date=date.today().strftime('%Y-%m-%d'), )
 
     if request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
         if 'Browse' in request.FILES.keys():  # qPCR Results file
             # Parse file for Ct values and determine decision tree resuls
             file = request.FILES['Browse']
             qreaction_plate = file.name.split('.')[0]
+            exists = test_results.objects.filter(qrp_id=qreaction_plate)
+            # First see if plate ID exists
+            if not exists:
+                return render(request, 'qpcr_records/unknown_qpcr_plate.html')
+            else:
+                # Double check that this sample doesn't already have data
+                history = test_results.objects.filter(~Q(decision_tree_results='Undetermined'), qrp_id=qreaction_plate)
+                if not history:
+                    # Upload excel file to s3
+                    objs = test_results.objects.filter(qrp_id=qreaction_plate).update(file_transfer_status='Complete')
+                    s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
+                                        aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
+                                        aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
+                    s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=file.name, Body=file)
 
-            # Upload excel file to s3
-            objs = test_results.objects.filter(qrp_id=qreaction_plate).update(file_transfer_status='Complete')
-            print(1)
-            s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
-                                aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
-                                aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
-            print(2)
-            s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=file.name, Body=file)
-            print(3)
+                    objs = test_results.objects.filter(qrp_id=qreaction_plate) \
+                        .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
 
-            objs = test_results.objects.filter(qrp_id=qreaction_plate) \
-                .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
-            print(4)
+                    r = Results()
+                    data_ = r.get_results(file)
+                    r.read_fake_names()
+                    # update the database with values
 
-            r = Results()
-            data_ = r.get_results(file)
-            # update the database with values
+                    for well, vals in data_.items():
+                        if well != 'instrument':
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                ms2_ct_value=vals['MS2'])
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                n_ct_value=vals['N gene'])
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                orf1ab_ct_value=vals['ORF1ab'])
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                s_ct_value=vals['S gene'])
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                decision_tree_results=vals['diagnosis'])
 
-            for well,vals in data_.items():
-                if well != 'instrument':
-                    objs = test_results.objects.filter(qrp_id=qreaction_plate,rwp_well=well).update(ms2_ct_value=vals['MS2'])
-                    objs = test_results.objects.filter(qrp_id=qreaction_plate,rwp_well=well).update(n_ct_value=vals['N gene'])
-                    objs = test_results.objects.filter(qrp_id=qreaction_plate,rwp_well=well).update(orf1ab_ct_value=vals['ORF1ab'])
-                    objs = test_results.objects.filter(qrp_id=qreaction_plate,rwp_well=well).update(s_ct_value=vals['S gene'])
-                    objs = test_results.objects.filter(qrp_id=qreaction_plate,rwp_well=well).update(decision_tree_results=vals['diagnosis'])
+                            if test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).count() > 0:
+                                barc = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).values_list(
+                                    'barcode', flat=True)[0]
+                                objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                    fake_name=r.get_fake_name(barc))
+                        elif well == 'instrument':
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate).update(qs5_id=vals)
+
+                    return render(request, 'qpcr_records/index.html', counter_information)
                 else:
-                    pass
-            print("Finished database update")
-            
-            return render(request, 'qpcr_records/index.html', counter_information)
+                    return render(request, 'qpcr_records/qpcr_overwrite_warning.html')
 
         elif 'Select Barcode List File' in request.FILES.keys():  # Barcodes list
             barcodes = request.FILES['Select Barcode List File'].read().decode("utf-8").splitlines()
@@ -341,9 +381,6 @@ def barcode_capture(request):
             request.session['last_scan'] = request.session['ssp_well']
             row = request.session['ssp_well'][0]
             col = int(request.session['ssp_well'][1:])
-            print(request.session['ssp_well'])
-            print(row)
-            print(col)
             if row == 'H':
                 row = d1[row]
                 col = col + 1
@@ -356,17 +393,14 @@ def barcode_capture(request):
     else:
         barcodes = request.session['current_barcodes']
         request.session['last_scan'] = request.session['ssp_well']
-        if request.session['ssp_well'] == 'A1': # Redirect from start
+        if request.session['ssp_well'] == 'A1':  # Redirect from start
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1', 'well': 'H1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'H1'})
-        if request.session['ssp_well'] == 'H1': # Redirect from start
+        if request.session['ssp_well'] == 'H1':  # Redirect from start
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'B1'})
         else:
-            if 'lrl_id' in request.GET.keys():
-                print('Works')
             request.session['lrl_id'] = request.GET['lrl_id']
-            print(request.session['lrl_id'])
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A1'})
@@ -386,12 +420,13 @@ def update_existing_records(request):
 
 @login_required
 def plate_termination(request):
-    print(request.GET.keys())
-    print(request.session.keys())
     if 'barcode' in request.session.keys():
         request.session[request.session['ssp_well']] = request.session['barcode']
+
+    barcodes = request.session['current_barcodes']
+
     f = SampleStorageAndExtractionPlateForm()
-    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
+    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f, 'barcodes': barcodes})
 
 
 @login_required
@@ -418,8 +453,11 @@ def scan_plate_2_3_barcode(request):
     f1 = SampleStorageAndExtractionPlateForm()
     f2 = RNAExtractionPlateForm()
 
-    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.now() - timedelta(days=2)).values("sep_id")
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.now() - timedelta(days=2)).values(
+        "sep_id")
     plates = list(recent_plate_query.values())
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    plates = list(recent_plate_query)
     return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
 
@@ -434,7 +472,11 @@ def scan_plate_arrayed_plate_barcode(request):
     """
     f1 = ArrayingForm()
     f2 = RNAStorageAndWorkingPlateForm()
-    return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2})
+
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2))\
+        .values_list("rep_id", flat=True)
+    plates = list(recent_plate_query)
+    return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
 
 @login_required
@@ -448,7 +490,11 @@ def scan_plate_5_6_barcode(request):
     """
     f1 = RNAStorageAndWorkingPlateForm()
     f2 = QPCRStorageAndReactionPlateForm()
-    return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2})
+
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2))\
+        .values_list("rwp_id", flat=True)
+    plates = list(recent_plate_query)
+    return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
 
 @login_required
@@ -508,7 +554,6 @@ def record_search(request):
         else:
             table = test_resultsTable(q)
             RequestConfig(request).configure(table)
-
             export_format = request.GET.get('_export', None)
             if TableExport.is_valid_format(export_format):
                 exporter = TableExport(export_format, table)
@@ -522,6 +567,14 @@ def record_search(request):
 def upload_qpcr_results(request):
     f = qpcrResultUploadForm()
     return render(request, 'qpcr_records/upload_qpcr_results.html', {'form': f})
+
+
+@login_required
+def review_results(request):
+    q = test_results.objects.filter(final_results__iexact='Undetermined', sampling_date__gte=date.today() - timedelta(days=2))
+    table = review_resultsTable(q)
+    RequestConfig(request).configure(table)
+    return render(request, 'qpcr_records/review_results.html', {'table': table, "choices": sample_result_choices})
 
 
 @login_required

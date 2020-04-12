@@ -1,7 +1,7 @@
 {% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 <div class="container">
-    <form action="/qpcr_records/" method="GET">
+    <form class="needs-validation" action="/qpcr_records/" method="GET" novalidate>
         <div class="alert alert-primary my-3">
             <div class="font-weight-bold d-inline">Reminder: </div>Clear positive control well.
         </div>
@@ -10,18 +10,17 @@
             <div class="form-group col-md-6 mb-0">
                 {{ form1.rwp_id|as_crispy_field }}
             </div>
-        </div>
-        <br>
-        <br>
-        <div class="form-row">
-            <div class="form-group col-md-6 mb-0">
-                {{ form2.qsp_id|as_crispy_field }}
-            </div>
             <div class="form-group col-md-6 mb-0">
                 {{ form2.qrp_id|as_crispy_field }}
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="submit" class="btn btn-primary">Assign Plates</button>
     </form>
+</div>
+<script>
+window.addEventListener("load", () => {
+    validateForm({{ form1.rwp_id.id_for_label }}, {{ plates|safe }}, true, "Plate does not exist!");
+});
+</script>
     {% endblock %}

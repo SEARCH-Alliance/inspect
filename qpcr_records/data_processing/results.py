@@ -95,3 +95,12 @@ class Results:
         # Read in the file cleanly
         self.results = pd.read_excel(file,sheet_name="Results",skiprows=list(range(0,(list(tmp.iloc[:,0]).index("Well") + 1))))
         print("Results stored")
+
+    def read_fake_names(self):
+        self.names_df = pd.read_csv('qpcr_records/data_processing/unique_psuedo_names_and_codes_04082020-v2-0_49999.csv').set_index('Barcode')
+
+    def get_fake_name(self,barcode):
+        try:
+            return self.names_df.loc[barcode]['Last, First']
+        except:
+            return 'None'
