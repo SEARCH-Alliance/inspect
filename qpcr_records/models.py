@@ -82,10 +82,10 @@ class test_results(models.Model):
     qpcr_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
 
     # RESULTS INFORMATION
-    ms2_ct_value = models.FloatField(null=False, default=-1)
-    n_ct_value = models.FloatField(null=False, default=-1)
-    orf1ab_ct_value = models.FloatField(null=False, default=-1)
-    s_ct_value = models.FloatField(null=False, default=-1)
+    ms2_ct_value = models.FloatField(null=False, blank=True, default='')
+    n_ct_value = models.FloatField(null=False, blank=True, default='')
+    orf1ab_ct_value = models.FloatField(null=False, blank=True, default='')
+    s_ct_value = models.FloatField(null=False, blank=True, default='')
     decision_tree_results = models.CharField(max_length=15, null=False, default='Undetermined',
                                              choices=sample_result_choices)
     final_results = models.CharField(max_length=15, null=False, default='Undetermined', choices=sample_result_choices)
