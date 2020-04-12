@@ -19,16 +19,54 @@
     </title>
 
 </head>
+<script>
+    function validateForm(fieldId, listToCheck, feedbackMsg) {
+        // Fetch all the forms we want to apply custom Bootstrap validation styles to
+        var forms = document.getElementsByClassName('needs-validation');
+        var field = document.getElementById(fieldId);
+        if (!field) {
+            return;
+        }
+
+        // Loop over them and prevent submission
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                var value = field.value.trim();
+
+                if (listToCheck.includes(value) | !value) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    field.classList.add('is-invalid');
+                    $('.invalid-feedback').remove();
+
+                    var feedback = document.createElement('div');
+                    feedback.classList.add('invalid-feedback');
+
+                    if (listToCheck.includes(value)) {
+                        feedback.innerText = feedbackMsg;
+                    } else {
+                        feedback.innerText = 'Required!'
+                    }
+
+                    insertAfter(feedback, field);
+                } else {
+                    field.classList.remove('is-invalid');
+                    field.classList.add('is-valid');
+                }
+            }, false);
+        });
+    }
+</script>
+
 <body class="container-fluid flex flex-column h-full px-0 bg-gray-100 antialiased font-sans">
 
-{% block sidebar %}
-    {% include 'qpcr_records/navbars/navbar.html' %}
-{% endblock %}
+    {% block sidebar %} {% include 'qpcr_records/navbars/navbar.html' %} {% endblock %}
 
-<!-- This is the content that our children templates populate (index.html, scan_plate_1_2_barcode.html, etc) -->
+    <!-- This is the content that our children templates populate (index.html, scan_plate_1_2_barcode.html, etc) -->
 
-{% block content %}
-{% endblock %}
+    {% block content %} {% endblock %}
 
 </body>
+
 </html>

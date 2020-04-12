@@ -56,17 +56,18 @@
             </div>
         </div>
     </div>
+
 </div>
 </div>
 
 <!-- Input Sample Barcode Information -->
 <div class="container">
-    <form action="/qpcr_records/barcode_capture/" method="GET">
+    <form class="needs-validation my-3" action="/qpcr_records/barcode_capture/" method="GET" novalidate>
         {% csrf_token %}
         <div class="form-row">
             <!-- Load controls step: hide barcode field -->
             {% if form.ssp_well.value != 'A1' and form.ssp_well.value != 'H1' %}
-            <div class="form-group col-md-4 mb-0">
+            <div>
                 {{ form.barcode|as_crispy_field }}
             </div>
             {% endif %}
@@ -79,15 +80,17 @@
         </div>
         <button type="submit" class="btn btn-primary">Proceed To Next Well</button>
     </form>
-    <br>
-    <br>
-    <form action="/qpcr_records/plate_termination/" method="GET">
+    <hr>
+    <form class="my-3" action="/qpcr_records/plate_termination/" method="GET">
         {% csrf_token %}
         <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-primary">End Plate</button>
     </form>
 </div>
 
 <script>
+    function insertAfter(el, referenceNode) {
+        referenceNode.parentNode.insertBefore(el, referenceNode.nextSibling);
+    }
     // TODO retrieve platemap size
     var rowNames = ["A", "B", "C", "D", "E", "F", "G", "H"]
     var colNames = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
@@ -101,9 +104,8 @@
 
     // Create plate elements
     function renderPlate() {
-        console.log('rendering');
         var plate = document.getElementById("platemap");
-        var activeWell = "{{ form.ssp_well.value }}"
+        var activeWell = "{{ form.ssp_well.value|safe }}";
 
         var wellSize = getWellSize();
 
@@ -135,14 +137,14 @@
                 if (label == 'A1' | label == 'H1') {
                     well.classList.add("control-well");
                 }
-                console.log(label.slice(1));
                 var activeRow = activeWell[0];
                 var activeCol = activeWell.substring(1);
-                if ((row < activeRow & col == activeCol) | col < activeCol) {
-                    well.classList.add("loaded-well");
+
+                for (const loadedWell in {{ barcodes|safe }}) {
+                    $("#"+loadedWell).addClass("loaded-well");
                 }
+
                 if (label == activeWell) {
-                    // console.log(activeWell);
                     well.classList.add("active-well");
                     well.classList.add("active");
                 }
@@ -156,7 +158,6 @@
 
     // Update well size and padding based on window resize
     function resizePlate() {
-        console.log('resizing');
         var plate = document.getElementById("platemap");
         var wellSize = getWellSize();
 
@@ -176,8 +177,20 @@
 
     }
 
+    function validateBarcodeForm() {
+        var well2barcode = {{ barcodes|safe }};
+        var barcodes = [];
+        for (const loadedWell in well2barcode) {
+            barcodes.push(well2barcode[loadedWell]);
+        }
+        validateForm("{{ form.barcode.id_for_label}}", barcodes, "Barcode already exists!");
+    };
+
     // Add window event hooks
-    window.addEventListener("load", renderPlate);
+    window.addEventListener("load", () => {
+        renderPlate();
+        validateBarcodeForm();
+    });
     window.addEventListener("resize", resizePlate);
 </script>
 <style>
@@ -191,11 +204,11 @@
         background: lightblue;
         border-radius: 4px;
     }
-    
+
     .plate-col {
         display: inline-block;
     }
-    
+
     .well {
         background: white;
         /* border: 1px solid darkgrey; */
@@ -204,43 +217,43 @@
         align-items: center;
         justify-content: center;
     }
-    
+
     .well div {
         color: darkgrey;
     }
-    
+
     .active-col .well {
         border: 1px solid black;
     }
-    
+
     .active-col .well div {
         color: black;
     }
-    
+
     .active-well {
         background: yellow;
         font-weight: bold;
     }
-    
+
     .loaded-well {
         background: grey;
         color: white;
     }
-    
+
     .control-well {
         background: lightcoral !important;
-        font-weight: normal !important;
+        font-weight: normal;
     }
-    
+
     .control-well div {
         color: white;
     }
-    
+
     #legend .well {
         border: 1px solid grey;
         margin: 0 !important;
     }
-    
+
     #legend span {
         margin: auto 0;
     }
