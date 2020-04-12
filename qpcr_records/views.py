@@ -153,10 +153,26 @@ def index(request):
         if 'Browse' in request.FILES.keys():  # qPCR Results file
             # Parse file for Ct values and determine decision tree resuls
             file = request.FILES['Browse']
+            qreaction_plate = file.name.split('.')[0]
+
+            # Upload excel file to s3
+            objs = test_results.objects.filter(qrp_id=qreaction_plate).update(file_transfer_status='Complete')
+            print(1)
+            s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
+                                aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
+                                aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
+            print(2)
+            s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=file.name, Body=file)
+            print(3)
+
+            objs = test_results.objects.filter(qrp_id=qreaction_plate) \
+                .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
+            print(4)
+
             r = Results()
             data_ = r.get_results(file)
-            qreaction_plate = file.name.split('.')[0]
             # update the database with values
+
             for well,vals in data_.items():
                 if well != 'instrument':
                     objs = test_results.objects.filter(qrp_id=qreaction_plate,rwp_well=well).update(ms2_ct_value=vals['MS2'])
@@ -167,16 +183,7 @@ def index(request):
                 else:
                     pass
             print("Finished database update")
-            # Upload excel file to s3
-            objs = test_results.objects.filter(qrp_id=qreaction_plate).update(file_transfer_status='Complete')
-            s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
-                                aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
-                                aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
-            s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=file.name, Body=file)
-
-            objs = test_results.objects.filter(qrp_id=qreaction_plate) \
-                .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
-
+            
             return render(request, 'qpcr_records/index.html', counter_information)
 
         elif 'Select Barcode List File' in request.FILES.keys():  # Barcodes list
