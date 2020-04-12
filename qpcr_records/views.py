@@ -27,7 +27,7 @@ def sample_counter_display():
     # We are calculating the plates from each stage backwards by
     # subtracting the number of plates in the current stage being evaluated
     # timestamp threshold
-    time_thresh = datetime.now() - timedelta(days=2)
+    time_thresh = date.today() - timedelta(days=2)
     dub_count = 0  # tracks plates in previous stages
 
     # Cleared plate counter
@@ -357,8 +357,8 @@ def scan_plate_2_3_barcode(request):
     f1 = SampleStorageAndExtractionPlateForm()
     f2 = RNAExtractionPlateForm()
 
-    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.now() - timedelta(days=2)).values("sep_id")
-    plates = list(recent_plate_query.values())
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    plates = list(recent_plate_query)
     return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
 
@@ -373,7 +373,10 @@ def scan_plate_arrayed_plate_barcode(request):
     """
     f1 = ArrayingForm()
     f2 = RNAStorageAndWorkingPlateForm()
-    return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2})
+
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    plates = list(recent_plate_query)
+    return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
 
 @login_required
@@ -387,7 +390,10 @@ def scan_plate_5_6_barcode(request):
     """
     f1 = RNAStorageAndWorkingPlateForm()
     f2 = QPCRStorageAndReactionPlateForm()
-    return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2})
+
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    plates = list(recent_plate_query)
+    return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
 
 @login_required
