@@ -48,25 +48,25 @@ class test_results(models.Model):
                                                help_text='Enter list of RNA extraction reagent IDs')
     kfr_id = models.CharField(max_length=15, null=False, default='', help_text='Enter KingFisher Number')
     rep_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of RNA Elution Plate')
+                              help_text='Scan or Enter Barcode of RNA Elution Plate (REP)')
     rep_well = models.CharField(max_length=3, null=False, default='')
     rsp_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of RNA Storage Plate')
+                              help_text='Scan or Enter Barcode of RNA Storage Plate (RSP)')
     rsp_well = models.CharField(max_length=2, null=False, default='')
     knight_lab_frz_id = models.CharField(max_length=15, null=False, default='',
                                          help_text='Enter RNA Storage Freezer Number')
     rwp_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of RNA Working Plate')
+                              help_text='Scan or Enter Barcode of RNA Working Plate (RWP)')
     rwp_well = models.CharField(max_length=3, null=False, default='')
     personnel_knight_lab = models.CharField(max_length=25, null=False, default='')
     re_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
 
     # LAURENT LAB INFORMATION
     qsp_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of qPCR_Storage Plate')
+                              help_text='Scan or Enter Barcode of qPCR_Storage Plate (QSP)')
     qsp_well = models.CharField(max_length=3, null=False, default='')
     qrp_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of qRTPCR Reaction Plate')
+                              help_text='Scan or Enter Barcode of qRTPCR Reaction Plate (QRP)')
     qrp_well = models.CharField(max_length=3, null=False, default='')
     probe_mix_id = models.CharField(max_length=15, null=False, default='',
                                     help_text='Enter qRTPCR Reaction Probe Mix Lot Number')
@@ -110,12 +110,6 @@ class test_resultsTable(tables.Table):
             'rsp_well', 'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
             'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'pcr_results_csv',
             'sample_release')
-
-
-# class BarcodeScanningTable(tables.Table):
-#     class Meta:
-#         model = test_results
-#         fields = ('barcode')
 
 
 class LysisReagentLotForm(ModelForm):

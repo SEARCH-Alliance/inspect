@@ -4,7 +4,7 @@
     <div class="alert alert-primary my-3">
         <div class="font-weight-bold d-inline">Reminder: </div>Clear positive control well.
     </div>
-    <form action="/qpcr_records/" method="GET">
+    <form class="needs-validation" action="/qpcr_records/" method="GET">
         {% csrf_token %}
         <div class="form-row">
             <div class="form-group col-md-6 mb-0">
@@ -18,4 +18,40 @@
 
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
-    {% endblock %}
+</div>
+<script>
+function validateForm() {
+    'use strict';
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    var forms = document.getElementsByClassName('needs-validation');
+    // Loop over them and prevent submission
+    var validation = Array.prototype.filter.call(forms, function(form) {
+    form.addEventListener('submit', function(event) {
+        var plates = {{ plates|safe }};
+        if (!plates.includes(form1.sep_id)) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (!form1.sepid.classList.contains('is-invalid')) {
+                    form1.sepid.classList.add('is-invalid');
+                    var invalidFeedback = document.createElement('div');
+                    invalidFeedback.classList.add('invalid-feedback');
+                    invalidFeedback.innerText = 'Plate has not been registered.';
+                    var input = document.getElementById('{{ form1.sepid.id_for_label }}');
+                    insertAfter(invalidFeedback, input);
+                }
+            }
+            else {
+                form1.sepid.classList.remove('is-invalid');
+                form1.sepid.classList.add('is-valid');
+            }
+    }, false);
+    });
+};
+
+window.addEventListener("load", () => {
+    validateForm(form1.sepid.id_for_label, {{ plates|safe }}, "Plate does not exist!");
+});
+</script>
+
+{% endblock %}

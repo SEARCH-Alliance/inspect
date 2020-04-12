@@ -5,9 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django_tables2 import RequestConfig
 from django_tables2.export.export import TableExport
 from decouple import config
-from datetime import date
+from datetime import date, datetime, timedelta
 import boto3
-import datetime
 from django.contrib import messages
 from django.db.models import Q
 
@@ -28,7 +27,7 @@ def sample_counter_display():
     # We are calculating the plates from each stage backwards by
     # subtracting the number of plates in the current stage being evaluated
     # timestamp threshold
-    time_thresh = datetime.datetime.now() - datetime.timedelta(days=2)
+    time_thresh = datetime.now() - timedelta(days=2)
     dub_count = 0  # tracks plates in previous stages
 
     # Cleared plate counter
@@ -102,14 +101,14 @@ def index(request):
                                               ssp_well=well,
                                               sep_id=request.GET['sep_id'],
                                               sep_well=well,
-                                              sampling_date=datetime.date.today().strftime('%Y-%m-%d'),
+                                              sampling_date=date.today().strftime('%Y-%m-%d'),
                                               lrl_id=request.session['lrl_id'],
                                               sample_bag_id=request.GET['sample_bag_id']))
             test_results.objects.bulk_create(l)
         # DATA UPDATE IN KNIGHT LAB
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
             objs = test_results.objects.filter(sep_id=request.GET['sep_id'])\
-                .update(rep_id=request.GET['rep_id'], re_date=datetime.date.today().strftime('%Y-%m-%d'),)
+                .update(rep_id=request.GET['rep_id'], re_date=date.today().strftime('%Y-%m-%d'),)
         elif 'barcode4' in request.GET.keys():
 
             objs = test_results.objects.filter(
@@ -118,7 +117,7 @@ def index(request):
         # DATA UPDATE IN LAURENT LAB
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
             objs = test_results.objects.filter(rwp_id=request.GET['rwp_id'])\
-                .update(qrp_id=request.GET['qrp_id'], qpcr_date=datetime.date.today().strftime('%Y-%m-%d'),)
+                .update(qrp_id=request.GET['qrp_id'], qpcr_date=date.today().strftime('%Y-%m-%d'),)
 
     if request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
         if 'Browse' in request.FILES.keys():  # qPCR Results file
@@ -138,7 +137,7 @@ def index(request):
             barcodes = request.FILES['Select Barcode List File'].read().decode("utf-8").splitlines()
             l = list()
             for b in barcodes:
-                l.append(test_results(barcode=b, sampling_date=datetime.date.today().strftime('%Y-%m-%d')))
+                l.append(test_results(barcode=b, sampling_date=date.today().strftime('%Y-%m-%d')))
             test_results.objects.bulk_create(l)
             return render(request, 'qpcr_records/index.html', counter_information)
         else:
@@ -234,7 +233,7 @@ def perform_safety_check(request):
             request.session[k] = request.GET[k]
 
         request.session['ssp_well'] = 'X'
-        request.session['current_barcodes'] = []
+        request.session['current_barcodes'] = dict()
         f = LysisReagentLotForm()
         request.session['expected_barcodes'] = list(
             test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
@@ -256,28 +255,28 @@ def barcode_capture(request):
     for k in request.GET.keys():
         request.session[k] = request.GET[k]
 
-    barcodes = request.session['current_barcodes']
-
     # Checks if the last scanned barcode was for a plate. In that case, the current scan is for the first well 'A1'.
+
+    # Add well barcodes
     if 'barcode' in request.GET.keys():
+
+        # Add barcode if not control well
+        if 'barcode' in request.session.keys():
+            well = request.session['ssp_well']
+            request.session['current_barcodes'][well] = request.session['barcode']
+            request.session[well] = request.session['barcode']
+
+        barcodes = request.session['current_barcodes']
+        # Skip second control well
         if request.session['ssp_well'] == 'G1':
-            request.session['current_barcodes'].append(request.session['barcode'])
-            request.session[request.session['ssp_well']] = request.session['barcode']
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A2', 'sep_well': 'A2'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A2'})
         elif request.session['ssp_well'] == 'H12':  # END
-            request.session['current_barcodes'].append(request.session['barcode'])
-            request.session[request.session['ssp_well']] = request.session['barcode']
             request.session['last_scan'] = 'H12'
             f = SampleStorageAndExtractionPlateForm()
             return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
         else:
-            # Add barcode if not control well
-            if 'barcode' in request.session.keys():
-                request.session['current_barcodes'].append(request.session['barcode'])
-                request.session[request.session['ssp_well']] = request.session['barcode']
-
             request.session['last_scan'] = request.session['ssp_well']
             row = request.session['ssp_well'][0]
             col = int(request.session['ssp_well'][1:])
@@ -294,12 +293,12 @@ def barcode_capture(request):
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes,
                                                                          'well': row + str(col)})
     else:
-        if request.session['ssp_well'] == 'A1':  # Redirect from start
-            request.session['last_scan'] = request.session['ssp_well']
+        barcodes = request.session['current_barcodes']
+        request.session['last_scan'] = request.session['ssp_well']
+        if request.session['ssp_well'] == 'A1': # Redirect from start
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1', 'well': 'H1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'H1'})
-        if request.session['ssp_well'] == 'H1':  # Redirect from start
-            request.session['last_scan'] = request.session['ssp_well']
+        if request.session['ssp_well'] == 'H1': # Redirect from start
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'B1'})
         else:
@@ -357,7 +356,10 @@ def scan_plate_2_3_barcode(request):
     """
     f1 = SampleStorageAndExtractionPlateForm()
     f2 = RNAExtractionPlateForm()
-    return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2})
+
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.now() - timedelta(days=2)).values("sep_id")
+    plates = list(recent_plate_query.values())
+    return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
 
 @login_required
@@ -537,5 +539,4 @@ def track_samples(request):
         exporter = TableExport(export_format, table)
         return exporter.response('table.{}'.format(export_format))
 
-    # table.columns.hide('id')
     return render(request, 'qpcr_records/track_samples.html', {'table': table})
