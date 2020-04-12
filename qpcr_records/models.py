@@ -62,9 +62,6 @@ class test_results(models.Model):
     re_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
 
     # LAURENT LAB INFORMATION
-    qsp_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of qPCR_Storage Plate (QSP)')
-    qsp_well = models.CharField(max_length=3, null=False, default='')
     qrp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of qRTPCR Reaction Plate (QRP)')
     qrp_well = models.CharField(max_length=3, null=False, default='')
@@ -161,8 +158,8 @@ class RNAStorageAndWorkingPlateForm(ModelForm):
 class QPCRStorageAndReactionPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['qsp_id', 'qrp_id']
-        labels = {'qsp_id': 'qRDP-PCR Storage Plate Barcode', 'qrp_id': 'qRT-PCR Plate Barcode'}
+        fields = ['qrp_id']
+        labels = {'qrp_id': 'qRT-PCR Plate Barcode'}
 
 
 class qpcrResultUploadForm(ModelForm):
