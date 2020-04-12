@@ -38,10 +38,19 @@
 </div>
 <script>
 window.addEventListener("load", () => {
-    validateForm({{ form1.barcode1.id_for_label }}, {{ plates|safe }}, true, "Plate does not exist!");
-    validateForm({{ form1.barcode2.id_for_label }}, {{ plates|safe }}, true, "Plate does not exist!");
-    validateForm({{ form1.barcode3.id_for_label }}, {{ plates|safe }}, true, "Plate does not exist!");
-    validateForm({{ form1.barcode4.id_for_label }}, {{ plates|safe }}, true, "Plate does not exist!");
+    validateForm({{ form1.barcode1.id_for_label }}, () => {
+        return {{ plates|safe }}.includes({{ form1.barcode1.id_for_label }}.value.trim());
+    }, "Plate does not exist!");
+    validateForm({{ form1.barcode2.id_for_label }}, () => {
+        return {{ plates|safe }}.includes({{ form1.barcode2.id_for_label }}.value.trim());
+    }, "Plate does not exist!");
+    validateForm({{ form1.barcode3.id_for_label }}, () => {
+        return {{ plates|safe }}.includes({{ form1.barcode3.id_for_label }}.value.trim());
+    }, "Plate does not exist!");
+    validateForm({{ form1.barcode4.id_for_label }}, () => {
+        return {{ plates|safe }}.includes({{ form1.barcode4.id_for_label }}.value.trim());
+    }, "Plate does not exist!");
+    success('Plates recorded successfully.');
 });
 </script>
 {% endblock %}
