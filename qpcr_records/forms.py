@@ -21,6 +21,7 @@ class SearchRecords(forms.Form):
     plate_id = forms.CharField(help_text='Enter a Plate Barcode', max_length=15, required=False, initial='')
     technician = forms.CharField(max_length=30, label=' Technician', required=False, initial='')
     result = forms.CharField(label='Final Result', required=False, widget=forms.Select(choices=result_choices), initial='')
+    bag_id = forms.CharField(help_text='Enter a Sample Bag Barcode', max_length=15, required=False, initial='')
 
 
 class ArrayingForm(forms.Form):

@@ -23,4 +23,5 @@ urlpatterns = [
     path('check_information/', views.check_information, name='check_information'),
     path('upload_qpcr_results/', views.upload_qpcr_results, name='upload_qpcr_results'),
     path('review_results/', views.review_results, name='review_results'),
+    path('qpcr_plate_id_to_review/', views.qpcr_plate_id_to_review, name='qpcr_plate_id_to_review'),
 ]

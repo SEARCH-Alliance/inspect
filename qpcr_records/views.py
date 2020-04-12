@@ -51,19 +51,24 @@ def sample_counter_display():
     dub_count += q_running
 
     # RNA plate counters
-    rwp_count = test_results.objects.filter(~Q(rwp_id=''), sampling_date__gte=time_thresh).count() - dub_count  # rna working plate
-    s = list(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True)))
+    rwp_count = test_results.objects.filter(~Q(rwp_id=''),
+                                            sampling_date__gte=time_thresh).count() - dub_count  # rna working plate
+    s = list(set(
+        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True)))
     rwp_id = ', '.join(s)
     dub_count += rwp_count
 
-    rep_count = test_results.objects.filter(~Q(rep_id=''), sampling_date__gte=time_thresh).count() - dub_count  # rna extraction plate
-    s = list(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True)))
+    rep_count = test_results.objects.filter(~Q(rep_id=''),
+                                            sampling_date__gte=time_thresh).count() - dub_count  # rna extraction plate
+    s = list(set(
+        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True)))
     rep_id = ', '.join(s)
     dub_count += rep_count
 
     # Sample extraction plate counter
     sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).count() - dub_count
-    s = list(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id', flat=True)))
+    s = list(set(
+        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id', flat=True)))
     sep_id = ', '.join(s)
     dub_count += sep_count
 
@@ -95,10 +100,8 @@ def index(request):
     counter_information = sample_counter_display()
 
     if request.method == 'GET':
-        print(request.GET.keys())
         # DATA UPDATE IN ANDERSSON LAB
         if 'ssp_id' in request.GET.keys():
-            print(list(request.session.keys()))
             l = list()
             for i in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
                 for j in range(1, 13):
@@ -118,12 +121,13 @@ def index(request):
                                               personnel2_andersen_lab=request.session['personnel2_andersen_lab'],
                                               sample_bag_id=request.GET['sample_bag_id']))
             test_results.objects.bulk_create(l)
+
         # DATA UPDATE IN KNIGHT LAB
+
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
             objs = test_results.objects.filter(sep_id=request.GET['sep_id']) \
                 .update(rep_id=request.GET['rep_id'], re_date=date.today().strftime('%Y-%m-%d'), )
         elif 'barcode4' in request.GET.keys():
-            print(request.GET)
             objs = test_results.objects.filter(
                 rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
                             request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'],
@@ -150,8 +154,6 @@ def index(request):
             i = 0
             for b in [request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
                       request.GET['barcode4']]:
-                print(type(b))
-                print(b)
                 if b in barcode_list:
                     continue
                 else:
@@ -161,10 +163,21 @@ def index(request):
                     i = i + 1
 
                 barcode_list.append(b)
+
         # DATA UPDATE IN LAURENT LAB
+
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
             objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']) \
-                .update(qrp_id=request.GET['qrp_id'], qpcr_date=date.today().strftime('%Y-%m-%d'), )
+                .update(qrp_id=request.GET['qrp_id'], ms2_lot_id=request.GET['ms2_lot_id'],
+                        qpcr_date=date.today().strftime('%Y-%m-%d'), )
+
+        elif 'qrp_id' in request.session.keys():
+            for i, j in zip(test_results.objects.filter(qrp_id__iexact=request.session['qrp_id']).values_list(
+                    'rwp_well', flat=True), list(request.GET.values())):
+                test_results.objects.filter(rwp_well=i, qrp_id__iexact=request.session['qrp_id']).update(
+                    final_results=j)
+            del request.session['qrp_id']
+            qs = ''
 
     if request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
         if 'Browse' in request.FILES.keys():  # qPCR Results file
@@ -322,7 +335,7 @@ def perform_safety_check(request):
         request.session['current_barcodes'] = dict()
         f1 = LysisReagentLotForm()
         f2 = PersonnelForm()
-        #request.session['expected_barcodes'] = list(
+        # request.session['expected_barcodes'] = list(
         #    test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
         #                                sep_well='').values_list('barcode', flat=True))
         return render(request, 'qpcr_records/perform_safety_check.html', {'form1': f1, 'form2': f2, 'well': 'A1'})
@@ -401,24 +414,22 @@ def unknown_barcode(request):
 def update_existing_records(request):
     # Sample Counter Display - Will appear every time the home page is loaded
     counter_information = sample_counter_display()
-    print('counter_infor')
-    print(counter_information)
     return render(request, 'qpcr_records/update_existing_records.html', counter_information)
 
 
 @login_required
 def scan_plate_1_2_barcode(request):
-    print(request.GET.keys())
-    print(request.session.keys())
     if 'barcode' in request.session.keys():
         request.session[request.session['ssp_well']] = request.session['barcode']
 
     barcodes = request.session['current_barcodes']
 
     f = SampleStorageAndExtractionPlateForm()
-    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    recent_plate_query = test_results.objects.filter(
+        sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
     plates = list(recent_plate_query)
-    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f, 'barcodes': barcodes, 'plates': plates})
+    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html',
+                  {'form': f, 'barcodes': barcodes, 'plates': plates})
 
 
 @login_required
@@ -433,7 +444,8 @@ def scan_plate_2_3_barcode(request):
     f1 = SampleStorageAndExtractionPlateForm()
     f2 = RNAExtractionPlateForm()
 
-    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    recent_plate_query = test_results.objects.filter(
+        sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
     plates = list(recent_plate_query)
     return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
@@ -468,11 +480,12 @@ def scan_plate_5_6_barcode(request):
     """
     f1 = RNAStorageAndWorkingPlateForm()
     f2 = QPCRStorageAndReactionPlateForm()
+    f3 = MS2LotForm
 
     recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)) \
         .values_list("rwp_id", flat=True)
     plates = list(recent_plate_query)
-    return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
+    return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2, 'form3': f3, 'plates': plates})
 
 
 @login_required
@@ -524,6 +537,11 @@ def record_search(request):
                     q = test_results.objects.filter(final_results__iexact=request.GET[k])
                 else:
                     q = q.filter(final_results__iexact=request.GET[k])
+            elif request.GET[k] != '' and k == 'bag_id':
+                if q == '':
+                    q = test_results.objects.filter(sample_bag_id__iexact=request.GET[k])
+                else:
+                    q = q.filter(sample_bag_id__iexact=request.GET[k])
             else:
                 continue
 
@@ -547,10 +565,15 @@ def upload_qpcr_results(request):
     return render(request, 'qpcr_records/upload_qpcr_results.html', {'form': f})
 
 
+@login_required()
+def qpcr_plate_id_to_review(request):
+    return render(request, 'qpcr_records/qpcr_plate_id_to_review.html', {'form': QPCRStorageAndReactionPlateForm})
+
+
 @login_required
 def review_results(request):
-    q = test_results.objects.filter(final_results__iexact='Undetermined',
-                                    sampling_date__gte=date.today() - timedelta(days=2))
+    request.session['qrp_id'] = request.GET['qrp_id']
+    q = test_results.objects.filter(qrp_id__iexact=request.GET['qrp_id'])
     table = review_resultsTable(q)
     RequestConfig(request).configure(table)
     return render(request, 'qpcr_records/review_results.html', {'table': table, "choices": sample_result_choices})
@@ -568,8 +591,7 @@ def track_samples(request):
     l2 = list()
     for k in l:
         if k in request.GET['track_samples']:
-            print(k)
-            l2.append(k)
+                l2.append(k)
         else:
             continue
 
