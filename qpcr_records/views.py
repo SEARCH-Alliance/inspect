@@ -198,15 +198,14 @@ def index(request):
                                 s_ct_value=vals['S gene'])
                             objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
                                 decision_tree_results=vals['diagnosis'])
-                            barc = \
-                            test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).values_list('barcode',
-                                                                                                           flat=True)[0]
-                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                fake_name=r.get_fake_name(barc))
+
+                            if test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).count() > 0:
+                                barc = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).values_list(
+                                    'barcode', flat=True)[0]
+                                objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                    fake_name=r.get_fake_name(barc))
                         elif well == 'instrument':
                             objs = test_results.objects.filter(qrp_id=qreaction_plate).update(qs5_id=vals)
-
-                    print("Finished database update")
 
                     return render(request, 'qpcr_records/index.html', counter_information)
                 else:
@@ -359,9 +358,6 @@ def barcode_capture(request):
             request.session['last_scan'] = request.session['ssp_well']
             row = request.session['ssp_well'][0]
             col = int(request.session['ssp_well'][1:])
-            print(request.session['ssp_well'])
-            print(row)
-            print(col)
             if row == 'H':
                 row = d1[row]
                 col = col + 1
@@ -381,10 +377,7 @@ def barcode_capture(request):
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'B1'})
         else:
-            if 'lrl_id' in request.GET.keys():
-                print('Works')
             request.session['lrl_id'] = request.GET['lrl_id']
-            print(request.session['lrl_id'])
             request.session['last_scan'] = request.session['ssp_well']
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A1'})
@@ -404,8 +397,6 @@ def update_existing_records(request):
 
 @login_required
 def plate_termination(request):
-    print(request.GET.keys())
-    print(request.session.keys())
     if 'barcode' in request.session.keys():
         request.session[request.session['ssp_well']] = request.session['barcode']
 
@@ -459,7 +450,8 @@ def scan_plate_arrayed_plate_barcode(request):
     f1 = ArrayingForm()
     f2 = RNAStorageAndWorkingPlateForm()
 
-    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2))\
+        .values_list("rep_id", flat=True)
     plates = list(recent_plate_query)
     return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
@@ -476,7 +468,8 @@ def scan_plate_5_6_barcode(request):
     f1 = RNAStorageAndWorkingPlateForm()
     f2 = QPCRStorageAndReactionPlateForm()
 
-    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
+    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2))\
+        .values_list("rwp_id", flat=True)
     plates = list(recent_plate_query)
     return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
