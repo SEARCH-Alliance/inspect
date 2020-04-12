@@ -1,0 +1,17 @@
+{% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<div class="container">
+
+    <h2> No matching qPCR plate ID found in database </h2>
+    <h2> Do you want to try a different file? </h2>
+    <br>
+    <form action="/qpcr_records/upload_qpcr_results/" method="GET">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Yes</button>
+    </form>
+    <br>
+    <form action="/qpcr_records/" method="GET">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">No</button>
+    </form>
+    {% endblock %}
