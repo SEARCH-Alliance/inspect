@@ -27,40 +27,40 @@ def sample_counter_display():
     # We are calculating the plates from each stage backwards by
     # subtracting the number of plates in the current stage being evaluated
     # timestamp threshold
-    time_thresh = datetime.datetime.now() - datetime.timedelta(days=2)
+    time_thresh = datetime.now() - timedelta(days=2)
     dub_count = 0  # tracks plates in previous stages
 
     # Cleared plate counter
-    data_cleared = test_results.objects.filter(~Q(final_results='Undetermined'),sampling_date > time_thresh).count() - dub_count
+    data_cleared = test_results.objects.filter(~Q(final_results='Undetermined'), sampling_date__gt=time_thresh).count() - dub_count
     dub_count += data_cleared
 
     # qPCR plate counters
-    q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined'),sampling_date > time_thresh).count() - dub_count
+    q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined'), sampling_date__gt=time_thresh).count() - dub_count
     dub_count += q_processed
 
-    q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''),sampling_date > time_thresh).count() - dub_count
+    q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gt=time_thresh).count() - dub_count
     dub_count += q_recorded
 
-    q_running = test_results.objects.filter(~Q(qrp_id=''),sampling_date > time_thresh).count() - dub_count
-    qrp_id = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).values_list('qrp_id')
+    q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gt=time_thresh).count() - dub_count
+    qrp_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gt=time_thresh).values_list('qrp_id')
     dub_count += q_running
 
     # RNA plate counters
-    rwp_count = test_results.objects.filter(~Q(rwp_id=''),sampling_date > time_thresh).count() - dub_count  # rna working plate
-    rwp_id = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).values_list('rwp_id')
+    rwp_count = test_results.objects.filter(~Q(rwp_id=''), sampling_date__gt=time_thresh).count() - dub_count  # rna working plate
+    rwp_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gt=time_thresh).values_list('rwp_id')
     dub_count += rwp_count
 
-    rep_count = test_results.objects.filter(~Q(rep_id=''),sampling_date > time_thresh).count() - dub_count  # rna extraction plate
-    rep_id = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).values_list('rep_id')
+    rep_count = test_results.objects.filter(~Q(rep_id=''), sampling_date__gt=time_thresh).count() - dub_count  # rna extraction plate
+    rep_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gt=time_thresh).values_list('rep_id')
     dub_count += rep_count
 
     # Sample extraction plate counter
-    sep_count = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).count() - dub_count
-    sep_id = test_results.objects.filter(~Q(sep_id=''),sampling_date > time_thresh).values_list('sep_id')
+    sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gt=time_thresh).count() - dub_count
+    sep_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gt=time_thresh).values_list('sep_id')
     dub_count += sep_count
 
     # Unprocessed sample counter
-    unproc_samples = test_results.objects.filter(~Q(barcode=''),sampling_date > time_thresh).count() - dub_count
+    unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gt=time_thresh).count() - dub_count
 
     # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
@@ -101,14 +101,14 @@ def index(request):
                                               ssp_well=well,
                                               sep_id=request.GET['sep_id'],
                                               sep_well=well,
-                                              sampling_date=datetime.date.today().strftime('%Y-%m-%d'),
+                                              sampling_date=date.today().strftime('%Y-%m-%d'),
                                               lrl_id=request.session['lrl_id'],
                                               sample_bag_id=request.GET['sample_bag_id']))
             test_results.objects.bulk_create(l)
         # DATA UPDATE IN KNIGHT LAB
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
             objs = test_results.objects.filter(sep_id=request.GET['sep_id'])\
-                .update(rep_id=request.GET['rep_id'], re_date=datetime.date.today().strftime('%Y-%m-%d'),)
+                .update(rep_id=request.GET['rep_id'], re_date=date.today().strftime('%Y-%m-%d'),)
         elif 'barcode4' in request.GET.keys():
 
             objs = test_results.objects.filter(
@@ -117,7 +117,7 @@ def index(request):
         # DATA UPDATE IN LAURENT LAB
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
             objs = test_results.objects.filter(rwp_id=request.GET['rwp_id'])\
-                .update(qrp_id=request.GET['qrp_id'], qpcr_date=datetime.date.today().strftime('%Y-%m-%d'),)
+                .update(qrp_id=request.GET['qrp_id'], qpcr_date=date.today().strftime('%Y-%m-%d'),)
 
     if request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
         if 'Browse' in request.FILES.keys():  # qPCR Results file

@@ -32,7 +32,7 @@ function validateForm() {
             event.preventDefault();
             event.stopPropagation();
 
-            if (!form1.sepid.classList.contains('is-invalid')){
+            if (!form1.sepid.classList.contains('is-invalid')) {
                     form1.sepid.classList.add('is-invalid');
                     var invalidFeedback = document.createElement('div');
                     invalidFeedback.classList.add('invalid-feedback');
@@ -50,7 +50,7 @@ function validateForm() {
 };
 
 window.addEventListener("load", () => {
-    validateForm();
+    validateForm(form1.sepid.id_for_label, {{ plates|safe }}, "Plate does not exist!");
 });
 </script>
 

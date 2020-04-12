@@ -180,51 +180,19 @@
 
     }
 
-    function validateForm() {
-        'use strict';
-        // Fetch all the forms we want to apply custom Bootstrap validation styles to
-        var forms = document.getElementsByClassName('needs-validation');
-        // Loop over them and prevent submission
-        var validation = Array.prototype.filter.call(forms, function(form) {
-        form.addEventListener('submit', function(event) {
-            if (form.ssp_well.value != 'A1' & form.ssp_well.value != 'H1') {
-                var barcode = form.barcode.value.trim()
-                var well2barcode = {{ barcodes |safe }};
-                var barcodes = [];
-                for (const well in well2barcode) {  barcodes.push(well2barcode[well]) }
-                if (barcodes.includes(barcode) | !barcode) {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    form.barcode.classList.add('is-invalid');
-                    $('.invalid-feedback').remove();
-
-                    var feedback = document.createElement('div');
-                    feedback.classList.add('invalid-feedback');
-
-                    if (barcodes.includes(barcode)) {
-                        feedback.innerText = 'Barcode already scanned!';
-                    }
-                    else {
-                        feedback.innerText = 'Required!'
-                    }
-
-                    insertAfter(feedback, form.barcode);
-                    }
-                }
-                else {
-                    form.barcode.classList.remove('is-invalid');
-                    form.barcode.classList.add('is-valid');
-                }
-            }, false);
-        });
-    }
-
+    function validateBarcodeForm() {
+        var well2barcode = {{ barcodes|safe }};
+        var barcodes = [];
+        for (const loadedWell in well2barcode) {
+            barcodes.push(well2barcode[loadedWell]);
+        }
+        validateForm("{{ form.barcode.id_for_label}}", barcodes, "Barcode already exists!");
+    };
 
     // Add window event hooks
     window.addEventListener("load", () => {
         renderPlate();
-        validateForm();
+        validateBarcodeForm();
     });
     window.addEventListener("resize", resizePlate);
 </script>
