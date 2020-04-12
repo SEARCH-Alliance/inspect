@@ -110,51 +110,51 @@
           <table class="table table-bordered table-hover table-responsive-md">
             <thead>
               <tr>
-                <th scope="col">Step Number</th>
                 <th scope="col">Step Name</th>
                 <th scope="col">Counter</th>
+                <th scope="col">Evaluated Plates</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <th scope="row">1</th>
-                <td>Unprocessed Samples</td>
+                <th scope="row">Unprocessed Samples</th>
                 <td>{{ unproc_samples }}</td>
+                <td>-</td>
               </tr>
               <tr class="table-primary">
-                <th scope="row">2</th>
-                <td>Sample Extraction Plate (SEP)</td>
+                <th scope="row">Sample Extraction Plate (SEP)</th>
                 <td>{{ sep_count }}</td>
+                <td>{{ sep_ids }}</td>
               </tr>
               <tr class="table-danger">
-                <th scope="row">3</th>
-                <td>RNA Elution Plate (REP)</td>
+                <th scope="row">RNA Elution Plate (REP)</th>
                 <td>{{ rep_count }}</td>
+                <td>{{ rep_ids }}</td>
               </tr>
               <tr class="table-danger">
-                <th scope="row">4</th>
-                <td>RNA Working Plate (RWP)</td>
+                <th scope="row">RNA Working Plate (RWP)</th>
                 <td>{{ rwp_count }}</td>
+                <td>{{ rwp_ids }}</td>
               </tr>
               <tr class="table-success">
-                <th scope="row">5</th>
-                <td>Running qPCR Plate (QRP)</td>
+                <th scope="row">Running qPCR Plate (QRP)</th>
                 <td>{{ q_running }}</td>
+                <td>{{ qrp_ids }}</td>
               </tr>
               <tr class="table-success">
-                <th scope="row">6</th>
-                <td>Recorded qPCR Plate (QRP)</td>
+                <th scope="row">Recorded qPCR Plate (QRP)</th>
                 <td>{{ q_recorded }}</td>
+                <td>-</td>
               </tr>
               <tr class="table-success">
-                <th scope="row">7</th>
-                <td>Processed qPCR Plate (QRP)</td>
+                <th scope="row">Processed qPCR Plate (QRP)</th>
                 <td>{{ q_processed }}</td>
+                <td>-</td>
               </tr>
               <tr class="table-active">
-                <th scope="row">8</th>
-                <td>Cleared Data</td>
+                <th scope="row">Cleared Data</th>
                 <td>{{ data_cleared }}</td>
+                <td>-</td>
               </tr>
             </tbody>
           </table>
