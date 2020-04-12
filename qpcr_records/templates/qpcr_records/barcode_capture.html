@@ -16,8 +16,8 @@
                             <p>Scan sample barcode and load sample into the indicated well below</p>
                             {% else %}
                             <p>Load control sample into the indicated well below</p>
-                            {% endif %}   
-                            <h5>Current Well: <b><code>{{well}}</code></b></h5>    
+                            {% endif %}
+                            <h5>Current Well: <b><code>{{well}}</code></b></h5>
                         </div>
                     </div>
                 </div>
@@ -53,10 +53,7 @@
                     <h4 class="card-header">
                         Previously Scanned Wells
                     </h4>
-                    <ul class="list-group list-group-flush scroll">
-                        {% for barcode in barcodes reversed %}
-                        <li class="list-group-item">{{ barcode }}</li>
-                        {% endfor %}
+                    <ul id="scanned-barcodes" class="list-group list-group-flush scroll">
                     </ul>
                 </div>
             </div>
@@ -183,6 +180,18 @@
 
     }
 
+    function renderScannedBarcodes() {
+        $scannedBarcodes = $("#scanned-barcodes");
+        var barcodes = {{ barcodes|safe }};
+        console.log(barcodes);
+        for (const well in barcodes) {
+            console.log(well);
+            var $barcodeItem = $('<li>').addClass("list-group-item")
+            .text(barcodes[well]);
+            $scannedBarcodes.prepend($barcodeItem);
+        }
+    }
+
     function validateBarcodeForm() {
         var well2barcode = {{ barcodes|safe }};
         var barcodes = [];
@@ -195,6 +204,7 @@
     // Add window event hooks
     window.addEventListener("load", () => {
         renderPlate();
+        renderScannedBarcodes();
         validateBarcodeForm();
     });
     window.addEventListener("resize", resizePlate);
