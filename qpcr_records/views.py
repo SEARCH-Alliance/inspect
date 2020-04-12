@@ -44,6 +44,24 @@ def sample_counter_display():
     q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gte=time_thresh).count() - dub_count
     dub_count += q_recorded
 
+<<<<<<< HEAD
+    q_running = test_results.objects.filter(~Q(qrp_id=''),sampling_date__gte=time_thresh).count() - dub_count
+    qrp_id = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).values_list('qrp_id', flat=True).order_by('qrp_id')
+    dub_count += q_running
+
+    # RNA plate counters
+    rwp_count = test_results.objects.filter(~Q(rwp_id=''),sampling_date__gte=time_thresh).count() - dub_count  # rna working plate
+    rwp_id = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).values_list('rwp_id', flat=True).order_by('rwp_id')
+    dub_count += rwp_count
+
+    rep_count = test_results.objects.filter(~Q(rep_id=''),sampling_date__gte=time_thresh).count() - dub_count  # rna extraction plate
+    rep_id = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).values_list('rep_id', flat=True).order_by('rep_id')
+    dub_count += rep_count
+
+    # Sample extraction plate counter
+    sep_count = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).count() - dub_count
+    sep_id = test_results.objects.filter(~Q(sep_id=''),sampling_date__gte=time_thresh).values_list('sep_id', flat=True).order_by('sep_id')
+=======
     q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).count() - dub_count
     qrp_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('qrp_id')
     dub_count += q_running
@@ -62,6 +80,7 @@ def sample_counter_display():
     # Sample extraction plate counter
     sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).count() - dub_count
     sep_id = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id')
+>>>>>>> master
     dub_count += sep_count
 
     # Unprocessed sample counter
@@ -71,8 +90,12 @@ def sample_counter_display():
     counter_information = {
         'data_cleared': data_cleared,
         'q_processed': q_processed, 'q_recorded': q_recorded, 'q_running': q_running,
+        'q_running_ids':qrp_id,
+        'qrp_ids':qrp_id,
         'rwp_count': rwp_count, 'rep_count': rep_count,
+        'rwp_ids':rwp_id, 'rep_ids':rep_id,
         'sep_count': sep_count,
+        'sep_ids':sep_id,
         'unproc_samples': unproc_samples
     }
     return counter_information

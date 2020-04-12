@@ -1,34 +1,14 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
-<html lang="en">
-
-{% load static %}
+{% extends 'qpcr_records/base.html' %}
 {% load render_table from django_tables2 %}
 {% load querystring from django_tables2 %}
-
-<style>
-    #header {
-    text-align: center;
-}
- </style>
-
-<head>
-    <meta charset="utf-8">
-    <title>Covid-19 Test App</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
-</head>
-
-<body>
-<div id="header">
-    <h1>
-        <td align="center" >Search Results</td>
-    </h1>
-</div>
-
-<div>
-   <a href="{% querystring '_export'='csv' %}"> Download All Results</a>
-     </p>
-     {% render_table table %}
-</div>
-</body>
-
-</html>
+{% block content %}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <div class="container">
+        <h2 align="center">Sample Tracking Results</h2>
+        <br>
+        <br>
+        <a href="{% querystring '_export'='csv' %}"> Download All Results</a>
+        </p>
+        {% render_table table %}
+    </div>
+{% endblock %}

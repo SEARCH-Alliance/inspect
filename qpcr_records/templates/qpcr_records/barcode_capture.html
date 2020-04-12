@@ -16,8 +16,8 @@
                             <p>Scan sample barcode and load sample into the indicated well below</p>
                             {% else %}
                             <p>Load control sample into the indicated well below</p>
-                            {% endif %}   
-                            <h5>Current Well: <b><code>{{well}}</code></b></h5>    
+                            {% endif %}
+                            <h5>Current Well: <b><code>{{well}}</code></b></h5>
                         </div>
                     </div>
                 </div>
@@ -26,21 +26,21 @@
                 </div>
 
                 <!-- Platemap Legend Information -->
-                <h4>Plate Legend</h4>
+                <h4>Plate Well Legend</h4>
                 <p></p>
                 <div class="d-flex flex-row flex-wrap align-items-start justify-content-between"">
                     <ul id="legend" class="list-group flex-md-row">
                         <li class="list-group-item d-flex flex-row">
                             <div class="well"></div>
-                            <span class="mx-3 my-auto">Sample Well</span>
+                            <span class="mx-3 my-auto">Sample</span>
                         </li>
                         <li class="list-group-item d-flex flex-row">
                             <div class="well control-well"></div>
-                            <span class="mx-3 my-auto">Control Well</span>
+                            <span class="mx-3 my-auto">Control</span>
                         </li>
                         <li class="list-group-item d-flex flex-row">
                             <div class="well active-well"></div>
-                            <span class="mx-3 my-auto">Current Sample Well</span>
+                            <span class="mx-3 my-auto">Current Sample</span>
                         </li>
                     </ul>
                 </div>
@@ -51,7 +51,7 @@
                 <br>
                 <div class="card">
                     <h4 class="card-header">
-                        Previously Scanned Wells
+                        Previously Scanned Barcodes
                     </h4>
                     <ul class="list-group list-group-flush scroll">
                         {% for w, b in barcodes.items  %}
@@ -181,6 +181,18 @@
 
     }
 
+    function renderScannedBarcodes() {
+        $scannedBarcodes = $("#scanned-barcodes");
+        var barcodes = {{ barcodes|safe }};
+        console.log(barcodes);
+        for (const well in barcodes) {
+            console.log(well);
+            var $barcodeItem = $('<li>').addClass("list-group-item")
+            .text(barcodes[well]);
+            $scannedBarcodes.prepend($barcodeItem);
+        }
+    }
+
     function validateBarcodeForm() {
         var well2barcode = {{ barcodes|safe }};
         var barcodes = [];
@@ -193,6 +205,7 @@
     // Add window event hooks
     window.addEventListener("load", () => {
         renderPlate();
+        renderScannedBarcodes();
         validateBarcodeForm();
     });
     window.addEventListener("resize", resizePlate);
