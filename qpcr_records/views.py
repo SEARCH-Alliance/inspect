@@ -83,7 +83,7 @@ def index(request):
     counter_information = sample_counter_display()
 
     if request.method == 'GET':
-        print(request.GET)
+        print(request.GET.keys())
         # DATA UPDATE IN ANDERSSON LAB
         if 'ssp_id' in request.GET.keys():
             print(list(request.session.keys()))
@@ -476,7 +476,6 @@ def record_search(request):
         else:
             table = test_resultsTable(q)
             RequestConfig(request).configure(table)
-
             export_format = request.GET.get('_export', None)
             if TableExport.is_valid_format(export_format):
                 exporter = TableExport(export_format, table)
@@ -490,6 +489,14 @@ def record_search(request):
 def upload_qpcr_results(request):
     f = qpcrResultUploadForm()
     return render(request, 'qpcr_records/upload_qpcr_results.html', {'form': f})
+
+
+@login_required
+def review_results(request):
+    q = test_results.objects.filter(final_results__iexact='Undetermined', sampling_date__gte=date.today() - timedelta(days=2))
+    table = review_resultsTable(q)
+    RequestConfig(request).configure(table)
+    return render(request, 'qpcr_records/review_results.html', {'table': table, "choices": sample_result_choices})
 
 
 @login_required
