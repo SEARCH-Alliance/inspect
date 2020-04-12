@@ -7,14 +7,19 @@
         <div class="row">
             <div class="col">
                 <!-- Platemap Diagram -->
-                <h2>Current Well: {{well}}</h2>
+                <h2>Input Sample Plate</h2>
                 <div class="my-3">
-                    <div class="font-weight-bold">Instructions: </div>
-                    {% if form.ssp_well.value != 'A1' %}
-                    <div>Scan sample barcode and load sample into the indicated well.</div>
-                    {% else %}
-                    <div>Load controls into indicated wells.</div>
-                    {% endif %}
+                    <div class="card">
+                        <div class="card-header"><h4>Instructions</h4></div>
+                        <div class="card-body">
+                            {% if form.ssp_well.value != 'A1' and form.ssp_well.value != 'H1'%}
+                            <p>Scan sample barcode and load sample into the indicated well below</p>
+                            {% else %}
+                            <p>Load control sample into the indicated well below</p>
+                            {% endif %}   
+                            <h5>Current Well: <b><code>{{well}}</code></b></h5>    
+                        </div>
+                    </div>
                 </div>
                 <div class="d-flex flex-row flex-wrap align-items-start justify-content-between">
                     <div id="platemap" class="table table-sm"></div>
