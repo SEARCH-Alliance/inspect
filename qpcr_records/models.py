@@ -12,7 +12,7 @@ class personnel_list(models.Model):
 
 
 sample_release_choices = (('Yes', 'Yes'), ('No', 'No'))
-sample_result_choices = (('Undetermined', 'Undetermined'), ('Invalid', 'Invalid'), ('Inconclusive', 'Inconclusive'),
+sample_result_choices = (('', ''), ('Undetermined', 'Undetermined'), ('Invalid', 'Invalid'), ('Inconclusive', 'Inconclusive'),
                          ('Positive', 'Positive'), ('Negative', 'Negative'))
 file_transfer_status_choices = (('Complete', 'Complete'), ('Not Complete', 'Not Complete'))
 
@@ -41,8 +41,6 @@ class test_results(models.Model):
     sample_bag_id = models.CharField(max_length=10, null=False, default='')
 
     # KNIGHT LAB INFORMATION
-    ms2_lot_id = models.CharField(max_length=15, null=False, default='',
-                                  help_text='Enter MS2 Control Lot #')
     epm_id = models.CharField(max_length=15, null=False, default='', help_text='Enter EpMotion ID')
     rna_extract_reagent_ids = models.CharField(max_length=200, null=False, default='',
                                                help_text='Enter list of RNA extraction reagent IDs')
@@ -62,6 +60,8 @@ class test_results(models.Model):
     re_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
 
     # LAURENT LAB INFORMATION
+    ms2_lot_id = models.CharField(max_length=15, null=False, default='',
+                                  help_text='Enter MS2 Control Lot #')
     qsp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of qPCR_Storage Plate (QSP)')
     qsp_well = models.CharField(max_length=3, null=False, default='')
@@ -88,7 +88,7 @@ class test_results(models.Model):
     s_ct_value = models.FloatField(null=False, default=-1)
     decision_tree_results = models.CharField(max_length=15, null=False, default='Undetermined',
                                              choices=sample_result_choices)
-    final_results = models.CharField(max_length=15, null=False, default='Undetermined', choices=sample_result_choices)
+    final_results = models.CharField(max_length=15, null=False, default='', choices=sample_result_choices)
 
     pcr_results_csv = models.URLField(max_length=300, null=False, default='')
     eds_results_csv = models.URLField(max_length=300, null=False, default='')
@@ -111,6 +111,7 @@ class test_resultsTable(tables.Table):
             'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'pcr_results_csv',
             'sample_release')
 
+
 class review_resultsTable(tables.Table):
     class Meta:
         model = test_results
@@ -118,11 +119,19 @@ class review_resultsTable(tables.Table):
         'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
         'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'pcr_results_csv']
 
+
 class LysisReagentLotForm(ModelForm):
     class Meta:
         model = test_results
         fields = ['lrl_id']
         labels = {'lrl_id': 'Lysis Reagent Lot #'}
+
+
+class PersonnelForm(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['personnel2_andersen_lab']
+        labels = {'personnel2_andersen_lab': 'Assisting Technician Name'}
 
 
 class SampleStorageAndExtractionWellForm(ModelForm):
