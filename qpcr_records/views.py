@@ -360,7 +360,7 @@ def barcode_capture(request):
         elif request.session['ssp_well'] == 'H12':  # END
             request.session['last_scan'] = 'H12'
             f = SampleStorageAndExtractionPlateForm()
-            return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f})
+            return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f, 'barcodes': barcodes})
         else:
             request.session['last_scan'] = request.session['ssp_well']
             row = request.session['ssp_well'][0]
