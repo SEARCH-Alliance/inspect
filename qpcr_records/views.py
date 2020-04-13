@@ -32,7 +32,7 @@ def sample_counter_display():
     dub_count = 0  # tracks plates in previous stages
 
     # Cleared plate counter
-    data_cleared = test_results.objects.filter(~Q(final_results='Undetermined'),
+    data_cleared = test_results.objects.filter(~Q(final_results=''),
                                                sampling_date__gte=time_thresh).count() - dub_count
     dub_count += data_cleared
 
