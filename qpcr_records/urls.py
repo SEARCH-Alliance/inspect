@@ -6,10 +6,7 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('barcode_list_upload/', views.barcode_list_upload, name='barcode_list_upload'),
     path('unknown_barcode/', views.unknown_barcode, name='unknown_barcode'),
-    path('new_record_form/', views.new_record_form, name='new_record_form'),
     path('scan_plate_1_2_barcode/', views.scan_plate_1_2_barcode, name='scan_plate_1_2_barcode'),
-    path('success/', views.create_record, name='success'),
-    path('failure/', views.create_record, name='failure'),
     path('search_record_form/', views.search_record_form, name='search_record_form'),
     path('record_search/', views.record_search, name='record_search'),
     path('perform_safety_check/', views.perform_safety_check, name='perform_safety_check'),
@@ -24,4 +21,5 @@ urlpatterns = [
     path('upload_qpcr_results/', views.upload_qpcr_results, name='upload_qpcr_results'),
     path('review_results/', views.review_results, name='review_results'),
     path('qpcr_plate_id_to_review/', views.qpcr_plate_id_to_review, name='qpcr_plate_id_to_review'),
+    path('search_record_form_error/', views.search_record_form_error, name='search_record_form_error'),
 ]

@@ -23,7 +23,7 @@ class test_results(models.Model):
     fake_name = models.CharField(max_length=30, null=False, default='')
 
     # ANDERSSON LAB INFORMATION
-    lrl_id = models.CharField(max_length=15, null=False, default='',
+    lrl_id = models.CharField(max_length=15, null=False, default='M6246109105',
                               help_text='Lysis Reagent Lot #')
     ssp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Sample Storage Plate (SSP)')
@@ -58,10 +58,9 @@ class test_results(models.Model):
     rwp_well = models.CharField(max_length=3, null=False, default='')
     personnel_knight_lab = models.CharField(max_length=25, null=False, default='')
     re_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
+    ms2_lot_id = models.CharField(max_length=15, null=False, default='', help_text='Enter MS2 Control Lot #')
 
     # LAURENT LAB INFORMATION
-    ms2_lot_id = models.CharField(max_length=15, null=False, default='',
-                                  help_text='Enter MS2 Control Lot #')
     qsp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of qPCR_Storage Plate (QSP)')
     qsp_well = models.CharField(max_length=3, null=False, default='')
@@ -106,8 +105,8 @@ class test_resultsTable(tables.Table):
     class Meta:
         model = test_results
         fields = (
-            'barcode', 'ssp_id', 'ssp_well', 'sampling_date', 'sep_id', 'sep_well', 'rep_id', 'rep_well', 'rsp_id',
-            'rsp_well', 'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
+            'barcode', 'sampling_date', 'ssp_id', 'ssp_well', 'sep_id', 'sep_well', 'sample_bag_id', 'rep_id',
+            'rep_well', 'rsp_id', 'rsp_well', 'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
             'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'pcr_results_csv',
             'sample_release')
 

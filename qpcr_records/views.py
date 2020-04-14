@@ -111,27 +111,30 @@ def index(request):
                     elif well not in request.session.keys():
                         continue
                     else:
-                        l.append(test_results(barcode=request.session[well],
-                                              ssp_id=request.GET['ssp_id'],
-                                              ssp_well=well,
-                                              sep_id=request.GET['sep_id'],
-                                              sep_well=well,
+                        l.append(test_results(barcode=request.session[well].strip(),
+                                              ssp_id=request.GET['ssp_id'].strip(),
+                                              ssp_well=well.strip(),
+                                              sep_id=request.GET['sep_id'].strip(),
+                                              sep_well=well.strip(),
+                                              rep_well=well.strip(),
                                               sampling_date=date.today().strftime('%Y-%m-%d'),
-                                              lrl_id=request.session['lrl_id'],
-                                              personnel2_andersen_lab=request.session['personnel2_andersen_lab'],
-                                              sample_bag_id=request.GET['sample_bag_id']))
+                                              lrl_id=request.session['lrl_id'].strip(),
+                                              personnel1_andersen_lab=request.user.get_full_name(),
+                                              personnel2_andersen_lab=request.session['personnel2_andersen_lab'].strip(),
+                                              sample_bag_id=request.GET['sample_bag_id'].strip()))
             test_results.objects.bulk_create(l)
 
         # DATA UPDATE IN KNIGHT LAB
 
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
             objs = test_results.objects.filter(sep_id=request.GET['sep_id']) \
-                .update(rep_id=request.GET['rep_id'], re_date=date.today().strftime('%Y-%m-%d'), )
+                .update(rep_id=request.GET['rep_id'].strip(), re_date=date.today().strftime('%Y-%m-%d'),
+                        ms2_lot_id=request.GET['ms2_lot_id'].strip(), personnel_knight_lab=request.user.get_full_name())
         elif 'barcode4' in request.GET.keys():
             objs = test_results.objects.filter(
                 rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
-                            request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'],
-                                                             rsp_id=request.GET['rsp_id'], )
+                            request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'].strip(),
+                                                             rsp_id=request.GET['rsp_id'].strip())
 
             # CONVERT 4X96-WELL PLATE LAYOUT TO 1X384-WELL PLATE LAYOUT
             d = dict()
@@ -159,7 +162,8 @@ def index(request):
                 else:
                     for z in test_results.objects.filter(rep_id=b).values_list('sep_well', flat=True):
                         test_results.objects.filter(rep_id=b, sep_well=z).update(rwp_well=d[str(i) + z],
-                                                                                 rsp_well=d[str(i) + z])
+                                                                                 rsp_well=d[str(i) + z],
+                                                                                 qrp_well=d[str(i) + z])
                     i = i + 1
 
                 barcode_list.append(b)
@@ -168,14 +172,14 @@ def index(request):
 
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
             objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']) \
-                .update(qrp_id=request.GET['qrp_id'], ms2_lot_id=request.GET['ms2_lot_id'],
-                        qpcr_date=date.today().strftime('%Y-%m-%d'), )
+                .update(qrp_id=request.GET['qrp_id'].strip(), qpcr_date=date.today().strftime('%Y-%m-%d'),
+                        personnel_laurent_lab=request.user.get_full_name())
 
         elif 'qrp_id' in request.session.keys():
             for i, j in zip(test_results.objects.filter(qrp_id__iexact=request.session['qrp_id']).values_list(
                     'rwp_well', flat=True), list(request.GET.values())):
                 test_results.objects.filter(rwp_well=i, qrp_id__iexact=request.session['qrp_id']).update(
-                    final_results=j)
+                    final_results=j.strip())
             del request.session['qrp_id']
             qs = ''
 
@@ -251,44 +255,6 @@ def barcode_list_upload(request):
 
 
 @login_required
-def new_record_form(request):
-    """
-    THIS FUNCTION IS NO LONGER USED
-    Pass new record form to the django template.
-    :param request: signal call that this function has been called
-    :return f: form to display
-    """
-    f = ArrayingForm()
-    return render(request, 'qpcr_records/new_record_form.html', {'form': f})
-
-
-@login_required
-def create_record(request):
-    """
-    THIS FUNCTION IS NO LONGER USED.
-
-    This function will update the database based on the form filled by user. Function will check if the request method
-    is POST, only then the database will be updated. Uploaded files are passed through the request.FILES variable
-    :param request: html request that contains user entries
-    :return:
-    """
-    if request.method == 'POST':
-        f = ArrayingForm(request.POST, request.FILES)
-
-        # Check if the form is valid : is the form complete ? are the datatypes correct ? etc..
-        if f.is_valid():
-            # create new record
-            new_entry = f.save()
-            return render(request, 'qpcr_records/success.html', {'status': 'works'})
-        else:
-            # something is wrong with the entries
-            return render(request, 'qpcr_records/success.html', {'status': 'form not valid'})
-    else:
-        f = ArrayingForm()
-        return render(request, 'qpcr_records/new_record.html', {'form': f})
-
-
-@login_required
 def search_record_form(request):
     """
     Pass the search form to the django template. User has to fill at least one field for a successful search
@@ -333,7 +299,7 @@ def perform_safety_check(request):
 
         request.session['ssp_well'] = 'X'
         request.session['current_barcodes'] = dict()
-        f1 = LysisReagentLotForm()
+        f1 = LysisReagentLotForm(initial={'lrl_id': 'M6246109105'})
         f2 = PersonnelForm()
         # request.session['expected_barcodes'] = list(
         #    test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
@@ -443,11 +409,12 @@ def scan_plate_2_3_barcode(request):
     """
     f1 = SampleStorageAndExtractionPlateForm()
     f2 = RNAExtractionPlateForm()
+    f3 = MS2LotForm()
 
     recent_plate_query = test_results.objects.filter(
         sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
     plates = list(recent_plate_query)
-    return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
+    return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2, 'form3': f3, 'plates': plates})
 
 
 @login_required
@@ -480,12 +447,11 @@ def scan_plate_5_6_barcode(request):
     """
     f1 = RNAStorageAndWorkingPlateForm()
     f2 = QPCRStorageAndReactionPlateForm()
-    f3 = MS2LotForm
 
     recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)) \
         .values_list("rwp_id", flat=True)
     plates = list(recent_plate_query)
-    return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2, 'form3': f3, 'plates': plates})
+    return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
 
 
 @login_required
@@ -496,9 +462,9 @@ def record_search(request):
     :return table: Returns a django-tables2 object to be displayed on the webpage
     """
     if request.method == 'GET':
-        # ['csrfmiddlewaretoken', 'barcode', 'technician', 'lab', 'collection_date', 'processing_date']
+        # ['csrfmiddlewaretoken', 'barcode', 'sampling_date', 'plate_id', 'technician', 'result', 'sample_bag_id']
         q = ''
-        for k in ['barcode', 'sampling_date', 'plate_id', 'technician', 'result']:
+        for k in request.GET.keys():
             if request.GET[k] != '' and k == 'barcode':
                 if q == '':
                     q = test_results.objects.filter(barcode__iexact=request.GET[k])
@@ -532,11 +498,13 @@ def record_search(request):
                                  Q(personnel2_andersen_lab__iexact=request.GET[k]) |
                                  Q(personnel_knight_lab__iexact=request.GET[k]) |
                                  Q(personnel_laurent_lab__iexact=request.GET[k]))
-            elif request.GET[k] != '' and k == 'result':
+            elif k == 'result':
+                print(request.GET[k])
                 if q == '':
-                    q = test_results.objects.filter(final_results__iexact=request.GET[k])
+                    q = test_results.objects.filter(final_results__iexact=request.GET[k].strip())
                 else:
-                    q = q.filter(final_results__iexact=request.GET[k])
+                    q = q.filter(final_results__iexact=request.GET[k].strip())
+                print(q.count())
             elif request.GET[k] != '' and k == 'bag_id':
                 if q == '':
                     q = test_results.objects.filter(sample_bag_id__iexact=request.GET[k])
@@ -557,6 +525,11 @@ def record_search(request):
 
             # table.columns.hide('id')
             return render(request, 'qpcr_records/record_search.html', {'table': table})
+
+
+@login_required
+def search_record_form_error(request):
+    return render(request, 'qpcr_records/search_record_form_error.html')
 
 
 @login_required
