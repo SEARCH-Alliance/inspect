@@ -14,6 +14,7 @@ class personnel_list(models.Model):
 sample_release_choices = (('Yes', 'Yes'), ('No', 'No'))
 sample_result_choices = (('', ''), ('Undetermined', 'Undetermined'), ('Invalid', 'Invalid'), ('Inconclusive', 'Inconclusive'),
                          ('Positive', 'Positive'), ('Negative', 'Negative'))
+is_reviewed_choices = ((True, True), (False, False))
 file_transfer_status_choices = (('Complete', 'Complete'), ('Not Complete', 'Not Complete'))
 
 
@@ -89,6 +90,7 @@ class test_results(models.Model):
     decision_tree_results = models.CharField(max_length=15, null=False, default='Undetermined',
                                              choices=sample_result_choices)
     final_results = models.CharField(max_length=15, null=False, default='', choices=sample_result_choices)
+    is_reviewed = models.BooleanField(default=False, choices=is_reviewed_choices)
 
     pcr_results_csv = models.URLField(max_length=300, null=False, default='')
     eds_results_csv = models.URLField(max_length=300, null=False, default='')

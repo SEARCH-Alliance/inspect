@@ -174,7 +174,7 @@ def index(request):
             for i, j in zip(test_results.objects.filter(qrp_id__iexact=request.session['qrp_id']).values_list(
                     'rwp_well', flat=True), list(request.GET.values())):
                 test_results.objects.filter(rwp_well=i, qrp_id__iexact=request.session['qrp_id']).update(
-                    final_results=j)
+                    final_results=j, is_reviewed=True)
 
         # RESET ALL SESSION DATA EXCEPT FOR USER LOGIN
         reset_session(request)
@@ -219,6 +219,8 @@ def index(request):
                                 s_ct_value=vals['S gene'])
                             objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
                                 decision_tree_results=vals['diagnosis'])
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                final_results=vals['diagnosis'])
 
                             if test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).count() > 0:
                                 barc = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).values_list(
