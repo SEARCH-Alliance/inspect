@@ -39,14 +39,8 @@
     </div>
 </div>
 <script>
-function success() {
-    $('form').on('submit', () => {
-    alert('{{ barcodes|length }} sample recorded successfully!')
+    window.addEventListener("load", () => {
+        success('{{ barcodes|length }} sample recorded successfully!');
     });
-}
-
-window.addEventListener("load", () => {
-    success();
-});
 </script>
 {% endblock %}
