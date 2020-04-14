@@ -121,7 +121,6 @@ def index(request):
                                               personnel2_andersen_lab=request.session['personnel2_andersen_lab'],
                                               sample_bag_id=request.GET['sample_bag_id']))
             test_results.objects.bulk_create(l)
-
         # DATA UPDATE IN KNIGHT LAB
 
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
@@ -176,8 +175,9 @@ def index(request):
                     'rwp_well', flat=True), list(request.GET.values())):
                 test_results.objects.filter(rwp_well=i, qrp_id__iexact=request.session['qrp_id']).update(
                     final_results=j)
-            del request.session['qrp_id']
-            qs = ''
+
+        # RESET ALL SESSION DATA EXCEPT FOR USER LOGIN
+        reset_session(request)
 
     if request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
         if 'Browse' in request.FILES.keys():  # qPCR Results file
@@ -323,9 +323,6 @@ def perform_safety_check(request):
     Present list of safety checks to user before starting plating.
     :param request: signal call that this function has been called
     """
-    for k in list(request.session.keys()):
-        if k not in ['_auth_user_id', '_auth_user_backend', '_auth_user_hash']:
-            del request.session[k]
 
     if request.method == 'GET':
         for k in request.GET.keys():
@@ -635,3 +632,9 @@ def track_samples(request):
         return exporter.response('table.{}'.format(export_format))
 
     return render(request, 'qpcr_records/track_samples.html', {'table': table})
+
+
+def reset_session(request):
+    for k in list(request.session.keys()):
+        if k not in ['_auth_user_id', '_auth_user_backend', '_auth_user_hash']:
+            del request.session[k]
