@@ -8,7 +8,10 @@
         {% csrf_token %}
         <div class="form-row">
             <div class="form-group col-md-6 mb-0">
-                {{ form3.ms2_lot_id|as_crispy_field }}
+                {{ form2.ms2_lot_id|as_crispy_field }}
+            </div>
+            <div class="form-group col-md-6 mb-0">
+                {{ form2.kfr_id|as_crispy_field }}
             </div>
         </div>
 

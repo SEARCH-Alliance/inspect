@@ -59,7 +59,7 @@ class test_results(models.Model):
     rwp_well = models.CharField(max_length=3, null=False, default='')
     personnel_knight_lab = models.CharField(max_length=25, null=False, default='')
     re_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
-    ms2_lot_id = models.CharField(max_length=15, null=False, default='', help_text='Enter MS2 Control Lot #')
+    ms2_lot_id = models.CharField(max_length=15, null=False, default='2003001', help_text='Enter MS2 Control Lot #')
 
     # LAURENT LAB INFORMATION
     qsp_id = models.CharField(max_length=15, null=False, default='',
@@ -156,8 +156,9 @@ class SampleStorageAndExtractionPlateForm(ModelForm):
 class RNAExtractionPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['rep_id', 'rsp_id']
-        labels = {'rep_id': 'RNA Extraction Plate Barcode', 'rsp_id': 'RNA Storage Plate Barcode'}
+        fields = ['rep_id', 'rsp_id', 'kfr_id', 'ms2_lot_id']
+        labels = {'rep_id': 'RNA Extraction Plate Barcode', 'rsp_id': 'RNA Storage Plate Barcode',
+                  'kfr_id': 'KingFisher ID', 'ms2_lot_id': 'MS2 Phage Lot #'}
 
 
 class MS2LotForm(ModelForm):
@@ -170,8 +171,8 @@ class MS2LotForm(ModelForm):
 class RNAStorageAndWorkingPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['rwp_id']
-        labels = {'rwp_id': 'RNA Working Plate Barcode'}
+        fields = ['rwp_id', 'epm_id']
+        labels = {'rwp_id': 'RNA Working Plate Barcode', 'epm_id': 'EpMotion ID'}
 
 
 class QPCRStorageAndReactionPlateForm(ModelForm):

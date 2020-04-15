@@ -118,6 +118,7 @@ def index(request):
                                               sep_id=request.GET['sep_id'].strip(),
                                               sep_well=well.strip(),
                                               rep_well=well.strip(),
+                                              rsp_well=well.strip(),
                                               sampling_date=date.today().strftime('%Y-%m-%d'),
                                               lrl_id=request.session['lrl_id'].strip(),
                                               personnel1_andersen_lab=request.user.get_full_name(),
@@ -131,12 +132,13 @@ def index(request):
             objs = test_results.objects.filter(sep_id=request.GET['sep_id']) \
                 .update(rep_id=request.GET['rep_id'].strip(), re_date=date.today().strftime('%Y-%m-%d'),
                         rsp_id=request.GET['rep_id'].strip(), ms2_lot_id=request.GET['ms2_lot_id'].strip(),
-                        personnel_knight_lab=request.user.get_full_name())
+                        personnel_knight_lab=request.user.get_full_name(), kfr_id=request.GET['kfr_id'].strip())
         # IF THERE IS A BARCODE4 PASSED, WE ARE AT THE ARRAYING STEP
         elif 'barcode4' in request.GET.keys():
             objs = test_results.objects.filter(
                 rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
-                            request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'].strip())
+                            request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'].strip(),
+                                                             epm_id=request.GET['epm_id'].strip())
 
             # CONVERT 4X96-WELL PLATE LAYOUT TO 1X384-WELL PLATE LAYOUT
             d = dict()
@@ -414,7 +416,7 @@ def scan_plate_2_3_barcode(request):
     :return:
     """
     f1 = SampleStorageAndExtractionPlateForm()
-    f2 = RNAExtractionPlateForm()
+    f2 = RNAExtractionPlateForm(initial={'ms2_lot_id': '2003001'})
     f3 = MS2LotForm()
 
     recent_plate_query = test_results.objects.filter(
