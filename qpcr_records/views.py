@@ -8,14 +8,12 @@ from django_tables2.export.export import TableExport
 from decouple import config
 from datetime import date, datetime, timedelta
 import boto3
-from django.contrib import messages
 from django.db.models import Q
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
 # for user logins. If the check returns False, user will be automatically redirected to the login page
 
-# barcode = subprocess.check_output(['python', 'webcam_barcode_scanner.py']).decode('utf-8')
 # barcode = barcode.rstrip()
 
 def sample_counter_display():
@@ -102,6 +100,9 @@ def index(request):
     if request.method == 'GET':
         # DATA UPDATE IN ANDERSSON LAB
         if 'ssp_id' in request.GET.keys():
+            # IF SSP_ID IS PRESENT, WE ARE CREATING NEW RECORDS. LOOP OVER WELLS FROM A1 THROUGH H12 AND EXTRACT THE
+            # BARCODE FROM THE CORRESPONDING WELL. WELLS A1 AND H1 HAVE NO BARCODES SINCE THESE ARE CONTROL WELLS.
+            # WELLS A1 AND H1 WILL NOT BE RECORDED IN THE DATABASE
             l = list()
             for i in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
                 for j in range(1, 13):
@@ -123,17 +124,19 @@ def index(request):
                                               personnel2_andersen_lab=request.session['personnel2_andersen_lab'].strip(),
                                               sample_bag_id=request.GET['sample_bag_id'].strip()))
             test_results.objects.bulk_create(l)
-        # DATA UPDATE IN KNIGHT LAB
 
+        # DATA UPDATE IN KNIGHT LAB
+        # IF WE HAVE REP_ID, WE ARE AT THE RNA ELUTION STEP. UPDATE THE DATABASE RECORDS USING THE SEP_ID THAT WAS SCANNED
         elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
             objs = test_results.objects.filter(sep_id=request.GET['sep_id']) \
                 .update(rep_id=request.GET['rep_id'].strip(), re_date=date.today().strftime('%Y-%m-%d'),
-                        ms2_lot_id=request.GET['ms2_lot_id'].strip(), personnel_knight_lab=request.user.get_full_name())
+                        rsp_id=request.GET['rep_id'].strip(), ms2_lot_id=request.GET['ms2_lot_id'].strip(),
+                        personnel_knight_lab=request.user.get_full_name())
+        # IF THERE IS A BARCODE4 PASSED, WE ARE AT THE ARRAYING STEP
         elif 'barcode4' in request.GET.keys():
             objs = test_results.objects.filter(
                 rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
-                            request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'].strip(),
-                                                             rsp_id=request.GET['rsp_id'].strip())
+                            request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'].strip())
 
             # CONVERT 4X96-WELL PLATE LAYOUT TO 1X384-WELL PLATE LAYOUT
             d = dict()
@@ -168,23 +171,25 @@ def index(request):
                 barcode_list.append(b)
 
         # DATA UPDATE IN LAURENT LAB
-
+        # IF BOTH RWP_ID AND QRP_ID WERE PASSED WE ARE AT THE QPCR STEP, WHERE THE LAURENT LAB WILL SCAN THE QPCR REACTION PLATE
         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
             objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']) \
                 .update(qrp_id=request.GET['qrp_id'].strip(), qpcr_date=date.today().strftime('%Y-%m-%d'),
                         personnel_laurent_lab=request.user.get_full_name())
-
+        # IF ONLY A QPR_ID WAS PASSED, THE LAURENT LAB WANTS TO REVIEW THE RESULTS FROM THIS QRP_ID
         elif 'qrp_id' in request.session.keys():
+            for k in request.GET.keys():
+                print("%s : %s\n" %(k, request.GET[k]))
             for i, j in zip(test_results.objects.filter(qrp_id__iexact=request.session['qrp_id']).values_list(
                     'rwp_well', flat=True), list(request.GET.values())):
                 test_results.objects.filter(rwp_well=i, qrp_id__iexact=request.session['qrp_id']).update(
                     final_results=j.strip(), is_reviewed=True)
-            del request.session['qrp_id']
             qs = ''
 
         # RESET ALL SESSION DATA EXCEPT FOR USER LOGIN
         reset_session(request)
 
+    # FOR ANY POST METHOD, ASSUME THAT THE USER IS UPLOADING A FILE
     if request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
         if 'Browse' in request.FILES.keys():  # qPCR Results file
             # Parse file for Ct values and determine decision tree resuls
@@ -478,16 +483,16 @@ def record_search(request):
                     q = q.filter(sampling_date__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'plate_id':
                 if q == '':
-                    q = test_results.objects.filter(Q(ssp_id__icontains=request.GET[k]) |
-                                                    Q(sep_id__icontains=request.GET[k]) |
-                                                    Q(rep_id__icontains=request.GET[k]) |
-                                                    Q(rwp_id__icontains=request.GET[k]) |
-                                                    Q(rsp_id__icontains=request.GET[k]) |
-                                                    Q(qrp_id__icontains=request.GET[k]))
+                    q = test_results.objects.filter(Q(ssp_id__iexact=request.GET[k].strip()) |
+                                                    Q(sep_id__iexact=request.GET[k].strip()) |
+                                                    Q(rep_id__iexact=request.GET[k].strip()) |
+                                                    Q(rwp_id__iexact=request.GET[k].strip()) |
+                                                    Q(rsp_id__iexact=request.GET[k].strip()) |
+                                                    Q(qrp_id__iexact=request.GET[k].strip()))
                 else:
-                    q = q.filter(Q(ssp_id__icontains=request.GET[k]) | Q(sep_id__icontains=request.GET[k]) |
-                                 Q(rep_id__icontains=request.GET[k]) | Q(rwp_id__icontains=request.GET[k]) |
-                                 Q(rsp_id__icontains=request.GET[k]) | Q(qrp_id__icontains=request.GET[k]))
+                    q = q.filter(Q(ssp_id__iexact=request.GET[k].strip()) | Q(sep_id__iexact=request.GET[k].strip()) |
+                                 Q(rep_id__iexact=request.GET[k].strip()) | Q(rwp_id__iexact=request.GET[k].strip()) |
+                                 Q(rsp_id__iexact=request.GET[k].strip()) | Q(qrp_id__iexact=request.GET[k].strip()))
             elif request.GET[k] != '' and k == 'technician':
                 if q == '':
                     q = test_results.objects.filter(Q(personnel1_andersen_lab__iexact=request.GET[k]) |
@@ -499,13 +504,11 @@ def record_search(request):
                                  Q(personnel2_andersen_lab__iexact=request.GET[k]) |
                                  Q(personnel_knight_lab__iexact=request.GET[k]) |
                                  Q(personnel_laurent_lab__iexact=request.GET[k]))
-            elif k == 'result':
-                print(request.GET[k])
+            elif request.GET[k] != '' and k == 'result':
                 if q == '':
                     q = test_results.objects.filter(final_results__iexact=request.GET[k].strip())
                 else:
                     q = q.filter(final_results__iexact=request.GET[k].strip())
-                print(q.count())
             elif request.GET[k] != '' and k == 'bag_id':
                 if q == '':
                     q = test_results.objects.filter(sample_bag_id__iexact=request.GET[k])
@@ -549,7 +552,7 @@ def review_results(request):
     request.session['qrp_id'] = request.GET['qrp_id']
     q = test_results.objects.filter(qrp_id__iexact=request.GET['qrp_id'])
     table = review_resultsTable(q)
-    RequestConfig(request).configure(table)
+    RequestConfig(request, paginate=False).configure(table)
     return render(request, 'qpcr_records/review_results.html', {'table': table, "choices": sample_result_choices})
 
 

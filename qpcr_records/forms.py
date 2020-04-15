@@ -9,7 +9,7 @@ sample_tracking_choice = [('Sample_Received', 'Sample Received From RCH'),
                           ('qPCR_BackUp', 'qPCR BackUp Stored'),
                           ('qPCR_Reaction', 'Sample Loaded for qPCR Reaction'),
                           ('Result_Generation', 'qPCR Result has been Recorded')]
-result_choices = [('', ''), ('Undetermined', 'Undetermined'), ('Inconclusive', 'Inconclusive'), ('Postive', 'Positive'),
+result_choices = [('', ''), ('Undetermined', 'Undetermined'), ('Inconclusive', 'Inconclusive'), ('Positive', 'Positive'),
                   ('Negative', 'Negative'), ('Invalid', 'Invalid')]
 
 

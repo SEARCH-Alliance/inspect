@@ -156,8 +156,8 @@ class SampleStorageAndExtractionPlateForm(ModelForm):
 class RNAExtractionPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['rep_id']
-        labels = {'rep_id': 'RNA Extraction Plate Barcode'}
+        fields = ['rep_id', 'rsp_id']
+        labels = {'rep_id': 'RNA Extraction Plate Barcode', 'rsp_id': 'RNA Storage Plate Barcode'}
 
 
 class MS2LotForm(ModelForm):
@@ -170,8 +170,8 @@ class MS2LotForm(ModelForm):
 class RNAStorageAndWorkingPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['rwp_id', 'rsp_id']
-        labels = {'rwp_id': 'RNA Working Plate Barcode', 'rsp_id': 'RNA Storage Plate Barcode'}
+        fields = ['rwp_id']
+        labels = {'rwp_id': 'RNA Working Plate Barcode'}
 
 
 class QPCRStorageAndReactionPlateForm(ModelForm):
