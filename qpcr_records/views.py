@@ -538,20 +538,12 @@ def barcode_capture(request):
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': row + str(col), 'sep_well': row + str(col)})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes,
                                                                          'well': row + str(col)})
-    else:
+    else: # Handle first visit to page passing lrl_id
         barcodes = request.session['current_barcodes']
+        request.session['lrl_id'] = request.GET['lrl_id']
         request.session['last_scan'] = request.session['ssp_well']
-        if request.session['ssp_well'] == 'A1':  # Redirect from start
-            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'H1', 'sep_well': 'H1', 'well': 'H1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'H1'})
-        if request.session['ssp_well'] == 'H1':  # Redirect from start
-            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'B1'})
-        else:
-            request.session['lrl_id'] = request.GET['lrl_id']
-            request.session['last_scan'] = request.session['ssp_well']
-            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A1'})
+        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1', 'well': 'B1'})
+        return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'B1'})
 
 
 @login_required

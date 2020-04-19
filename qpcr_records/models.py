@@ -120,9 +120,9 @@ class test_resultsTable(tables.Table):
 class review_resultsTable(tables.Table):
     class Meta:
         model = test_results
-        fields = ['sampling_date', 'barcode', 'sep_id', 'sep_well', 'rep_id', 'rep_well',
-        'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
-        'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'pcr_results_csv']
+        fields = ['sampling_date', 'barcode', 'sep_id', 'rep_id',
+        'rwp_id', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
+        'orf1ab_ct_value', 's_ct_value', 'final_results']
 
 
 class LysisReagentLotForm(ModelForm):
