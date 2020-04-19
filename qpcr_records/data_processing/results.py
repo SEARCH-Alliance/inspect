@@ -60,7 +60,7 @@ class Results:
                     # MS2 spike in is diluted now so it'll have degraded performance
                     # Making MS2 Cq_conf cutoff 0.5
                     if target == 'MS2':
-                        if val > 0 and val < 40 and conf > 0.5 and amp == 'Amp':
+                        if val > 0 and val < 40 and conf > 0.3 and amp == 'Amp':
                             val = round(val,3)
                         else:
                             val = -1.0
