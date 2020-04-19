@@ -13,7 +13,19 @@
             <div class="form-group col-md-6 mb-0">
                 {{ form2.kfr_id|as_crispy_field }}
             </div>
+            <div class="form-group col-md-6 mb-0">
+                {{ form2.rna_extract_kit_id|as_crispy_field }}
+            </div>
+            <div class="form-group col-md-6 mb-0">
+                {{ form2.megabeads_id|as_crispy_field }}
+            </div>
+            <div class="form-group col-md-6 mb-0">
+                {{ form2.carrier_rna_id|as_crispy_field }}
+            </div>
         </div>
+
+        <br>
+        <br>
 
         {% if messages %}
         <div class="alert alert-primary my-3">
@@ -25,6 +37,10 @@
         </div>
         {% endif %}
 
+        <div class="alert alert-primary my-3">
+            <div class="font-weight-bold d-inline">Reminder: </div>RNA Elution Plate ID will be recorded as the RNA Storage Plate ID.
+        </div>
+
         <div class="form-row">
             <div class="form-group col-md-6 mb-0">
                 {{ form1.sep_id|as_crispy_field }}
@@ -34,10 +50,6 @@
         <div class="form-row">
             <div class="form-group col-md-6 mb-0">
                 {{ form2.rep_id|as_crispy_field }}
-            </div>
-
-            <div class="form-group col-md-6 mb-0">
-                {{ form2.rsp_id|as_crispy_field }}
             </div>
         </div>
 
