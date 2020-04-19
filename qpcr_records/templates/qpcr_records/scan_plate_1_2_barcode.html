@@ -17,6 +17,17 @@
                 </div>
             </div>
         </div>
+
+        {% if messages %}
+        <div class="alert alert-primary my-3">
+            <ul>
+                {% for message in messages %}
+                <div class="font-weight-bold d-inline">ERROR: </div>{{message}}.
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
         <form action="/qpcr_records/" method="GET">
             {% csrf_token %}
             <div class="form-row">

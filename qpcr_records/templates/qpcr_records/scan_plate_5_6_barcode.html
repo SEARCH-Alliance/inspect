@@ -1,6 +1,17 @@
 {% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 <div class="container">
+
+    {% if messages %}
+        <div class="alert alert-primary my-3">
+            <ul>
+                {% for message in messages %}
+                <div class="font-weight-bold d-inline">ERROR: </div>{{message}}.
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
     <form class="needs-validation" action="/qpcr_records/" method="GET" novalidate>
         {% csrf_token %}
         <div class="form-row">

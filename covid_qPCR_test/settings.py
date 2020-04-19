@@ -49,6 +49,7 @@ DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap4.html"
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',

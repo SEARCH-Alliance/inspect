@@ -10,6 +10,17 @@
         </div>
         <br>
         <br>
+
+        {% if messages %}
+        <div class="alert alert-primary my-3">
+            <ul>
+                {% for message in messages %}
+                <div class="font-weight-bold d-inline">ERROR: </div>{{message}}.
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
         <div class="form-row">
             <div class="form-group col-md-6 mb-0">
                 {{ form1.barcode1|as_crispy_field }}

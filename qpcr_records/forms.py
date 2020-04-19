@@ -1,12 +1,9 @@
 from django import forms
 
-sample_tracking_choice = [('Sample_Received', 'Sample Received From RCH'),
-                          ('Sample_Plated', 'Sample Plated into 96 well Plates'),
+sample_tracking_choice = [('Sample_Plated', 'Sample Plated into 96 well Plates'),
                           ('Sample_Stored', 'Sample Stored in -180'),
                           ('RNA_Extraction', 'RNA Extraction Performed'),
-                          ('RNA_Stored', 'RNA Plate Stored'),
                           ('Sample_Arrayed', 'RNA Plated onto 384 well Plate'),
-                          ('qPCR_BackUp', 'qPCR BackUp Stored'),
                           ('qPCR_Reaction', 'Sample Loaded for qPCR Reaction'),
                           ('Result_Generation', 'qPCR Result has been Recorded')]
 result_choices = [('', ''), ('Undetermined', 'Undetermined'), ('Inconclusive', 'Inconclusive'), ('Positive', 'Positive'),

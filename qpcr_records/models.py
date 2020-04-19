@@ -20,8 +20,8 @@ file_transfer_status_choices = (('Complete', 'Complete'), ('Not Complete', 'Not 
 
 class test_results(models.Model):
     # SAMPLE INFORMATION : MOST UPSTREAM INFORMATION TO CAPTURE
-    barcode = models.CharField(max_length=20, null=False, default='')
-    fake_name = models.CharField(max_length=30, null=False, default='')
+    barcode = models.CharField(max_length=10, null=False, default='')
+    fake_name = models.CharField(max_length=40, null=False, default='')
 
     # ANDERSSON LAB INFORMATION
     lrl_id = models.CharField(max_length=15, null=False, default='M6246109105',
@@ -39,19 +39,23 @@ class test_results(models.Model):
     personnel1_andersen_lab = models.CharField(max_length=25, null=False, default='')
     personnel2_andersen_lab = models.CharField(max_length=25, null=False, default='',
                                                help_text='Name of Assisting Technician')
-    sample_bag_id = models.CharField(max_length=10, null=False, default='')
+    sample_bag_id = models.CharField(max_length=15, null=False, default='')
 
     # KNIGHT LAB INFORMATION
     epm_id = models.CharField(max_length=15, null=False, default='', help_text='Enter EpMotion ID')
-    rna_extract_reagent_ids = models.CharField(max_length=200, null=False, default='',
-                                               help_text='Enter list of RNA extraction reagent IDs')
-    kfr_id = models.CharField(max_length=15, null=False, default='', help_text='Enter KingFisher Number')
+    rna_extract_kit_id = models.CharField(max_length=20, null=False, default='',
+                                               help_text='Enter RNA extraction kit lot #')
+    megabeads_id = models.CharField(max_length=20, null=False, default='',
+                                               help_text='Enter Mag-Bind particles CNR Lot #')
+    carrier_rna_id = models.CharField(max_length=20, null=False, default='',
+                                               help_text='Enter Carrier RNA Lot #')
+    kfr_id = models.CharField(max_length=20, null=False, default='', help_text='Enter KingFisher Number')
     rep_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of RNA Elution Plate (REP)')
     rep_well = models.CharField(max_length=3, null=False, default='')
     rsp_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Scan or Enter Barcode of RNA Storage Plate (RSP)')
-    rsp_well = models.CharField(max_length=2, null=False, default='')
+    rsp_well = models.CharField(max_length=3, null=False, default='')
     knight_lab_frz_id = models.CharField(max_length=15, null=False, default='',
                                          help_text='Enter RNA Storage Freezer Number')
     rwp_id = models.CharField(max_length=15, null=False, default='',
@@ -70,9 +74,9 @@ class test_results(models.Model):
     qrp_well = models.CharField(max_length=3, null=False, default='')
     probe_mix_id = models.CharField(max_length=15, null=False, default='',
                                     help_text='Enter qRTPCR Reaction Probe Mix Lot Number')
-    enzyme_mix_id = models.CharField(max_length=15, null=False, default='',
+    enzyme_mix_id = models.CharField(max_length=15, null=False, default='2219127',
                                      help_text='Enter qRTPCR Reaction Enzyme Mix Lot Number')
-    mhv_id = models.CharField(max_length=15, null=False, default='',
+    mhv_id = models.CharField(max_length=15, null=False, default='MHV-041',
                               help_text='Enter Mosquito HV Number')
     qs5_id = models.CharField(max_length=15, null=False, default='',
                               help_text='Enter QS5 Number')
@@ -156,9 +160,11 @@ class SampleStorageAndExtractionPlateForm(ModelForm):
 class RNAExtractionPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['rep_id', 'rsp_id', 'kfr_id', 'ms2_lot_id']
-        labels = {'rep_id': 'RNA Extraction Plate Barcode', 'rsp_id': 'RNA Storage Plate Barcode',
-                  'kfr_id': 'KingFisher ID', 'ms2_lot_id': 'MS2 Phage Lot #'}
+        fields = ['rep_id', 'rsp_id', 'kfr_id', 'ms2_lot_id', 'rna_extract_kit_id', 'megabeads_id', 'carrier_rna_id']
+        labels = {'rep_id': 'RNA Elution Plate Barcode', 'rsp_id': 'RNA Storage Plate Barcode',
+                  'kfr_id': 'KingFisher ID', 'ms2_lot_id': 'MS2 Phage Lot #',
+                  'rna_extract_kit_id': 'RNA Extraction Kit Lot #', 'megabeads_id': 'Mag-bind Particles CNR Lot #',
+                  'carrier_rna_id': 'Carrier RNA Lot #'}
 
 
 class MS2LotForm(ModelForm):
