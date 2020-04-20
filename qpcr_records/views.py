@@ -121,7 +121,7 @@ def index(request):
 
                 if len(l) > 0:
                     if len(l) == 3:
-                        messages.success(request, mark_safe('Sample Storage Plate %s, Sample Extraction Plate %s, and Sample Storage Bag %s '
+                        messages.warning(request, mark_safe('Sample Storage Plate %s, Sample Extraction Plate %s, and Sample Storage Bag %s '
                                                             'already exist!<br/><br/> Please enter new IDs for the '
                                                             'Sample Storage Plate, Sample Extraction Plate and Sample Storage Bag<br/>. '
                                                             'You may also continue with this form to create duplicate entries of the '
@@ -132,7 +132,7 @@ def index(request):
                                                             % (request.GET['ssp_id'], request.GET['sep_id'],
                                                                request.GET['sample_bag_id'])))
                     elif 'ssp' in l and 'sep' in l:
-                        messages.success(request, mark_safe('Sample Storage Plate %s and Sample Extraction Plate %s '
+                        messages.warning(request, mark_safe('Sample Storage Plate %s and Sample Extraction Plate %s '
                                                             'already exist!<br/><br/> Please enter new IDs for the '
                                                             'Sample Storage Plate and Sample Extraction Plate<br/><br/>. '
                                                             'You may also continue with this form to create duplicate entries of the '
@@ -142,7 +142,7 @@ def index(request):
                                                             'to cancel and return to the home page. You will lose all scanned information.'
                                                             % (request.GET['ssp_id'], request.GET['sep_id'])))
                     elif 'ssp' in l and 'ssb' in l:
-                        messages.success(request, mark_safe('Sample Storage Plate %s and Sample Storage Bag %s '
+                        messages.warning(request, mark_safe('Sample Storage Plate %s and Sample Storage Bag %s '
                                                             'already exist!<br/><br/> Please enter new IDs for the '
                                                             'Sample Storage Plate and Sample Storage Bag<br/><br/>. '
                                                             'You may also continue with this form to create duplicate entries of the '
@@ -152,7 +152,7 @@ def index(request):
                                                             'to cancel and return to the home page. You will lose all scanned information.'
                                                             % (request.GET['ssp_id'], request.GET['sample_bag_id'])))
                     elif 'sep' in l and 'ssb' in l:
-                        messages.success(request, mark_safe('Sample Extraction Plate %s and Sample Storage Bag %s '
+                        messages.warning(request, mark_safe('Sample Extraction Plate %s and Sample Storage Bag %s '
                                                             'already exist!<br/><br/> Please enter new IDs for the '
                                                             'Sample Extraction Plate and Sample Storage Bag<br/><br/>. '
                                                             'You may also continue with this form to create duplicate entries of the '
@@ -162,7 +162,7 @@ def index(request):
                                                             'to cancel and return to the home page. You will lose all scanned information.'
                                                             % (request.GET['sep_id'], request.GET['sample_bag_id'])))
                     elif 'ssp' in l:
-                        messages.success(request, mark_safe('Sample Storage Plate %s '
+                        messages.warning(request, mark_safe('Sample Storage Plate %s '
                                                             'already exists!<br/><br/> Please enter a new ID for the '
                                                             'Sample Storage Plate ID<br/><br/>. '
                                                             'You may also continue with this form to create duplicate entries of the '
@@ -172,7 +172,7 @@ def index(request):
                                                             'to cancel and return to the home page. You will lose all scanned information.'
                                                             % request.GET['ssp_id']))
                     elif 'sep' in l:
-                        messages.success(request, mark_safe('Sample Extraction Plate %s '
+                        messages.warning(request, mark_safe('Sample Extraction Plate %s '
                                                             'already exists!<br/><br/> Please enter a new ID for the '
                                                             'Sample Extraction Plate<br/><br/>. '
                                                             'You may also continue with this form to create duplicate entries of the '
@@ -182,7 +182,7 @@ def index(request):
                                                             'to cancel and return to the home page. You will lose all scanned information.'
                                                             % request.GET['sep_id']))
                     else:
-                        messages.success(request, mark_safe('Sample Storage Bag %s '
+                        messages.warning(request, mark_safe('Sample Storage Bag %s '
                                                             'already exists!<br/><br/> Please enter a new ID for the '
                                                             'Sample Storage Bag<br/><br/>. '
                                                             'You may also continue with this form to create duplicate entries of the '
