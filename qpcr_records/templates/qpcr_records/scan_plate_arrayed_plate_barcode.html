@@ -65,7 +65,6 @@ window.addEventListener("load", () => {
     validateForm({{ form1.barcode4.id_for_label }}, () => {
         return {{ plates|safe }}.includes({{ form1.barcode4.id_for_label }}.value.trim());
     }, "Plate does not exist!");
-    success('Plates recorded successfully.');
 });
 </script>
 {% endblock %}
