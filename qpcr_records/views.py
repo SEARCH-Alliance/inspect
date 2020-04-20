@@ -218,6 +218,8 @@ def index(request):
                                                       sample_bag_id=request.GET['sample_bag_id'].strip()))
                     test_results.objects.bulk_create(l)
                     del request.session['sep_attempt']
+                    messages.success(request, mark_safe('Database updated successfully.'))
+
 
             # DATA UPDATE IN KNIGHT LAB
             # IF WE HAVE REP_ID, WE ARE AT THE RNA ELUTION STEP. UPDATE THE DATABASE RECORDS USING THE SEP_ID THAT WAS SCANNED
@@ -248,6 +250,7 @@ def index(request):
                         rna_extract_kit_id=request.GET['rna_extract_kit_id'], megabeads_id=request.GET['megabeads_id'],
                         carrier_rna_id=request.GET['carrier_rna_id'])
                     del request.session['rep_attempt']
+                    messages.success(request, mark_safe('Database updated successfully.'))
 
                 # IF THERE IS A BARCODE4 PASSED, WE ARE AT THE ARRAYING STEP
             elif 'barcode4' in request.GET.keys():
@@ -325,6 +328,7 @@ def index(request):
 
                         barcode_list.append(b)
                     del request.session['rwp_attempt']
+                    messages.success(request, mark_safe('Database updated successfully.'))
 
         # DATA UPDATE IN LAURENT LAB
             # IF BOTH RWP_ID AND QRP_ID WERE PASSED WE ARE AT THE QPCR STEP, WHERE THE LAURENT LAB WILL SCAN THE QPCR REACTION PLATE
@@ -352,6 +356,7 @@ def index(request):
                         .update(qrp_id=request.GET['qrp_id'].strip(), qpcr_date=date.today().strftime('%Y-%m-%d'),
                                 personnel_laurent_lab=request.user.get_full_name())
                     del request.session['qrp_attempt']
+                    messages.success(request, mark_safe('Database updated successfully.'))
 
             # IF ONLY A QPR_ID WAS PASSED, THE LAURENT LAB WANTS TO REVIEW THE RESULTS FROM THIS QRP_ID
             elif 'qrp_id' in request.session.keys():
@@ -361,11 +366,9 @@ def index(request):
                         'rwp_well', flat=True), list(request.GET.values())):
                     test_results.objects.filter(rwp_well=i, qrp_id__iexact=request.session['qrp_id']).update(
                         final_results=j.strip(), is_reviewed=True)
-                qs = ''
 
             # RESET ALL SESSION DATA EXCEPT FOR USER LOGIN
             reset_session(request)
-
         # FOR ANY POST METHOD, ASSUME THAT THE USER IS UPLOADING A FILE
         if request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
             if 'Browse' in request.FILES.keys():  # qPCR Results file
@@ -418,6 +421,7 @@ def index(request):
                             elif well == 'instrument':
                                 objs = test_results.objects.filter(qrp_id=qreaction_plate).update(qs5_id=vals)
 
+                        messages.success(request, mark_safe('Database updated successfully.'))
                         return render(request, 'qpcr_records/index.html', counter_information)
                     else:
                         return render(request, 'qpcr_records/qpcr_overwrite_warning.html')
@@ -428,6 +432,7 @@ def index(request):
                 for b in barcodes:
                     l.append(test_results(barcode=b, sampling_date=date.today().strftime('%Y-%m-%d')))
                 test_results.objects.bulk_create(l)
+                messages.success(request, mark_safe('Database updated successfully.'))
                 return render(request, 'qpcr_records/index.html', counter_information)
             else:
                 return render(request, 'qpcr_records/index.html', counter_information)

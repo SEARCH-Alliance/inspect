@@ -26,7 +26,6 @@ window.addEventListener("load", () => {
         var file_extension = barcodeInput.value.split('.').pop().toLowerCase();
         return file_extension == 'txt';
     }, "File type not allowed.");
-    success('File uploaded');
     bsCustomFileInput.init();
 
 });
