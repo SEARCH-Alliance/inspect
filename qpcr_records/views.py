@@ -58,8 +58,7 @@ def sample_counter_display():
     s = list(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list(
         'qrp_id', flat=True).order_by('qrp_id')))
     qrp_id = ', '.join(s)
-    q_running_plate = len(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list(
-        'qrp_id', flat=True))) - dub_count_plate
+    q_running_plate = len(s)
     dub_count += q_running
     dub_count_plate += q_running_plate
 
@@ -69,7 +68,7 @@ def sample_counter_display():
     s = list(set(
         test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True)))
     rwp_id = ', '.join(s)
-    rwp_count_plate = len(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True))) - dub_count_plate
+    rwp_count_plate = len(s)
     dub_count += rwp_count
     dub_count_plate += rwp_count_plate
 
@@ -78,7 +77,7 @@ def sample_counter_display():
     s = list(set(
         test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True)))
     rep_id = ', '.join(s)
-    rep_count_plate = len(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True))) - dub_count_plate
+    rep_count_plate = len(s)
     dub_count += rep_count
     dub_count_plate += rep_count_plate
 
@@ -87,8 +86,7 @@ def sample_counter_display():
     s = list(set(
         test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id', flat=True)))
     sep_id = ', '.join(s)
-    sep_count_plate = len(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id', flat=True))) - dub_count_plate
-    dub_count += sep_count
+    sep_count_plate = len(s)
     dub_count_plate += sep_count_plate
     # Unprocessed sample counter
     unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh).count() - dub_count
