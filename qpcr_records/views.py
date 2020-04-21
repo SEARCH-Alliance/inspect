@@ -517,6 +517,7 @@ def perform_safety_check(request):
     """
 
     if request.method == 'GET':
+        reset_session(request)
         for k in request.GET.keys():
             request.session[k] = request.GET[k]
 
