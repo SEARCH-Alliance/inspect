@@ -29,26 +29,39 @@ def sample_counter_display():
     # subtracting the number of plates in the current stage being evaluated
     # timestamp threshold
     time_thresh = date.today() - timedelta(days=2)
-    dub_count = 0  # tracks plates in previous stages
+    dub_count = 0  # tracks barcodes in previous stages
+    dub_count_plate = 0  # tracks plates in previous stages
 
     # Cleared plate counter
     data_cleared = test_results.objects.filter(~Q(final_results=''),
                                                sampling_date__gte=time_thresh).count() - dub_count
+    data_cleared_plate = len(set(test_results.objects.filter(~Q(final_results=''),
+                                               sampling_date__gte=time_thresh).values_list('qrp_id',flat=True))) - dub_count_plate
     dub_count += data_cleared
+    dub_count_plate += data_cleared_plate
 
     # qPCR plate counters
     q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined'),
                                               sampling_date__gte=time_thresh).count() - dub_count
+    q_processed_plate = len(set(test_results.objects.filter(~Q(decision_tree_results='Undetermined'),
+                                              sampling_date__gte=time_thresh).values_list('qrp_id',flat=True))) - dub_count_plate
     dub_count += q_processed
+    dub_count_plate += q_processed_plate
 
     q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gte=time_thresh).count() - dub_count
+    q_recorded_plate = len(set(test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gte=time_thresh).values_list('qrp_id',flat=True))) - dub_count_plate
+
     dub_count += q_recorded
+    dub_count_plate += q_recorded_plate
 
     q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).count() - dub_count
     s = list(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list(
         'qrp_id', flat=True).order_by('qrp_id')))
     qrp_id = ', '.join(s)
+    q_running_plate = len(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list(
+        'qrp_id', flat=True))) - dub_count_plate
     dub_count += q_running
+    dub_count_plate += q_running_plate
 
     # RNA plate counters
     rwp_count = test_results.objects.filter(~Q(rwp_id=''),
@@ -56,34 +69,42 @@ def sample_counter_display():
     s = list(set(
         test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True)))
     rwp_id = ', '.join(s)
+    rwp_count_plate = len(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True))) - dub_count_plate
     dub_count += rwp_count
+    dub_count_plate += rwp_count_plate
 
     rep_count = test_results.objects.filter(~Q(rep_id=''),
                                             sampling_date__gte=time_thresh).count() - dub_count  # rna extraction plate
     s = list(set(
         test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True)))
     rep_id = ', '.join(s)
+    rep_count_plate = len(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True))) - dub_count_plate
     dub_count += rep_count
+    dub_count_plate += rep_count_plate
 
     # Sample extraction plate counter
     sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).count() - dub_count
     s = list(set(
         test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id', flat=True)))
     sep_id = ', '.join(s)
+    sep_count_plate = len(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id', flat=True))) - dub_count_plate
     dub_count += sep_count
-
+    dub_count_plate += sep_count_plate
     # Unprocessed sample counter
     unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh).count() - dub_count
 
     # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
-        'data_cleared': data_cleared,
-        'q_processed': q_processed, 'q_recorded': q_recorded, 'q_running': q_running,
+        'data_cleared': data_cleared,'data_cleared_plate': data_cleared_plate,
+        'q_processed': q_processed, 'q_processed_plate': q_processed_plate,
+        'q_recorded': q_recorded, 'q_recorded_plate': q_recorded_plate,
+        'q_running': q_running, 'q_running_plate': q_running_plate,
         'q_running_ids': qrp_id,
         'qrp_ids': qrp_id,
-        'rwp_count': rwp_count, 'rep_count': rep_count,
+        'rwp_count': rwp_count, 'rwp_count_plate': rwp_count_plate,
+        'rep_count': rep_count, 'rep_count_plate': rep_count_plate,
         'rwp_ids': rwp_id, 'rep_ids': rep_id,
-        'sep_count': sep_count,
+        'sep_count': sep_count, 'sep_count_plate': sep_count_plate,
         'sep_ids': sep_id,
         'unproc_samples': unproc_samples
     }
