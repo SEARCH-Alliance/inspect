@@ -230,7 +230,6 @@ def index(request):
                     del request.session['sep_attempt']
                     messages.success(request, mark_safe('Database updated successfully.'))
 
-
             # DATA UPDATE IN KNIGHT LAB
             # IF WE HAVE REP_ID, WE ARE AT THE RNA ELUTION STEP. UPDATE THE DATABASE RECORDS USING THE SEP_ID THAT WAS SCANNED
             elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
@@ -340,7 +339,7 @@ def index(request):
                     del request.session['rwp_attempt']
                     messages.success(request, mark_safe('Database updated successfully.'))
 
-        # DATA UPDATE IN LAURENT LAB
+            # DATA UPDATE IN LAURENT LAB
             # IF BOTH RWP_ID AND QRP_ID WERE PASSED WE ARE AT THE QPCR STEP, WHERE THE LAURENT LAB WILL SCAN THE QPCR REACTION PLATE
             elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
                 if test_results.objects.filter(rwp_id=request.GET['rwp_id']).exclude(qrp_id='').exists() and \
@@ -380,8 +379,10 @@ def index(request):
             else:
                 return render(request, 'qpcr_records/index.html', counter_information)
 
-            # RESET ALL SESSION DATA EXCEPT FOR USER LOGIN
-            reset_session(request)
+        # RESET ALL SESSION DATA EXCEPT FOR USER LOGIN
+        reset_session(request)
+        return render(request, 'qpcr_records/index.html', counter_information)
+
         # FOR ANY POST METHOD, ASSUME THAT THE USER IS UPLOADING A FILE
     elif request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
         if 'Browse' in request.FILES.keys():  # qPCR Results file
