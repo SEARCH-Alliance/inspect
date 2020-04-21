@@ -230,7 +230,6 @@ def index(request):
                     del request.session['sep_attempt']
                     messages.success(request, mark_safe('Database updated successfully.'))
 
-
             # DATA UPDATE IN KNIGHT LAB
             # IF WE HAVE REP_ID, WE ARE AT THE RNA ELUTION STEP. UPDATE THE DATABASE RECORDS USING THE SEP_ID THAT WAS SCANNED
             elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
@@ -340,7 +339,7 @@ def index(request):
                     del request.session['rwp_attempt']
                     messages.success(request, mark_safe('Database updated successfully.'))
 
-        # DATA UPDATE IN LAURENT LAB
+            # DATA UPDATE IN LAURENT LAB
             # IF BOTH RWP_ID AND QRP_ID WERE PASSED WE ARE AT THE QPCR STEP, WHERE THE LAURENT LAB WILL SCAN THE QPCR REACTION PLATE
             elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
                 if test_results.objects.filter(rwp_id=request.GET['rwp_id']).exclude(qrp_id='').exists() and \
@@ -380,8 +379,10 @@ def index(request):
             else:
                 return render(request, 'qpcr_records/index.html', counter_information)
 
-            # RESET ALL SESSION DATA EXCEPT FOR USER LOGIN
-            reset_session(request)
+        # RESET ALL SESSION DATA EXCEPT FOR USER LOGIN
+        reset_session(request)
+        return render(request, 'qpcr_records/index.html', counter_information)
+
         # FOR ANY POST METHOD, ASSUME THAT THE USER IS UPLOADING A FILE
     elif request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
         if 'Browse' in request.FILES.keys():  # qPCR Results file
@@ -556,13 +557,16 @@ def barcode_capture(request):
             f = SampleStorageAndExtractionWellForm(initial={'ssp_well': row + str(col), 'sep_well': row + str(col)})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes,
                                                                          'well': row + str(col)})
+    elif request.session['ssp_well'] == 'A1':
+        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1', 'well': 'B1'})
+        return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': request.session['current_barcodes'], 'well': 'B1'})
     else: # Handle first visit to page passing lrl_id
         request.session['sep_attempt'] = 1
         barcodes = request.session['current_barcodes']
         request.session['lrl_id'] = request.GET['lrl_id']
         request.session['last_scan'] = request.session['ssp_well']
-        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1', 'well': 'B1'})
-        return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'B1'})
+        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1', 'well': 'A1'})
+        return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A1'})
 
 
 @login_required
