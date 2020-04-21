@@ -32,7 +32,7 @@ window.addEventListener("load", () => {
         var value = {{ form1.rwp_id.id_for_label }}.value.trim();
         return {{ plates|safe }}.includes(value);
     }, "Plate does not exist!");
-    success('Plates reocrded successfully.');
+    success('Updating qPCR Reaction Plate');
 });
 </script>
     {% endblock %}

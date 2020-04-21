@@ -377,77 +377,80 @@ def index(request):
                     test_results.objects.filter(rwp_well=i, qrp_id__iexact=request.session['qrp_id']).update(
                         final_results=j.strip(), is_reviewed=True)
 
+            else:
+                return render(request, 'qpcr_records/index.html', counter_information)
+
             # RESET ALL SESSION DATA EXCEPT FOR USER LOGIN
             reset_session(request)
         # FOR ANY POST METHOD, ASSUME THAT THE USER IS UPLOADING A FILE
-        if request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
-            if 'Browse' in request.FILES.keys():  # qPCR Results file
-                # Parse file for Ct values and determine decision tree resuls
-                file = request.FILES['Browse']
-                qreaction_plate = file.name.split('.')[0]
-                exists = test_results.objects.filter(qrp_id=qreaction_plate)
-                # First see if plate ID exists
-                if not exists:
-                    return render(request, 'qpcr_records/unknown_qpcr_plate.html')
-                else:
-                    # Double check that this sample doesn't already have data
-                    history = test_results.objects.filter(~Q(decision_tree_results='Undetermined'), qrp_id=qreaction_plate)
-                    if not history:
-                        # Upload excel file to s3
-                        objs = test_results.objects.filter(qrp_id=qreaction_plate).update(file_transfer_status='Complete')
-                        s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
-                                            aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
-                                            aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
-                        s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=file.name, Body=file)
-
-                        objs = test_results.objects.filter(qrp_id=qreaction_plate) \
-                            .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
-
-                        r = Results()
-                        data_ = r.get_results(file)
-                        r.read_fake_names()
-                        # update the database with values
-
-                        for well, vals in data_.items():
-                            if well != 'instrument':
-                                objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                    ms2_ct_value=vals['MS2'])
-                                objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                    n_ct_value=vals['N gene'])
-                                objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                    orf1ab_ct_value=vals['ORF1ab'])
-                                objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                    s_ct_value=vals['S gene'])
-                                objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                    decision_tree_results=vals['diagnosis'])
-                                objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                    final_results=vals['diagnosis'])
-
-                                if test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).count() > 0:
-                                    barc = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).values_list(
-                                        'barcode', flat=True)[0]
-                                    objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                        fake_name=r.get_fake_name(barc))
-                            elif well == 'instrument':
-                                objs = test_results.objects.filter(qrp_id=qreaction_plate).update(qs5_id=vals)
-
-                        messages.success(request, mark_safe('Database updated successfully.'))
-                        return render(request, 'qpcr_records/index.html', counter_information)
-                    else:
-                        return render(request, 'qpcr_records/qpcr_overwrite_warning.html')
-
-            elif 'Select Barcode List File' in request.FILES.keys():  # Barcodes list
-                barcodes = request.FILES['Select Barcode List File'].read().decode("utf-8").splitlines()
-                l = list()
-                for b in barcodes:
-                    l.append(test_results(barcode=b, sampling_date=date.today().strftime('%Y-%m-%d')))
-                test_results.objects.bulk_create(l)
-                messages.success(request, mark_safe('Database updated successfully.'))
-                return render(request, 'qpcr_records/index.html', counter_information)
+    elif request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
+        if 'Browse' in request.FILES.keys():  # qPCR Results file
+            # Parse file for Ct values and determine decision tree resuls
+            file = request.FILES['Browse']
+            qreaction_plate = file.name.split('.')[0]
+            exists = test_results.objects.filter(qrp_id=qreaction_plate)
+            # First see if plate ID exists
+            if not exists:
+                return render(request, 'qpcr_records/unknown_qpcr_plate.html')
             else:
-                return render(request, 'qpcr_records/index.html', counter_information)
+                # Double check that this sample doesn't already have data
+                history = test_results.objects.filter(~Q(decision_tree_results='Undetermined'), qrp_id=qreaction_plate)
+                if not history:
+                    # Upload excel file to s3
+                    objs = test_results.objects.filter(qrp_id=qreaction_plate).update(file_transfer_status='Complete')
+                    s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
+                                        aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
+                                        aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
+                    s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=file.name, Body=file)
+
+                    objs = test_results.objects.filter(qrp_id=qreaction_plate) \
+                        .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
+
+                    r = Results()
+                    data_ = r.get_results(file)
+                    r.read_fake_names()
+                    # update the database with values
+
+                    for well, vals in data_.items():
+                        if well != 'instrument':
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                ms2_ct_value=vals['MS2'])
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                n_ct_value=vals['N gene'])
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                orf1ab_ct_value=vals['ORF1ab'])
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                s_ct_value=vals['S gene'])
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                decision_tree_results=vals['diagnosis'])
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                final_results=vals['diagnosis'])
+
+                            if test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).count() > 0:
+                                barc = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).values_list(
+                                    'barcode', flat=True)[0]
+                                objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+                                    fake_name=r.get_fake_name(barc))
+                        elif well == 'instrument':
+                            objs = test_results.objects.filter(qrp_id=qreaction_plate).update(qs5_id=vals)
+
+                    messages.success(request, mark_safe('Database updated successfully.'))
+                    return render(request, 'qpcr_records/index.html', counter_information)
+                else:
+                    return render(request, 'qpcr_records/qpcr_overwrite_warning.html')
+
+        elif 'Select Barcode List File' in request.FILES.keys():  # Barcodes list
+            barcodes = request.FILES['Select Barcode List File'].read().decode("utf-8").splitlines()
+            l = list()
+            for b in barcodes:
+                l.append(test_results(barcode=b, sampling_date=date.today().strftime('%Y-%m-%d')))
+            test_results.objects.bulk_create(l)
+            messages.success(request, mark_safe('Database updated successfully.'))
+            return render(request, 'qpcr_records/index.html', counter_information)
         else:
             return render(request, 'qpcr_records/index.html', counter_information)
+    else:
+        return render(request, 'qpcr_records/index.html', counter_information)
 
 
 @login_required
