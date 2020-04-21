@@ -557,6 +557,7 @@ def barcode_capture(request):
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes,
                                                                          'well': row + str(col)})
     else: # Handle first visit to page passing lrl_id
+        request.session['sep_attempt'] = 1
         barcodes = request.session['current_barcodes']
         request.session['lrl_id'] = request.GET['lrl_id']
         request.session['last_scan'] = request.session['ssp_well']
