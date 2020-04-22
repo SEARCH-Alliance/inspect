@@ -1,21 +1,24 @@
 from django.db import models
-from django.forms import ModelForm, HiddenInput, TextInput
+from django.forms import ModelForm, HiddenInput, TextInput, ValidationError
 import datetime
 import django_tables2 as tables
 from django.utils import timezone
 
 
 class personnel_list(models.Model):
-    technician_name = models.CharField(max_length=20, null=False, default='', primary_key=True)
+    technician_name = models.CharField(
+        max_length=20, null=False, default='', primary_key=True)
     technician_lab = models.CharField(max_length=20, null=False, default='')
-    technician_institute = models.CharField(max_length=20, null=False, default='')
+    technician_institute = models.CharField(
+        max_length=20, null=False, default='')
 
 
 sample_release_choices = (('Yes', 'Yes'), ('No', 'No'))
 sample_result_choices = (('', ''), ('Undetermined', 'Undetermined'), ('Invalid', 'Invalid'), ('Inconclusive', 'Inconclusive'),
                          ('Positive', 'Positive'), ('Negative', 'Negative'))
 is_reviewed_choices = ((True, True), (False, False))
-file_transfer_status_choices = (('Complete', 'Complete'), ('Not Complete', 'Not Complete'))
+file_transfer_status_choices = (
+    ('Complete', 'Complete'), ('Not Complete', 'Not Complete'))
 
 
 class test_results(models.Model):
@@ -24,64 +27,45 @@ class test_results(models.Model):
     fake_name = models.CharField(max_length=40, null=False, default='')
 
     # ANDERSSON LAB INFORMATION
-    lrl_id = models.CharField(max_length=15, null=False, default='M6246109105',
-                              help_text='Lysis Reagent Lot #')
-    ssp_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Sample Storage Plate (SSP)')
+    lrl_id = models.CharField(max_length=15, null=False, default='M6246109105', help_text='Lysis Reagent Lot #')
+    ssp_id = models.CharField(max_length=15, null=False, default='', help_text='Sample Storage Plate (SSP)')
     ssp_well = models.CharField(max_length=3, null=False, default='')
     sampling_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
 
-    sep_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of Sample Extraction Plate (SEP)')
+    sep_id = models.CharField(max_length=15, null=False, default='', help_text='Scan or Enter Barcode of Sample Extraction Plate (SEP)')
     sep_well = models.CharField(max_length=3, null=False, default='')
-    andersson_lab_frz_id = models.CharField(max_length=15, null=False, default='',
-                                            help_text='Enter Sample Storage Freezer Number')
+    andersson_lab_frz_id = models.CharField(max_length=15, null=False, default='', help_text='Enter Sample Storage Freezer Number')
     personnel1_andersen_lab = models.CharField(max_length=25, null=False, default='')
-    personnel2_andersen_lab = models.CharField(max_length=25, null=False, default='',
-                                               help_text='Name of Assisting Technician')
+    personnel2_andersen_lab = models.CharField(max_length=25, null=False, default='', help_text='Name of Assisting Technician')
     sample_bag_id = models.CharField(max_length=15, null=False, default='')
 
     # KNIGHT LAB INFORMATION
     epm_id = models.CharField(max_length=15, null=False, default='', help_text='Enter EpMotion ID')
-    rna_extract_kit_id = models.CharField(max_length=20, null=False, default='',
-                                               help_text='Enter RNA extraction kit lot #')
-    megabeads_id = models.CharField(max_length=20, null=False, default='',
-                                               help_text='Enter Mag-Bind particles CNR Lot #')
-    carrier_rna_id = models.CharField(max_length=20, null=False, default='',
-                                               help_text='Enter Carrier RNA Lot #')
+    rna_extract_kit_id = models.CharField(max_length=20, null=False, default='', help_text='Enter RNA extraction kit lot #')
+    megabeads_id = models.CharField(max_length=20, null=False, default='', help_text='Enter Mag-Bind particles CNR Lot #')
+    carrier_rna_id = models.CharField(max_length=20, null=False, default='', help_text='Enter Carrier RNA Lot #')
     kfr_id = models.CharField(max_length=20, null=False, default='', help_text='Enter KingFisher Number')
-    rep_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of RNA Elution Plate (REP)')
+    rep_id = models.CharField(max_length=15, null=False, default='', help_text='Scan or Enter Barcode of RNA Elution Plate (REP)')
     rep_well = models.CharField(max_length=3, null=False, default='')
-    rsp_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of RNA Storage Plate (RSP)')
+    rsp_id = models.CharField(max_length=15, null=False, default='', help_text='Scan or Enter Barcode of RNA Storage Plate (RSP)')
     rsp_well = models.CharField(max_length=3, null=False, default='')
-    knight_lab_frz_id = models.CharField(max_length=15, null=False, default='',
-                                         help_text='Enter RNA Storage Freezer Number')
-    rwp_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of RNA Working Plate (RWP)')
+    knight_lab_frz_id = models.CharField(max_length=15, null=False, default='', help_text='Enter RNA Storage Freezer Number')
+    rwp_id = models.CharField(max_length=15, null=False, default='', help_text='Scan or Enter Barcode of RNA Working Plate (RWP)')
     rwp_well = models.CharField(max_length=3, null=False, default='')
-    personnel_knight_lab = models.CharField(max_length=25, null=False, default='')
+    personnel_knight_lab = models.CharField( max_length=25, null=False, default='')
     re_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
     ms2_lot_id = models.CharField(max_length=15, null=False, default='2003001', help_text='Enter MS2 Control Lot #')
 
     # LAURENT LAB INFORMATION
-    qsp_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of qPCR_Storage Plate (QSP)')
+    qsp_id = models.CharField(max_length=15, null=False, default='', help_text='Scan or Enter Barcode of qPCR_Storage Plate (QSP)')
     qsp_well = models.CharField(max_length=3, null=False, default='')
-    qrp_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Scan or Enter Barcode of qRTPCR Reaction Plate (QRP)')
+    qrp_id = models.CharField(max_length=15, null=False, default='', help_text='Scan or Enter Barcode of qRTPCR Reaction Plate (QRP)')
     qrp_well = models.CharField(max_length=3, null=False, default='')
-    probe_mix_id = models.CharField(max_length=15, null=False, default='',
-                                    help_text='Enter qRTPCR Reaction Probe Mix Lot Number')
-    enzyme_mix_id = models.CharField(max_length=15, null=False, default='2219127',
-                                     help_text='Enter qRTPCR Reaction Enzyme Mix Lot Number')
-    mhv_id = models.CharField(max_length=15, null=False, default='MHV-041',
-                              help_text='Enter Mosquito HV Number')
-    qs5_id = models.CharField(max_length=15, null=False, default='',
-                              help_text='Enter QS5 Number')
-    laurent_lab_frz_id = models.CharField(max_length=15, null=False, default='',
-                                          help_text='Enter RNA Storage Freezer Number')
+    probe_mix_id = models.CharField(max_length=15, null=False, default='', help_text='Enter qRTPCR Reaction Probe Mix Lot Number')
+    enzyme_mix_id = models.CharField(max_length=15, null=False, default='2219127', help_text='Enter qRTPCR Reaction Enzyme Mix Lot Number')
+    mhv_id = models.CharField(max_length=15, null=False, default='MHV-041', help_text='Enter Mosquito HV Number')
+    qs5_id = models.CharField(max_length=15, null=False, default='', help_text='Enter QS5 Number')
+    laurent_lab_frz_id = models.CharField(max_length=15, null=False, default='', help_text='Enter RNA Storage Freezer Number')
     personnel_laurent_lab = models.CharField(max_length=25, null=False, default='')
     qpcr_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
 
@@ -103,35 +87,31 @@ class test_results(models.Model):
     sample_release = models.CharField(max_length=15, null=False, default='No', choices=sample_release_choices)
 
     class Meta:
-        indexes = [
-            models.Index(fields=['barcode', 'ssp_id', 'sep_id', 'rep_id', 'rsp_id', 'rwp_id', 'qrp_id']), ]
+        indexes = [models.Index(fields=['barcode', 'ssp_id', 'sep_id', 'rep_id', 'rsp_id', 'rwp_id', 'qrp_id'])]
 
 
 class test_resultsTable(tables.Table):
     class Meta:
         model = test_results
-        fields = (
-            'barcode', 'sampling_date', 'ssp_id', 'ssp_well', 'sep_id', 'sep_well', 'sample_bag_id', 'rep_id',
-            'rep_well', 'rsp_id', 'rsp_well', 'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
-            'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'pcr_results_csv',
-            'sample_release')
+        fields = ('barcode', 'sampling_date', 'ssp_id', 'ssp_well', 'sep_id', 'sep_well', 'sample_bag_id', 'rep_id',
+                  'rep_well', 'rsp_id', 'rsp_well', 'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
+                  'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'pcr_results_csv',
+                  'sample_release')
 
 
 class review_resultsTable(tables.Table):
     class Meta:
         model = test_results
         fields = ['sampling_date', 'barcode', 'sep_id', 'rep_id',
-        'rwp_id', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
-        'orf1ab_ct_value', 's_ct_value', 'final_results']
+                  'rwp_id', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
+                  'orf1ab_ct_value', 's_ct_value', 'final_results']
 
 
 class LysisReagentLotForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['lrl_id']
-        labels = {'lrl_id': 'Lysis Reagent Lot #'}
-
-
+        fields = ['lrl_id', 'personnel2_andersen_lab']
+        labels = {'lrl_id': 'Lysis Reagent Lot #', 'personnel2_andersen_lab': 'Assisting Technician Name'}
 
 
 class SampleStorageAndExtractionWellForm(ModelForm):
@@ -141,7 +121,7 @@ class SampleStorageAndExtractionWellForm(ModelForm):
         labels = {'barcode': 'Sample Barcode', 'ssp_well': 'Sample Storage Plate Well',
                   'sep_well': 'Sample Extraction Plate Well'}
         widgets = {'barcode': TextInput(attrs={'autofocus': 'autofocus'}), 'ssp_well':
-            HiddenInput(attrs={'readonly': True}), 'sep_well': HiddenInput(attrs={'readonly': True})}
+                   HiddenInput(attrs={'readonly': True}), 'sep_well': HiddenInput(attrs={'readonly': True})}
 
 
 class SampleStorageAndExtractionPlateForm(ModelForm):
@@ -151,37 +131,72 @@ class SampleStorageAndExtractionPlateForm(ModelForm):
         labels = {'ssp_id': 'Sample Storage Plate Barcode', 'sep_id': 'Sample Extraction Plate Barcode',
                   'sample_bag_id': 'Sample Storage Bag'}
 
+    def clean_ssp_id(self):
+        ssp_id = self.cleaned_data['ssp_id']
+        if test_results.objects.filter(ssp_id__iexact=ssp_id).exists():
+            raise ValidationError("Sample storage plate ID already exists.", code='invalid')
+        return ssp_id
+
+    def clean_sep_id(self):
+        sep_id = self.cleaned_data['sep_id']
+        if test_results.objects.filter(sep_id__iexact=sep_id).exists():
+            raise ValidationError("Sample extraction plate ID already exists.", code='invalid')
+        return sep_id
+
+    def clean_sample_bag_id(self):
+        sample_bag_id = self.cleaned_data['sample_bag_id']
+        if test_results.objects.filter(sample_bag_id__iexact=sample_bag_id).exists():
+            raise ValidationError("Sample bag ID already exists.", code='invalid')
+        return sample_bag_id
+
 
 class RNAExtractionPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['rep_id', 'rsp_id', 'kfr_id', 'ms2_lot_id', 'rna_extract_kit_id', 'megabeads_id', 'carrier_rna_id']
-        labels = {'rep_id': 'RNA Elution Plate Barcode', 'rsp_id': 'RNA Storage Plate Barcode',
+        fields = ['sep_id', 'rep_id', 'kfr_id', 'ms2_lot_id',
+                  'rna_extract_kit_id', 'megabeads_id', 'carrier_rna_id', 'ms2_lot_id']
+        labels = {'sep_id': 'Sample Extraction Plate Barcode',
+                  'rep_id': 'RNA Elution Plate Barcode',
                   'kfr_id': 'KingFisher ID', 'ms2_lot_id': 'MS2 Phage Lot #',
                   'rna_extract_kit_id': 'RNA Extraction Kit Lot #', 'megabeads_id': 'Mag-bind Particles CNR Lot #',
                   'carrier_rna_id': 'Carrier RNA Lot #'}
 
 
-class MS2LotForm(ModelForm):
-    class Meta:
-        model = test_results
-        fields = ['ms2_lot_id']
-        labels = {'ms2_lot_id': 'MS2 Phage Lot #'}
+    def clean_sep_id(self):
+        sep_id = self.cleaned_data['sep_id']
+        if not test_results.objects.filter(sep_id__iexact=sep_id).exists():
+            raise ValidationError("Sample extraction plate ID does not exist.", code='invalid')
+        if test_results.objects.filter(sep_id__iexact=sep_id).exclude(rep_id='').exists():
+            raise ValidationError(f"Sample extraction plate \"{sep_id}\" has already been assigned an RNA elution plate ID.")
+        return sep_id
 
-
-class RNAStorageAndWorkingPlateForm(ModelForm):
-    class Meta:
-        model = test_results
-        fields = ['rwp_id', 'epm_id']
-        labels = {'rwp_id': 'RNA Working Plate Barcode', 'epm_id': 'EpMotion ID'}
+    def clean_rep_id(self):
+        rep_id = self.cleaned_data['rep_id']
+        if test_results.objects.filter(rep_id__iexact=rep_id).exists():
+            raise ValidationError("RNA elution plate ID already exists.", code='invalid')
+        return rep_id
 
 
 class QPCRStorageAndReactionPlateForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['qsp_id', 'qrp_id']
-        labels = {'qsp_id': 'qRDP-PCR Storage Plate Barcode', 'qrp_id': 'qRT-PCR Plate Barcode'}
+        fields = ['rwp_id', 'qrp_id']
+        labels = {'rwp_id': 'RNA Working Plate Barcode',
+                  'qrp_id': 'qRT-PCR Plate Barcode'}
 
+    def clean_rwp_id(self):
+        rwp_id = self.cleaned_data['rwp_id']
+        if not test_results.objects.filter(rwp_id__iexact=rwp_id).exists():
+            raise ValidationError("RNA working plate ID does not exist.", code='invalid')
+        if test_results.objects.filter(rwp_id__iexact=rwp_id).exclude(qrp_id='').exists():
+            raise ValidationError(f"qRT-PCR reaction plate ID is already assigned to RNA working plate ID {rwp_id}.")
+        return rwp_id
+
+    def clean_qrp_id(self):
+        qrp_id = self.cleaned_data['qrp_id']
+        if test_results.objects.filter(qrp_id__iexact=qrp_id).exists():
+            raise ValidationError("qRT-PCR reaction plate ID already exists.", code='invalid')
+        return qrp_id
 
 class qpcrResultUploadForm(ModelForm):
     class Meta:

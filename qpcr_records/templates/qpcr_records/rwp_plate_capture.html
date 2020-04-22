@@ -1,0 +1,43 @@
+{% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<div class="container">
+    <form action="" method="POST">
+        {% csrf_token %}
+        {% for error in form.non_field_errors %}
+            <div class="alert border border-danger bg-white text-danger">{{ error }}</div>
+        {% endfor %}
+        <div class="form-row">
+            <div class="form-group col-md-6 mb-0">
+                {{ form.epm_id|as_crispy_field }}
+            </div>
+        </div>
+        <hr>
+        <div class="form-row">
+            <div class="form-group col-md-6 mb-0">
+                {{ form.barcode1|as_crispy_field }}
+            </div>
+
+            <div class="form-group col-md-6 mb-0">
+                {{ form.barcode2|as_crispy_field }}
+            </div>
+
+            <div class="form-group col-md-6 mb-0">
+                {{ form.barcode3|as_crispy_field }}
+            </div>
+
+            <div class="form-group col-md-6 mb-0">
+                {{ form.barcode4|as_crispy_field }}
+            </div>
+
+            </div>
+        <hr>
+        <div class="form-row">
+            <div class="form-group col-md-6 mb-0">
+                {{ form.rwp_id|as_crispy_field }}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Assign Plates</button>
+    </form>
+</div>
+{% endblock %}

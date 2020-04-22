@@ -1,4 +1,7 @@
 from django import forms
+from django.forms import ValidationError
+
+from qpcr_records.models import test_results
 
 sample_tracking_choice = [('Sample_Plated', 'Sample Plated into 96 well Plates'),
                           ('Sample_Stored', 'Sample Stored in -180'),
@@ -22,20 +25,68 @@ class SearchRecords(forms.Form):
 
 
 class ArrayingForm(forms.Form):
-    barcode1 = forms.CharField(max_length=30, label='First 96-Well Plate and Plate into Array Position B2',
-                               required=True)
 
-    barcode2 = forms.CharField(max_length=30, label='Second 96-Well Plate and Plate into Array Position B3',
-                               required=True)
+    epm_id = forms.CharField(max_length=15, label='EpMotion ID', help_text="Enter EpMotion ID")
+    barcode1 = forms.CharField(max_length=30, label='First 96-Well Plate in Array Position B2', required=True)
+    barcode2 = forms.CharField(max_length=30, label='Second 96-Well Plate in Array Position B3', required=True)
+    barcode3 = forms.CharField(max_length=30, label='Third 96-Well Plate in Array Position B4', required=True)
+    barcode4 = forms.CharField(max_length=30, label='Fourth 96-Well Plate in Array Position B5', required=True)
+    rwp_id = forms.CharField(max_length=15, label='RNA Working Plate Barcode', help_text="Scan or Enter Barcode of RNA Working Plate (RWP)")
 
-    barcode3 = forms.CharField(max_length=30, label='Third 96-Well Plate and Plate into Array Position B4',
-                               required=True)
+    def clean(self):
+        barcode1 = self.cleaned_data['barcode1']
+        barcode2 = self.cleaned_data['barcode2']
+        barcode3 = self.cleaned_data['barcode3']
+        barcode4 = self.cleaned_data['barcode4']
 
-    barcode4 = forms.CharField(max_length=30, label='Fourth 96-Well Plate and Plate into Array Position B5',
-                               required=True)
+        barcodes = [barcode1, barcode2, barcode3, barcode4]
 
+        errors = []
+        for b, f in zip(barcodes, ['barcode1', 'barcode2', 'barcode3', 'barcode4']):
+            if not test_results.objects.filter(rep_id__iexact=b).exists():
+                errors.append((f, ValidationError(f"RNA extraction plate \"{b}\" does not exist.")))
+
+        if test_results.objects.filter(rep_id__in=barcodes).exclude(rwp_id='').exists():
+            raise ValidationError("One or more RNA elution plate IDs are already assigned to an RNA working plate.")
+
+        if len(set(barcodes)) != 4:
+            raise ValidationError("Duplicated RNA elution plate IDs not allowed.")
+
+        for e in errors:
+            self.add_error(*e)
+
+        return self.cleaned_data
+
+    # def clean_barcode1(self):
+    #     barcode1 = self.cleaned_data['barcode1']
+    #     if not test_results.objects.filter(rep_id__iexact=barcode1).exists():
+    #         raise ValidationError("RNA elution plate ID does not exist.", code='invalid')
+    #     return barcode1
+
+    # def clean_barcode2(self):
+    #     barcode2 = self.cleaned_data['barcode2']
+    #     if not test_results.objects.filter(rep_id__iexact=barcode2).exists():
+    #         raise ValidationError("RNA elution plate ID does not exist.", code='invalid')
+    #     return barcode2
+
+    # def clean_barcode3(self):
+    #     barcode3 = self.cleaned_data['barcode3']
+    #     if not test_results.objects.filter(rep_id__iexact=barcode3).exists():
+    #         raise ValidationError("RNA elution plate ID does not exist.", code='invalid')
+    #     return barcode3
+
+    # def clean_barcode4(self):
+    #     barcode4 = self.cleaned_data['barcode4']
+    #     if not test_results.objects.filter(rep_id__iexact=barcode4).exists():
+    #         raise ValidationError("RNA elution plate ID does not exist.", code='invalid')
+    #     return barcode4
+
+    def clean_rwp_id(self):
+        rwp_id = self.cleaned_data['rwp_id']
+        if test_results.objects.filter(rwp_id__iexact=rwp_id).exists():
+            raise ValidationError("RNA working plate ID already exists.", code='invalid')
+        return rwp_id
 
 class TrackSamplesForm(forms.Form):
     track_samples = forms.MultipleChoiceField(required=True, widget=forms.CheckboxSelectMultiple,
                                               choices=sample_tracking_choice)
-

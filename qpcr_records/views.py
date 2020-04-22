@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from qpcr_records.models import *
 from qpcr_records.forms import *
 from qpcr_records.data_processing.results import Results
@@ -41,10 +41,12 @@ def sample_counter_display():
                                               sampling_date__gte=time_thresh).count() - dub_count
     dub_count += q_processed
 
-    q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gte=time_thresh).count() - dub_count
+    q_recorded = test_results.objects.filter(
+        ~Q(pcr_results_csv=''), sampling_date__gte=time_thresh).count() - dub_count
     dub_count += q_recorded
 
-    q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).count() - dub_count
+    q_running = test_results.objects.filter(
+        ~Q(qrp_id=''), sampling_date__gte=time_thresh).count() - dub_count
     s = list(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list(
         'qrp_id', flat=True).order_by('qrp_id')))
     qrp_id = ', '.join(s)
@@ -66,14 +68,16 @@ def sample_counter_display():
     dub_count += rep_count
 
     # Sample extraction plate counter
-    sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).count() - dub_count
+    sep_count = test_results.objects.filter(
+        ~Q(sep_id=''), sampling_date__gte=time_thresh).count() - dub_count
     s = list(set(
         test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id', flat=True)))
     sep_id = ', '.join(s)
     dub_count += sep_count
 
     # Unprocessed sample counter
-    unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh).count() - dub_count
+    unproc_samples = test_results.objects.filter(
+        ~Q(barcode=''), sampling_date__gte=time_thresh).count() - dub_count
 
     # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
@@ -99,359 +103,131 @@ def index(request):
     # Sample Counter Display - Will appear every time the home page is loaded
     counter_information = sample_counter_display()
 
-    if request.method == 'GET':
-        # USER HAS CANCELLED RECORD ENTRY OR UPDATE
-        if 'status' in request.GET.keys():
-            return render(request, 'qpcr_records/index.html')
+    #         # DATA UPDATE IN LAURENT LAB
+    #         # IF BOTH RWP_ID AND QRP_ID WERE PASSED WE ARE AT THE QPCR STEP, WHERE THE LAURENT LAB WILL SCAN THE QPCR REACTION PLATE
+    #         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
+    #             if test_results.objects.filter(rwp_id=request.GET['rwp_id']).exclude(qrp_id='').exists() and \
+    #                     request.session['qrp_attempt'] == 1:
+    #                 messages.success(request,
+    #                                  mark_safe(
+    #                                      'qPCR Reaction Plate ID already exists for RNA Working Plate %s.<br/>Enter correct '
+    #                                      'RNA Working Plate ID else Continue with this form to overwrite exiting records.'
+    #                                      '<br/>Click <a href="/qpcr_records/?status=cancel">here</a> to cancel and return to home.'
+    #                                      % request.GET['rwp_id']))
+    #                 f1 = RNAStorageAndWorkingPlateForm(
+    #                     initial={'rwp_id': request.GET['rwp_id']})
+    #                 f2 = QPCRStorageAndReactionPlateForm(
+    #                     initial={'qrp_id': request.GET['qrp_id']})
 
-        else:
-            # DATA UPDATE IN ANDERSSON LAB
-            if 'ssp_id' in request.GET.keys():
-                # IF SSP_ID IS PRESENT, WE ARE CREATING NEW RECORDS. LOOP OVER WELLS FROM A1 THROUGH H12 AND EXTRACT THE
-                # BARCODE FROM THE CORRESPONDING WELL. WELLS A1 AND H1 HAVE NO BARCODES SINCE THESE ARE CONTROL WELLS.
-                # WELLS A1 AND H1 WILL NOT BE RECORDED IN THE DATABASE
-                l = list()
-                if test_results.objects.filter(sep_id__iexact=request.GET['sep_id']).exists() and request.session['sep_attempt'] == 1:
-                    l.append('sep')
-                if test_results.objects.filter(ssp_id__iexact=request.GET['ssp_id']).exists() and request.session['sep_attempt'] == 1:
-                    l.append('ssp')
-                if test_results.objects.filter(sample_bag_id__iexact=request.GET['sample_bag_id']).exists() and request.session['sep_attempt'] == 1:
-                    l.append('ssb')
-                print(l)
+    #                 recent_plate_query = test_results.objects.filter(
+    #                     sampling_date__gte=datetime.today() - timedelta(days=2)) \
+    #                     .values_list("rwp_id", flat=True)
+    #                 plates = list(recent_plate_query)
+    #                 request.session['qrp_attempt'] = request.session['qrp_attempt'] + 1
+    #                 return render(request, 'qpcr_records/qpcr_plate_capture.html', {'form1': f1, 'form2': f2,
+    #                                                                                     'plates': plates})
+    #             else:
+    #                 objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']) \
+    #                     .update(qrp_id=request.GET['qrp_id'].strip(), qpcr_date=date.today().strftime('%Y-%m-%d'),
+    #                             personnel_laurent_lab=request.user.get_full_name())
+    #                 del request.session['qrp_attempt']
+    #                 messages.success(request, mark_safe(
+    #                     'Database updated successfully.'))
 
-                if len(l) > 0:
-                    if len(l) == 3:
-                        messages.warning(request, mark_safe('Sample Storage Plate %s, Sample Extraction Plate %s, and Sample Storage Bag %s '
-                                                            'already exist!<br/><br/> Please enter new IDs for the '
-                                                            'Sample Storage Plate, Sample Extraction Plate and Sample Storage Bag<br/>. '
-                                                            'You may also continue with this form to create duplicate entries of the '
-                                                            'Sample Storage Plate, Sample Extraction Plate and Sample Storage Bag. '
-                                                            '<br/><br/>Click '
-                                                            '<a href="/qpcr_records/?status=cancel"><strong><u>here</u></strong></a> '
-                                                            'to cancel and return to the home page. You will lose all scanned information.'
-                                                            % (request.GET['ssp_id'], request.GET['sep_id'],
-                                                               request.GET['sample_bag_id'])))
-                    elif 'ssp' in l and 'sep' in l:
-                        messages.warning(request, mark_safe('Sample Storage Plate %s and Sample Extraction Plate %s '
-                                                            'already exist!<br/><br/> Please enter new IDs for the '
-                                                            'Sample Storage Plate and Sample Extraction Plate<br/><br/>. '
-                                                            'You may also continue with this form to create duplicate entries of the '
-                                                            'Sample Storage Plate and Sample Extraction Plate. '
-                                                            '<br/><br/>Click '
-                                                            '<a href="/qpcr_records/?status=cancel"><strong><u>here</u></strong></a> '
-                                                            'to cancel and return to the home page. You will lose all scanned information.'
-                                                            % (request.GET['ssp_id'], request.GET['sep_id'])))
-                    elif 'ssp' in l and 'ssb' in l:
-                        messages.warning(request, mark_safe('Sample Storage Plate %s and Sample Storage Bag %s '
-                                                            'already exist!<br/><br/> Please enter new IDs for the '
-                                                            'Sample Storage Plate and Sample Storage Bag<br/><br/>. '
-                                                            'You may also continue with this form to create duplicate entries of the '
-                                                            ' Sample Storage Plate and Sample Storage Bag. '
-                                                            '<br/><br/>Click '
-                                                            '<a href="/qpcr_records/?status=cancel"><strong><u>here</u></strong></a> '
-                                                            'to cancel and return to the home page. You will lose all scanned information.'
-                                                            % (request.GET['ssp_id'], request.GET['sample_bag_id'])))
-                    elif 'sep' in l and 'ssb' in l:
-                        messages.warning(request, mark_safe('Sample Extraction Plate %s and Sample Storage Bag %s '
-                                                            'already exist!<br/><br/> Please enter new IDs for the '
-                                                            'Sample Extraction Plate and Sample Storage Bag<br/><br/>. '
-                                                            'You may also continue with this form to create duplicate entries of the '
-                                                            'Sample Extraction Plate and Sample Storage Bag. '
-                                                            '<br/><br/>Click '
-                                                            '<a href="/qpcr_records/?status=cancel"><strong><u>here</u></strong></a> '
-                                                            'to cancel and return to the home page. You will lose all scanned information.'
-                                                            % (request.GET['sep_id'], request.GET['sample_bag_id'])))
-                    elif 'ssp' in l:
-                        messages.warning(request, mark_safe('Sample Storage Plate %s '
-                                                            'already exists!<br/><br/> Please enter a new ID for the '
-                                                            'Sample Storage Plate ID<br/><br/>. '
-                                                            'You may also continue with this form to create duplicate entries of the '
-                                                            'Sample Storage Plate. '
-                                                            '<br/><br/>Click '
-                                                            '<a href="/qpcr_records/?status=cancel"><strong><u>here</u></strong></a> '
-                                                            'to cancel and return to the home page. You will lose all scanned information.'
-                                                            % request.GET['ssp_id']))
-                    elif 'sep' in l:
-                        messages.warning(request, mark_safe('Sample Extraction Plate %s '
-                                                            'already exists!<br/><br/> Please enter a new ID for the '
-                                                            'Sample Extraction Plate<br/><br/>. '
-                                                            'You may also continue with this form to create duplicate entries of the '
-                                                            'Sample Extraction Plate. '
-                                                            '<br/><br/>Click '
-                                                            '<a href="/qpcr_records/?status=cancel"><strong><u>here</u></strong></a> '
-                                                            'to cancel and return to the home page. You will lose all scanned information.'
-                                                            % request.GET['sep_id']))
-                    else:
-                        messages.warning(request, mark_safe('Sample Storage Bag %s '
-                                                            'already exists!<br/><br/> Please enter a new ID for the '
-                                                            'Sample Storage Bag<br/><br/>. '
-                                                            'You may also continue with this form to create duplicate entries of the '
-                                                            'Sample Storage Bag. '
-                                                            '<br/><br/>Click '
-                                                            '<a href="/qpcr_records/?status=cancel"><strong><u>here</u></strong></a> '
-                                                            'to cancel and return to the home page. You will lose all scanned information.'
-                                                            % request.GET['sample_bag_id']))
+    #         # IF ONLY A QPR_ID WAS PASSED, THE LAURENT LAB WANTS TO REVIEW THE RESULTS FROM THIS QRP_ID
+    #         elif 'qrp_id' in request.session.keys():
+    #             for k in request.GET.keys():
+    #                 print("%s : %s\n" % (k, request.GET[k]))
+    #             for i, j in zip(test_results.objects.filter(qrp_id__iexact=request.session['qrp_id']).values_list(
+    #                     'rwp_well', flat=True), list(request.GET.values())):
+    #                 test_results.objects.filter(rwp_well=i, qrp_id__iexact=request.session['qrp_id']).update(
+    #                     final_results=j.strip(), is_reviewed=True)
 
-                    barcodes = request.session['current_barcodes']
-                    f = SampleStorageAndExtractionPlateForm(initial={'ssp_id': request.GET['ssp_id'],
-                                                                     'sep_id': request.GET['sep_id'],
-                                                                     'sample_bag_id': request.GET['sample_bag_id']})
-                    recent_plate_query = test_results.objects.filter(
-                        sampling_date__gte=datetime.today() - timedelta(days=2)) \
-                        .values_list("sep_id", flat=True)
-                    plates = list(recent_plate_query)
-                    request.session['sep_attempt'] = request.session['sep_attempt'] + 1
-                    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html',
-                                  {'form': f, 'barcodes': barcodes, 'plates': plates})
-                else:
-                    l = list()
-                    for i in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
-                        for j in range(1, 13):
-                            well = i + str(j)
-                            if well in ['A1', 'H1']:
-                                continue
-                            elif well not in request.session.keys():
-                                continue
-                            else:
-                                l.append(test_results(barcode=request.session[well].strip(),
-                                                      ssp_id=request.GET['ssp_id'].strip(),
-                                                      ssp_well=well.strip(),
-                                                      sep_id=request.GET['sep_id'].strip(),
-                                                      sep_well=well.strip(),
-                                                      rep_well=well.strip(),
-                                                      rsp_well=well.strip(),
-                                                      sampling_date=date.today().strftime('%Y-%m-%d'),
-                                                      lrl_id=request.session['lrl_id'].strip(),
-                                                      personnel1_andersen_lab=request.user.get_full_name(),
-                                                      personnel2_andersen_lab=request.session[
-                                                          'personnel2_andersen_lab'].strip(),
-                                                      sample_bag_id=request.GET['sample_bag_id'].strip()))
-                    test_results.objects.bulk_create(l)
-                    del request.session['sep_attempt']
-                    messages.success(request, mark_safe('Database updated successfully.'))
+    #         else:
+    #             return render(request, 'qpcr_records/index.html', counter_information)
 
-            # DATA UPDATE IN KNIGHT LAB
-            # IF WE HAVE REP_ID, WE ARE AT THE RNA ELUTION STEP. UPDATE THE DATABASE RECORDS USING THE SEP_ID THAT WAS SCANNED
-            elif 'sep_id' in request.GET.keys() and 'rep_id' in request.GET.keys():
-                if test_results.objects.filter(sep_id=request.GET['sep_id']).exclude(rep_id='').exists() and \
-                        request.session['rep_attempt'] == 1:
-                    messages.success(request,
-                                     mark_safe('RNA Elution Plate ID already exists for Sample Extraction Plate %s.'
-                                               '<br/>Enter correct Sample Extraction Plate ID else Continue with this form '
-                                               'to overwrite exiting records.<br/>Click <a href="/qpcr_records/?status=cancel">here</a> to'
-                                               ' cancel and return to home.' % request.GET['sep_id']))
-                    f1 = SampleStorageAndExtractionPlateForm(initial={'sep_id': request.GET['sep_id']})
-                    f2 = RNAExtractionPlateForm(initial={'ms2_lot_id': '2003001', 'rep_id': request.GET['rep_id'],
-                                                         'rsp_id': request.GET['rep_id'], 'kfr_id': request.GET['kfr_id']})
-                    f3 = MS2LotForm()
+    # RESET ALL SESSION DATA EXCEPT FOR USER LOGIN
+    reset_session(request)
+    return render(request, 'qpcr_records/index.html', counter_information)
 
-                    recent_plate_query = test_results.objects.filter(
-                        sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
-                    plates = list(recent_plate_query)
-                    request.session['rep_attempt'] = request.session['rep_attempt'] + 1
-                    return render(request, 'qpcr_records/scan_plate_2_3_barcode.html', {'form1': f1, 'form2': f2,
-                                                                                        'form3': f3, 'plates': plates})
-                else:
-                    objs = test_results.objects.filter(sep_id=request.GET['sep_id']).update(
-                        rep_id=request.GET['rep_id'].strip(), re_date=date.today().strftime('%Y-%m-%d'),
-                        rsp_id=request.GET['rep_id'].strip(), ms2_lot_id=request.GET['ms2_lot_id'].strip(),
-                        personnel_knight_lab=request.user.get_full_name(), kfr_id=request.GET['kfr_id'].strip(),
-                        rna_extract_kit_id=request.GET['rna_extract_kit_id'], megabeads_id=request.GET['megabeads_id'],
-                        carrier_rna_id=request.GET['carrier_rna_id'])
-                    del request.session['rep_attempt']
-                    messages.success(request, mark_safe('Database updated successfully.'))
+    # FOR ANY POST METHOD, ASSUME THAT THE USER IS UPLOADING A FILE
+    # elif request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
+    #     if 'Browse' in request.FILES.keys():  # qPCR Results file
+    #         # Parse file for Ct values and determine decision tree resuls
+    #         file = request.FILES['Browse']
+    #         qreaction_plate = file.name.split('.')[0]
+    #         exists = test_results.objects.filter(qrp_id=qreaction_plate)
+    #         # First see if plate ID exists
+    #         if not exists:
+    #             return render(request, 'qpcr_records/unknown_qpcr_plate.html')
+    #         else:
+    #             # Double check that this sample doesn't already have data
+    #             history = test_results.objects.filter(
+    #                 ~Q(decision_tree_results='Undetermined'), qrp_id=qreaction_plate)
+    #             if not history:
+    #                 # Upload excel file to s3
+    #                 objs = test_results.objects.filter(qrp_id=qreaction_plate).update(
+    #                     file_transfer_status='Complete')
+    #                 s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
+    #                                     aws_access_key_id=config(
+    #                                         'AWS_ACCESS_KEY_ID'),
+    #                                     aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
+    #                 s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')
+    #                           ).put_object(Key=file.name, Body=file)
 
-                # IF THERE IS A BARCODE4 PASSED, WE ARE AT THE ARRAYING STEP
-            elif 'barcode4' in request.GET.keys():
-                if test_results.objects.filter(rep_id__in=[request.GET['barcode1'], request.GET['barcode2'],
-                                                           request.GET['barcode3'], request.GET['barcode4']]) \
-                        .exclude(rwp_id='').exists() and request.session['rwp_attempt'] == 1:
-                    l = list()
-                    if test_results.objects.filter(rep_id__iexact=request.GET['barcode1']).exclude(rwp_id='').exists() and \
-                            request.session['rwp_attempt'] == 1:
-                        l.append(request.GET['barcode1'])
-                    elif test_results.objects.filter(rep_id__iexact=request.GET['barcode2']).exclude(rwp_id='').exists() and \
-                            request.session['rwp_attempt'] == 1:
-                        l.append(request.GET['barcode2'])
-                    elif test_results.objects.filter(rep_id__iexact=request.GET['barcode3']).exclude(rwp_id='').exists() and \
-                            request.session['rwp_attempt'] == 1:
-                        l.append(request.GET['barcode3'])
-                    else:
-                        l.append(request.GET['barcode4'])
+    #                 objs = test_results.objects.filter(qrp_id=qreaction_plate) \
+    #                     .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
 
-                    s = ','.join(map(str, l))
-                    messages.success(request, mark_safe('RNA Working Plate ID already exists for RNA Elution Plate %s.<br/>'
-                                                        'Enter correct RNA Elution Plate ID else Continue with this form to '
-                                                        'overwrite exiting records.<br/>Click <a href="/qpcr_records/?status=cancel">here</a> to '
-                                                        'cancel and return to home.' % s))
+    #                 r = Results()
+    #                 data_ = r.get_results(file)
+    #                 r.read_fake_names()
+    #                 # update the database with values
 
-                    f1 = ArrayingForm(initial={'barcode1': request.GET['barcode1'], 'barcode2': request.GET['barcode2'],
-                                               'barcode3': request.GET['barcode3'],
-                                               'barcode4': request.GET['barcode4']})
-                    f2 = RNAStorageAndWorkingPlateForm(initial={'rwp_id': request.GET['rwp_id'],
-                                                                'epm_id': request.GET['epm_id']})
+    #                 for well, vals in data_.items():
+    #                     if well != 'instrument':
+    #                         objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+    #                             ms2_ct_value=vals['MS2'])
+    #                         objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+    #                             n_ct_value=vals['N gene'])
+    #                         objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+    #                             orf1ab_ct_value=vals['ORF1ab'])
+    #                         objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+    #                             s_ct_value=vals['S gene'])
+    #                         objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+    #                             decision_tree_results=vals['diagnosis'])
+    #                         objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+    #                             final_results=vals['diagnosis'])
 
-                    recent_plate_query = test_results.objects.filter(
-                        sampling_date__gte=datetime.today() - timedelta(days=2)) \
-                        .values_list("rep_id", flat=True)
-                    plates = list(recent_plate_query)
-                    request.session['rwp_attempt'] = request.session['rwp_attempt'] + 1
-                    return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html',
-                                  {'form1': f1, 'form2': f2,
-                                   'plates': plates})
-                else:
-                    objs = test_results.objects.filter(
-                        rep_id__in=[request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
-                                    request.GET['barcode4']]).update(rwp_id=request.GET['rwp_id'].strip(),
-                                                                     epm_id=request.GET['epm_id'].strip())
+    #                         if test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).count() > 0:
+    #                             barc = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).values_list(
+    #                                 'barcode', flat=True)[0]
+    #                             objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
+    #                                 fake_name=r.get_fake_name(barc))
+    #                     elif well == 'instrument':
+    #                         objs = test_results.objects.filter(
+    #                             qrp_id=qreaction_plate).update(qs5_id=vals)
 
-                    # CONVERT 4X96-WELL PLATE LAYOUT TO 1X384-WELL PLATE LAYOUT
-                    d = dict()
-                    rows_384 = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P']
-                    cols_384 = range(1, 25)
-                    col_index = 0
-                    row_index = 0
-                    for z in range(0, 4):
-                        for col1, col2 in zip([1, 3, 5, 7, 9, 11], [2, 4, 6, 8, 10, 12]):
-                            for row in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
-                                d[str(z) + row + str(col1)] = rows_384[row_index] + str(cols_384[col_index])
-                                row_index = row_index + 1
-                                d[str(z) + row + str(col2)] = rows_384[row_index] + str(cols_384[col_index])
-                                row_index = row_index + 1
+    #                 messages.success(request, mark_safe(
+    #                     'Database updated successfully.'))
+    #                 return render(request, 'qpcr_records/index.html', counter_information)
+    #             else:
+    #                 return render(request, 'qpcr_records/qpcr_overwrite_warning.html')
 
-                            col_index = col_index + 1
-                            row_index = 0
-
-                    barcode_list = list()
-                    i = 0
-                    for b in [request.GET['barcode1'], request.GET['barcode2'], request.GET['barcode3'],
-                              request.GET['barcode4']]:
-                        if b in barcode_list:
-                            continue
-                        else:
-                            for z in test_results.objects.filter(rep_id=b).values_list('sep_well', flat=True):
-                                test_results.objects.filter(rep_id=b, sep_well=z).update(rwp_well=d[str(i) + z],
-                                                                                         rsp_well=d[str(i) + z],
-                                                                                         qrp_well=d[str(i) + z])
-                            i = i + 1
-
-                        barcode_list.append(b)
-                    del request.session['rwp_attempt']
-                    messages.success(request, mark_safe('Database updated successfully.'))
-
-            # DATA UPDATE IN LAURENT LAB
-            # IF BOTH RWP_ID AND QRP_ID WERE PASSED WE ARE AT THE QPCR STEP, WHERE THE LAURENT LAB WILL SCAN THE QPCR REACTION PLATE
-            elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
-                if test_results.objects.filter(rwp_id=request.GET['rwp_id']).exclude(qrp_id='').exists() and \
-                        request.session['qrp_attempt'] == 1:
-                    messages.success(request,
-                                     mark_safe(
-                                         'qPCR Reaction Plate ID already exists for RNA Working Plate %s.<br/>Enter correct '
-                                         'RNA Working Plate ID else Continue with this form to overwrite exiting records.'
-                                         '<br/>Click <a href="/qpcr_records/?status=cancel">here</a> to cancel and return to home.'
-                                         % request.GET['rwp_id']))
-                    f1 = RNAStorageAndWorkingPlateForm(initial={'rwp_id': request.GET['rwp_id']})
-                    f2 = QPCRStorageAndReactionPlateForm(initial={'qrp_id': request.GET['qrp_id']})
-
-                    recent_plate_query = test_results.objects.filter(
-                        sampling_date__gte=datetime.today() - timedelta(days=2)) \
-                        .values_list("rwp_id", flat=True)
-                    plates = list(recent_plate_query)
-                    request.session['qrp_attempt'] = request.session['qrp_attempt'] + 1
-                    return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2,
-                                                                                        'plates': plates})
-                else:
-                    objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']) \
-                        .update(qrp_id=request.GET['qrp_id'].strip(), qpcr_date=date.today().strftime('%Y-%m-%d'),
-                                personnel_laurent_lab=request.user.get_full_name())
-                    del request.session['qrp_attempt']
-                    messages.success(request, mark_safe('Database updated successfully.'))
-
-            # IF ONLY A QPR_ID WAS PASSED, THE LAURENT LAB WANTS TO REVIEW THE RESULTS FROM THIS QRP_ID
-            elif 'qrp_id' in request.session.keys():
-                for k in request.GET.keys():
-                    print("%s : %s\n" % (k, request.GET[k]))
-                for i, j in zip(test_results.objects.filter(qrp_id__iexact=request.session['qrp_id']).values_list(
-                        'rwp_well', flat=True), list(request.GET.values())):
-                    test_results.objects.filter(rwp_well=i, qrp_id__iexact=request.session['qrp_id']).update(
-                        final_results=j.strip(), is_reviewed=True)
-
-            else:
-                return render(request, 'qpcr_records/index.html', counter_information)
-
-        # RESET ALL SESSION DATA EXCEPT FOR USER LOGIN
-        reset_session(request)
-        return render(request, 'qpcr_records/index.html', counter_information)
-
-        # FOR ANY POST METHOD, ASSUME THAT THE USER IS UPLOADING A FILE
-    elif request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
-        if 'Browse' in request.FILES.keys():  # qPCR Results file
-            # Parse file for Ct values and determine decision tree resuls
-            file = request.FILES['Browse']
-            qreaction_plate = file.name.split('.')[0]
-            exists = test_results.objects.filter(qrp_id=qreaction_plate)
-            # First see if plate ID exists
-            if not exists:
-                return render(request, 'qpcr_records/unknown_qpcr_plate.html')
-            else:
-                # Double check that this sample doesn't already have data
-                history = test_results.objects.filter(~Q(decision_tree_results='Undetermined'), qrp_id=qreaction_plate)
-                if not history:
-                    # Upload excel file to s3
-                    objs = test_results.objects.filter(qrp_id=qreaction_plate).update(file_transfer_status='Complete')
-                    s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
-                                        aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
-                                        aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
-                    s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=file.name, Body=file)
-
-                    objs = test_results.objects.filter(qrp_id=qreaction_plate) \
-                        .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
-
-                    r = Results()
-                    data_ = r.get_results(file)
-                    r.read_fake_names()
-                    # update the database with values
-
-                    for well, vals in data_.items():
-                        if well != 'instrument':
-                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                ms2_ct_value=vals['MS2'])
-                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                n_ct_value=vals['N gene'])
-                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                orf1ab_ct_value=vals['ORF1ab'])
-                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                s_ct_value=vals['S gene'])
-                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                decision_tree_results=vals['diagnosis'])
-                            objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                final_results=vals['diagnosis'])
-
-                            if test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).count() > 0:
-                                barc = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).values_list(
-                                    'barcode', flat=True)[0]
-                                objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-                                    fake_name=r.get_fake_name(barc))
-                        elif well == 'instrument':
-                            objs = test_results.objects.filter(qrp_id=qreaction_plate).update(qs5_id=vals)
-
-                    messages.success(request, mark_safe('Database updated successfully.'))
-                    return render(request, 'qpcr_records/index.html', counter_information)
-                else:
-                    return render(request, 'qpcr_records/qpcr_overwrite_warning.html')
-
-        elif 'Select Barcode List File' in request.FILES.keys():  # Barcodes list
-            barcodes = request.FILES['Select Barcode List File'].read().decode("utf-8").splitlines()
-            l = list()
-            for b in barcodes:
-                l.append(test_results(barcode=b, sampling_date=date.today().strftime('%Y-%m-%d')))
-            test_results.objects.bulk_create(l)
-            messages.success(request, mark_safe('Database updated successfully.'))
-            return render(request, 'qpcr_records/index.html', counter_information)
-        else:
-            return render(request, 'qpcr_records/index.html', counter_information)
-    else:
-        return render(request, 'qpcr_records/index.html', counter_information)
+    #     elif 'Select Barcode List File' in request.FILES.keys():  # Barcodes list
+    #         barcodes = request.FILES['Select Barcode List File'].read().decode(
+    #             "utf-8").splitlines()
+    #         l = list()
+    #         for b in barcodes:
+    #             l.append(test_results(
+    #                 barcode=b, sampling_date=date.today().strftime('%Y-%m-%d')))
+    #         test_results.objects.bulk_create(l)
+    #         messages.success(request, mark_safe(
+    #             'Database updated successfully.'))
+    #         return render(request, 'qpcr_records/index.html', counter_information)
+    #     else:
+    #         return render(request, 'qpcr_records/index.html', counter_information)
+    # else:
+    #     return render(request, 'qpcr_records/index.html', counter_information)
 
 
 @login_required
@@ -494,19 +270,20 @@ def perform_safety_check(request):
     Present list of safety checks to user before starting plating.
     :param request: signal call that this function has been called
     """
+    # Upon form submission, redirect to barcode_capture if valid
+    if request.method == 'POST':
+        f = LysisReagentLotForm(request.POST)
 
-    if request.method == 'GET':
-        for k in request.GET.keys():
-            request.session[k] = request.GET[k]
+        if f.is_valid():
+            request.session['lrl_id'] = f.cleaned_data['lrl_id']
+            request.session['personnel2_andersen_lab'] = f.cleaned_data['personnel2_andersen_lab']
+            return redirect('barcode_capture')
+        else:
+            return render(request, 'qpcr_records/perform_safety_check.html', {'form': f})
 
-        request.session['ssp_well'] = 'X'
-        request.session['current_barcodes'] = dict()
-        f1 = LysisReagentLotForm(initial={'lrl_id': 'M6246109105'})
-        f2 = PersonnelForm()
-        # request.session['expected_barcodes'] = list(
-        #    test_results.objects.filter(sampling_date=date.today().strftime('%Y-%m-%d'),
-        #                                sep_well='').values_list('barcode', flat=True))
-        return render(request, 'qpcr_records/perform_safety_check.html', {'form1': f1, 'form2': f2, 'well': 'A1'})
+    else:  # Show initial form
+        f = LysisReagentLotForm(initial={'lrl_id': 'M6246109105'})
+        return render(request, 'qpcr_records/perform_safety_check.html', {'form': f})
 
 
 @login_required
@@ -518,60 +295,52 @@ def barcode_capture(request):
     :param request: signal call that this function has been called
     :return f: captured barcode
     """
-    d1 = {'A': 'B', 'B': 'C', 'C': 'D', 'D': 'E', 'E': 'F', 'F': 'G', 'G': 'H', 'H': 'A'}
+    d1 = {'A': 'B', 'B': 'C', 'C': 'D', 'D': 'E',
+          'E': 'F', 'F': 'G', 'G': 'H', 'H': 'A'}
 
     for k in request.GET.keys():
         request.session[k] = request.GET[k]
 
-    # Checks if the last scanned barcode was for a plate. In that case, the current scan is for the first well 'A1'.
+    # Initial visit via redirect
+    if request.method == 'GET':
+        start_well = 'A1'
+        request.session['barcodes'] = dict()
+        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': start_well, 'sep_well': start_well})
+        return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': request.session['barcodes']})
+    # Progressing through wells
+    else:
+        f = SampleStorageAndExtractionWellForm(request.POST)
 
-    # Add well barcodes
-    if 'barcode' in request.GET.keys():
+        # Proceed to next well accordingly
+        if f.is_valid():
+            # Save well barcodes to session
+            active_well = f.cleaned_data['sep_well']
+            request.session[active_well] = f.cleaned_data['barcode']
+            request.session['barcodes'][active_well] = f.cleaned_data['barcode']
+            barcodes = request.session['barcodes']
 
-        # Add barcode if not control well
-        if 'barcode' in request.session.keys():
-            well = request.session['ssp_well']
-            request.session['current_barcodes'][well] = request.session['barcode']
-            request.session[well] = request.session['barcode']
-
-        barcodes = request.session['current_barcodes']
-        # Skip second control well
-        if request.session['ssp_well'] == 'G1':
-            request.session['last_scan'] = request.session['ssp_well']
-            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A2', 'sep_well': 'A2'})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A2'})
-        elif request.session['ssp_well'] == 'H12':  # END
-            request.session['last_scan'] = 'H12'
-            f = SampleStorageAndExtractionPlateForm()
-            return render(request, 'qpcr_records/scan_plate_1_2_barcode.html', {'form': f, 'barcodes': barcodes})
-        else:
-            request.session['last_scan'] = request.session['ssp_well']
-            row = request.session['ssp_well'][0]
-            col = int(request.session['ssp_well'][1:])
-            if row == 'H':
-                row = d1[row]
-                col = col + 1
+            # Last well reached; redirect to plate form
+            if active_well == 'C1':
+                # Save barcode to
+                return redirect('sample_plate_capture')
+            # Next well
             else:
-                row = d1[row]
+                row = active_well[0]
+                col = int(active_well[1:])
+                if row == 'H':
+                    row = d1[row]
+                    col = col + 1
+                else:
+                    row = d1[row]
 
-            f = SampleStorageAndExtractionWellForm(initial={'ssp_well': row + str(col), 'sep_well': row + str(col)})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes,
-                                                                         'well': row + str(col)})
-    elif request.session['ssp_well'] == 'A1':
-        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'B1', 'sep_well': 'B1', 'well': 'B1'})
-        return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': request.session['current_barcodes'], 'well': 'B1'})
-    else: # Handle first visit to page passing lrl_id
-        request.session['sep_attempt'] = 1
-        barcodes = request.session['current_barcodes']
-        request.session['lrl_id'] = request.GET['lrl_id']
-        request.session['last_scan'] = request.session['ssp_well']
-        f = SampleStorageAndExtractionWellForm(initial={'ssp_well': 'A1', 'sep_well': 'A1', 'well': 'A1'})
-        return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes, 'well': 'A1'})
-
-
-@login_required
-def unknown_barcode(request):
-    return render(request, 'qpcr_records/unknown_barcode.html')
+                well = row + str(col)
+                f = SampleStorageAndExtractionWellForm(initial={'sep_well': well, 'ssp_well': well})
+                return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
+        else:  # Initial submission of control wells
+            # Initialize variables
+            first_sample_well = 'B1'
+            f = SampleStorageAndExtractionWellForm(initial={'sep_well': first_sample_well, 'ssp_well': first_sample_well})
+            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': request.session['barcodes']})
 
 
 @login_required
@@ -582,23 +351,51 @@ def update_existing_records(request):
 
 
 @login_required
-def scan_plate_1_2_barcode(request):
-    if 'barcode' in request.session.keys():
-        request.session[request.session['ssp_well']] = request.session['barcode']
+def sample_plate_capture(request):
 
-    barcodes = request.session['current_barcodes']
+    # Render initial form
+    if request.method == 'GET':
+        f = SampleStorageAndExtractionPlateForm()
+        return render(request, 'qpcr_records/sample_plate_capture.html',
+                      {'form': f, 'barcodes': request.session['barcodes']})
+    else:  # Upon form submission, redirect according to validation
+        f = SampleStorageAndExtractionPlateForm(request.POST)
+        # Save barcodes to db
+        if f.is_valid():
+            l = list()
+            for i in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+                for j in range(1, 13):
+                    well = i + str(j)
+                    if well in ['A1', 'H1']:
+                        continue
+                    elif well not in request.session.keys():
+                        continue
+                    else:
+                        entry = test_results(barcode=request.session[well].strip(),
+                                             ssp_id=f.cleaned_data['ssp_id'],
+                                             ssp_well=well,
+                                             sep_id=f.cleaned_data['sep_id'],
+                                             sep_well=well,
+                                             rep_well=well,
+                                             rsp_well=well,
+                                             sampling_date=date.today().strftime('%Y-%m-%d'),
+                                             lrl_id=request.session['lrl_id'].strip(),
+                                             personnel1_andersen_lab=request.user.get_full_name(),
+                                             personnel2_andersen_lab=request.session['personnel2_andersen_lab'].strip(),
+                                             sample_bag_id=f.cleaned_data['sample_bag_id'])
+                        l.append(entry)
 
-    f = SampleStorageAndExtractionPlateForm()
-    recent_plate_query = test_results.objects.filter(
-        sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
-    plates = list(recent_plate_query)
-    request.session['sep_attempt'] = 1
-    return render(request, 'qpcr_records/scan_plate_1_2_barcode.html',
-                  {'form': f, 'barcodes': barcodes, 'plates': plates})
+            test_results.objects.bulk_create(l)
+            messages.success(request, mark_safe(f'{len(l)} samples added successfully.'))
+            return redirect('index')
+        # Invalid form
+        else:
+            return render(request, 'qpcr_records/sample_plate_capture.html',
+                          {'form': f, 'barcodes': request.session['barcodes']})
 
 
 @login_required
-def scan_plate_2_3_barcode(request):
+def rna_plate_capture(request):
     """
     Redirected here after the barcode for the last well is scanned. Create a platemap for display with the barcodes
     specified along the corresponding well.
@@ -606,20 +403,35 @@ def scan_plate_2_3_barcode(request):
     :param request:
     :return:
     """
-    f1 = SampleStorageAndExtractionPlateForm()
-    f2 = RNAExtractionPlateForm(initial={'ms2_lot_id': '2003001'})
-    f3 = MS2LotForm()
+    # Render initial form
+    if request.method == 'GET':
+        f = RNAExtractionPlateForm(initial={'ms2_lot_id': '2003001'})
+        return render(request, 'qpcr_records/rna_plate_capture.html', {'form': f})
+    else:  # Upon form submission, redirect according to validation
+        f = RNAExtractionPlateForm(request.POST)
 
-    recent_plate_query = test_results.objects.filter(
-        sampling_date__gte=datetime.today() - timedelta(days=2)).values_list("sep_id", flat=True)
-    plates = list(recent_plate_query)
-    request.session['rep_attempt'] = 1
-    return render(request, 'qpcr_records/scan_plate_2_3_barcode.html',
-                  {'form1': f1, 'form2': f2, 'form3': f3, 'plates': plates})
+        if f.is_valid():
+            objs = test_results.objects.filter(sep_id=f.cleaned_data['sep_id']).update(
+                rep_id=f.cleaned_data['rep_id'].strip(),
+                re_date=date.today().strftime('%Y-%m-%d'),
+                rsp_id=f.cleaned_data['rep_id'].strip(),
+                ms2_lot_id=f.cleaned_data['ms2_lot_id'].strip(),
+                personnel_knight_lab=request.user.get_full_name(),
+                kfr_id=f.cleaned_data['kfr_id'].strip(),
+                rna_extract_kit_id=f.cleaned_data['rna_extract_kit_id'],
+                megabeads_id=f.cleaned_data['megabeads_id'],
+                carrier_rna_id=f.cleaned_data['carrier_rna_id'])
+
+            # Redirect to homepage
+            messages.success(request, mark_safe('RNA plates added successfully.'))
+            return redirect('index')
+        # Invalid form
+        else:
+            return render(request, 'qpcr_records/rna_plate_capture.html', {'form': f})
 
 
 @login_required
-def scan_plate_arrayed_plate_barcode(request):
+def rwp_plate_capture(request):
     """
     Redirected here after the barcode for the last well is scanned. Create a platemap for display with the barcodes
     specified along the corresponding well.
@@ -627,19 +439,61 @@ def scan_plate_arrayed_plate_barcode(request):
     :param request:
     :return:
     """
-    f1 = ArrayingForm()
-    f2 = RNAStorageAndWorkingPlateForm()
+    # TODO
+    if request.method == 'GET':
+        f = ArrayingForm()
+        return render(request, 'qpcr_records/rwp_plate_capture.html', {'form': f})
+    else:  # Upon form submission, redirect according to validation
+        f = ArrayingForm(request.POST)
 
-    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)) \
-        .values_list("rep_id", flat=True)
-    plates = list(recent_plate_query)
-    request.session['rwp_attempt'] = 1
-    return render(request, 'qpcr_records/scan_plate_arrayed_plate_barcode.html',
-                  {'form1': f1, 'form2': f2, 'plates': plates})
+        # Array form
+        if f.is_valid():
+            objs = test_results.objects.filter(rep_id__in=[f.cleaned_data['barcode1'], f.cleaned_data['barcode2'],
+                                                           f.cleaned_data['barcode3'], f.cleaned_data['barcode4']]).update(
+                rwp_id=f.cleaned_data['rwp_id'],
+                epm_id=f.cleaned_data['epm_id'])
+
+            # CONVERT 4X96-WELL PLATE LAYOUT TO 1X384-WELL PLATE LAYOUT
+            d = dict()
+            rows_384 = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P']
+            cols_384 = range(1, 25)
+            col_index = 0
+            row_index = 0
+            for z in range(0, 4):
+                for col1, col2 in zip([1, 3, 5, 7, 9, 11], [2, 4, 6, 8, 10, 12]):
+                    for row in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+                        d[str(z) + row + str(col1)] = rows_384[row_index] + \
+                            str(cols_384[col_index])
+                        row_index = row_index + 1
+                        d[str(z) + row + str(col2)] = rows_384[row_index] + \
+                            str(cols_384[col_index])
+                        row_index = row_index + 1
+
+                    col_index = col_index + 1
+                    row_index = 0
+
+            barcode_list = list()
+            i = 0
+            for b in [f.cleaned_data['barcode1'], f.cleaned_data['barcode2'],
+                      f.cleaned_data['barcode3'], f.cleaned_data['barcode4']]:
+                if b in barcode_list:
+                    continue
+                else:
+                    for z in test_results.objects.filter(rep_id=b).values_list('sep_well', flat=True):
+                        test_results.objects.filter(rep_id=b, sep_well=z).update(rwp_well=d[str(i) + z],
+                                                                                 rsp_well=d[str(i) + z],
+                                                                                 qrp_well=d[str(i) + z])
+                    i = i + 1
+
+                barcode_list.append(b)
+            messages.success(request, mark_safe('RNA working plate added successfully.'))
+            return redirect('index')
+        else:  # Invalid form
+            return render(request, 'qpcr_records/rwp_plate_capture.html', {'form': f})
 
 
 @login_required
-def scan_plate_5_6_barcode(request):
+def qpcr_plate_capture(request):
     """
     Redirected here after the barcode for the last well is scanned. Create a platemap for display with the barcodes
     specified along the corresponding well.
@@ -647,14 +501,22 @@ def scan_plate_5_6_barcode(request):
     :param request:
     :return:
     """
-    f1 = RNAStorageAndWorkingPlateForm()
-    f2 = QPCRStorageAndReactionPlateForm()
+    if request.method == 'GET':
+        f = QPCRStorageAndReactionPlateForm()
+        return render(request, 'qpcr_records/qpcr_plate_capture.html', {'form': f})
+    else:
+        f = QPCRStorageAndReactionPlateForm(request.POST)
 
-    recent_plate_query = test_results.objects.filter(sampling_date__gte=datetime.today() - timedelta(days=2)) \
-        .values_list("rwp_id", flat=True)
-    plates = list(recent_plate_query)
-    request.session['qrp_attempt'] = 1
-    return render(request, 'qpcr_records/scan_plate_5_6_barcode.html', {'form1': f1, 'form2': f2, 'plates': plates})
+        if f.is_valid():
+            objs = test_results.objects.filter(rwp_id=f.cleaned_data['rwp_id']).update(
+                qrp_id=f.cleaned_data['qrp_id'],
+                qpcr_date=date.today().strftime('%Y-%m-%d'),
+                personnel_laurent_lab=request.user.get_full_name())
+
+            messages.success(request, mark_safe('qRT-PCR plate added successfully.'))
+            return redirect('index')
+        else:
+            return render(request, 'qpcr_records/qpcr_plate_capture.html', {'form': f})
 
 
 @login_required
@@ -670,12 +532,14 @@ def record_search(request):
         for k in request.GET.keys():
             if request.GET[k] != '' and k == 'barcode':
                 if q == '':
-                    q = test_results.objects.filter(barcode__iexact=request.GET[k])
+                    q = test_results.objects.filter(
+                        barcode__iexact=request.GET[k])
                 else:
                     q = q.filter(barcode__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'sampling_date':
                 if q == '':
-                    q = test_results.objects.filter(sampling_date__iexact=request.GET[k])
+                    q = test_results.objects.filter(
+                        sampling_date__iexact=request.GET[k])
                 else:
                     q = q.filter(sampling_date__iexact=request.GET[k])
             elif request.GET[k] != '' and k == 'plate_id':
@@ -703,12 +567,14 @@ def record_search(request):
                                  Q(personnel_laurent_lab__iexact=request.GET[k]))
             elif request.GET[k] != '' and k == 'result':
                 if q == '':
-                    q = test_results.objects.filter(final_results__iexact=request.GET[k].strip())
+                    q = test_results.objects.filter(
+                        final_results__iexact=request.GET[k].strip())
                 else:
                     q = q.filter(final_results__iexact=request.GET[k].strip())
             elif request.GET[k] != '' and k == 'bag_id':
                 if q == '':
-                    q = test_results.objects.filter(sample_bag_id__iexact=request.GET[k])
+                    q = test_results.objects.filter(
+                        sample_bag_id__iexact=request.GET[k])
                 else:
                     q = q.filter(sample_bag_id__iexact=request.GET[k])
             else:
@@ -761,7 +627,8 @@ def track_samples_form(request):
 
 @login_required
 def track_samples(request):
-    l = ['Sample_Plated', 'Sample_Stored', 'RNA_Extraction', 'Sample_Arrayed', 'qPCR_BackUp', 'qPCR_Reaction']
+    l = ['Sample_Plated', 'Sample_Stored', 'RNA_Extraction',
+         'Sample_Arrayed', 'qPCR_BackUp', 'qPCR_Reaction']
     l2 = list()
     for k in l:
         if k in request.GET['track_samples']:
