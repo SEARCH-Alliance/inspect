@@ -3,18 +3,8 @@
     <h1 class="display-4">Upload Barcode List</h1>
     <form class="needs-validation col-4 p-0 my-3" action="/qpcr_records/" method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
-        {{ form.qpcr_results_file|as_crispy_field }}
+        {{ form.barcodes_file|as_crispy_field }}
 
         <button type="submit" class="btn btn-primary">Upload</button>
     </form>
-
-
-<div class="container">
-    <h1 class="display-h4">Upload qPCR Results</h1>
-    <form class="col-4 p-0 my-3" action="" method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.qpcr_results_file|as_crispy_field }}
-    <button type="submit" class="btn btn-primary">Upload</button>
-    </form>
-</div>
 {% endblock %}
