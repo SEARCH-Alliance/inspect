@@ -132,11 +132,6 @@ class LysisReagentLotForm(ModelForm):
         labels = {'lrl_id': 'Lysis Reagent Lot #'}
 
 
-class PersonnelForm(ModelForm):
-    class Meta:
-        model = test_results
-        fields = ['personnel2_andersen_lab']
-        labels = {'personnel2_andersen_lab': 'Assisting Technician Name'}
 
 
 class SampleStorageAndExtractionWellForm(ModelForm):
