@@ -2,10 +2,9 @@
 
 
 <div class="container">
-    <form action="" method="POST">
-        {% csrf_token %}
-        {% for error in form.non_field_errors %}
-            <div class="alert border border-danger bg-white text-danger">{{ error }}</div>
+    <form class="needs-validation" action="" method="POST">
+        {% csrf_token %} {% for error in form.non_field_errors %}
+        <div class="alert border border-danger bg-white text-danger">{{ error }}</div>
         {% endfor %}
         <div class="form-row">
             <div class="form-group col-md-6 mb-0">
@@ -30,7 +29,7 @@
                 {{ form.barcode4|as_crispy_field }}
             </div>
 
-            </div>
+        </div>
         <hr>
         <div class="form-row">
             <div class="form-group col-md-6 mb-0">
@@ -41,4 +40,15 @@
         <button type="submit" class="btn btn-primary">Assign Plates</button>
     </form>
 </div>
+<script>
+    // function isAnyEmpty() {
+    //     var barcode_list = ["{{ form.barcode1.value }}", "{{ form.barcode2.value }}", "{{ form.barcode3.value }}", "{{ form.barcode4.value }}"];
+    //     if (barcode_list.includes("")) {
+    //         if (!confirm("Less than 4 RNA elution plates selected. Proceed anyway?")) {
+    //             event.preventDefault();
+    //             event.stopPropagation();
+    //         }
+    //     }
+    // }
+</script>
 {% endblock %}

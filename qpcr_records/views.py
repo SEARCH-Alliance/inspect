@@ -217,8 +217,7 @@ def barcode_capture(request):
             barcodes = request.session['barcodes']
 
             # Last well reached; redirect to plate form
-            if active_well == 'C1':
-                # Save barcode to
+            if active_well == 'H12':
                 return redirect('sample_plate_capture')
             # Next well
             else:

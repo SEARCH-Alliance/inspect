@@ -28,9 +28,9 @@ class ArrayingForm(forms.Form):
 
     epm_id = forms.CharField(max_length=15, label='EpMotion ID', help_text="Enter EpMotion ID")
     barcode1 = forms.CharField(max_length=30, label='First 96-Well Plate in Array Position B2', required=True)
-    barcode2 = forms.CharField(max_length=30, label='Second 96-Well Plate in Array Position B3', required=True)
-    barcode3 = forms.CharField(max_length=30, label='Third 96-Well Plate in Array Position B4', required=True)
-    barcode4 = forms.CharField(max_length=30, label='Fourth 96-Well Plate in Array Position B5', required=True)
+    barcode2 = forms.CharField(max_length=30, label='Second 96-Well Plate in Array Position B3', required=False)
+    barcode3 = forms.CharField(max_length=30, label='Third 96-Well Plate in Array Position B4', required=False)
+    barcode4 = forms.CharField(max_length=30, label='Fourth 96-Well Plate in Array Position B5', required=False)
     rwp_id = forms.CharField(max_length=15, label='RNA Working Plate Barcode', help_text="Scan or Enter Barcode of RNA Working Plate (RWP)")
 
     def clean(self):
