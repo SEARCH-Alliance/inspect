@@ -515,6 +515,7 @@ def perform_safety_check(request):
     """
 
     if request.method == 'GET':
+        reset_session(request)
         for k in request.GET.keys():
             request.session[k] = request.GET[k]
 
@@ -625,6 +626,7 @@ def scan_plate_2_3_barcode(request):
     :param request:
     :return:
     """
+    reset_session(request)
     f1 = SampleStorageAndExtractionPlateForm()
     f2 = RNAExtractionPlateForm(initial={'ms2_lot_id': '2003001'})
     f3 = MS2LotForm()
@@ -646,6 +648,7 @@ def scan_plate_arrayed_plate_barcode(request):
     :param request:
     :return:
     """
+    reset_session(request)
     f1 = ArrayingForm()
     f2 = RNAStorageAndWorkingPlateForm()
 
@@ -666,6 +669,7 @@ def scan_plate_5_6_barcode(request):
     :param request:
     :return:
     """
+    reset_session(request)
     f1 = RNAStorageAndWorkingPlateForm()
     f2 = QPCRStorageAndReactionPlateForm()
 

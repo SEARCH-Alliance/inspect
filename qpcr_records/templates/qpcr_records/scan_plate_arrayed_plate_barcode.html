@@ -65,10 +65,7 @@ window.addEventListener("load", () => {
     validateForm({{ form1.barcode4.id_for_label }}, () => {
         return {{ plates|safe }}.includes({{ form1.barcode4.id_for_label }}.value.trim());
     }, "Plate does not exist!");
-<<<<<<< HEAD
     success('Updating RNA Working Plate');
-=======
->>>>>>> 9498136c40651cb1291957b7b9f5ec0c499a6689
 });
 </script>
 {% endblock %}
