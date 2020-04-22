@@ -29,74 +29,59 @@ def sample_counter_display():
     # subtracting the number of plates in the current stage being evaluated
     # timestamp threshold
     time_thresh = date.today() - timedelta(days=2)
-    dub_count = 0  # tracks barcodes in previous stages
-    dub_count_plate = 0  # tracks plates in previous stages
 
     # Cleared plate counter
     data_cleared = test_results.objects.filter(~Q(final_results=''),
-                                               sampling_date__gte=time_thresh).count() - dub_count
-    data_cleared_plate = len(set(test_results.objects.filter(~Q(final_results=''),
-                                               sampling_date__gte=time_thresh).values_list('qrp_id',flat=True))) - dub_count_plate
-    dub_count += data_cleared
-    dub_count_plate += data_cleared_plate
+                                               sampling_date__gte=time_thresh).count()
 
     # qPCR plate counters
     q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined'),
-                                              sampling_date__gte=time_thresh).count() - dub_count
-    q_processed_plate = len(set(test_results.objects.filter(~Q(decision_tree_results='Undetermined'),
-                                              sampling_date__gte=time_thresh).values_list('qrp_id',flat=True))) - dub_count_plate
-    dub_count += q_processed
-    dub_count_plate += q_processed_plate
+                                              sampling_date__gte=time_thresh,final_results='').count()
 
-    q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gte=time_thresh).count() - dub_count
-    q_recorded_plate = len(set(test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gte=time_thresh).values_list('qrp_id',flat=True))) - dub_count_plate
+    q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gte=time_thresh,decision_tree_results='Undetermined').count()
 
-    dub_count += q_recorded
-    dub_count_plate += q_recorded_plate
 
-    q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).count() - dub_count
-    s = list(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list(
+    q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh,pcr_results_csv='').count()
+    s = list(set(test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).values_list(
         'qrp_id', flat=True).order_by('qrp_id')))
     qrp_id = ', '.join(s)
-    q_running_plate = len(s)
-    dub_count += q_running
-    dub_count_plate += q_running_plate
+    qrp_plate = len(s)
+
 
     # RNA plate counters
     rwp_count = test_results.objects.filter(~Q(rwp_id=''),
-                                            sampling_date__gte=time_thresh).count() - dub_count  # rna working plate
+                                            sampling_date__gte=time_thresh,qrp_id='').count() # rna working plate
     s = list(set(
-        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True)))
+        test_results.objects.filter(~Q(rwp_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True)))
     rwp_id = ', '.join(s)
-    rwp_count_plate = len(s)
-    dub_count += rwp_count
-    dub_count_plate += rwp_count_plate
+    rwp_count_plate = len(list(set(
+        test_results.objects.filter(~Q(rwp_id=''), sampling_date__gte=time_thresh,qrp_id='').values_list('rwp_id', flat=True))))
+    rwp_id = ', '.join(s)
 
     rep_count = test_results.objects.filter(~Q(rep_id=''),
-                                            sampling_date__gte=time_thresh).count() - dub_count  # rna extraction plate
+                                            sampling_date__gte=time_thresh,rwp_id='').count()  # rna extraction plate
     s = list(set(
-        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True)))
+        test_results.objects.filter(~Q(rep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True)))
     rep_id = ', '.join(s)
-    rep_count_plate = len(s)
-    dub_count += rep_count
-    dub_count_plate += rep_count_plate
+    rep_count_plate = len(list(set(
+        test_results.objects.filter(~Q(rep_id=''), sampling_date__gte=time_thresh,rwp_id='').values_list('rep_id', flat=True))))
 
     # Sample extraction plate counter
-    sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).count() - dub_count
+    sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh,rep_id='').count()
     s = list(set(
         test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id', flat=True)))
     sep_id = ', '.join(s)
-    sep_count_plate = len(s)
-    dub_count_plate += sep_count_plate
+    sep_count_plate = len(list(set(
+        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh,rep_id='').values_list('sep_id', flat=True))))
     # Unprocessed sample counter
-    unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh).count() - dub_count
+    unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh,sep_id='').count()
 
     # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
-        'data_cleared': data_cleared,'data_cleared_plate': data_cleared_plate,
-        'q_processed': q_processed, 'q_processed_plate': q_processed_plate,
-        'q_recorded': q_recorded, 'q_recorded_plate': q_recorded_plate,
-        'q_running': q_running, 'q_running_plate': q_running_plate,
+        'data_cleared': data_cleared,
+        'q_processed': q_processed,
+        'q_recorded': q_recorded,
+        'q_running': q_running,'qrp_plate':qrp_plate,
         'q_running_ids': qrp_id,
         'qrp_ids': qrp_id,
         'rwp_count': rwp_count, 'rwp_count_plate': rwp_count_plate,
