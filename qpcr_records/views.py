@@ -16,8 +16,6 @@ from django.utils.safestring import mark_safe
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
 # for user logins. If the check returns False, user will be automatically redirected to the login page
 
-# barcode = barcode.rstrip()
-
 def sample_counter_display():
     """
     Performs queries to determine the number of unprocessed samples, sample extraction plates,
@@ -42,7 +40,7 @@ def sample_counter_display():
     dub_count += q_processed
 
     q_recorded = test_results.objects.filter(
-        ~Q(pcr_results_csv=''), sampling_date__gte=time_thresh).count() - dub_count
+        ~Q(qpcr_results_file=''), sampling_date__gte=time_thresh).count() - dub_count
     dub_count += q_recorded
 
     q_running = test_results.objects.filter(
@@ -103,136 +101,34 @@ def index(request):
     # Sample Counter Display - Will appear every time the home page is loaded
     counter_information = sample_counter_display()
 
-    #         # DATA UPDATE IN LAURENT LAB
-    #         # IF BOTH RWP_ID AND QRP_ID WERE PASSED WE ARE AT THE QPCR STEP, WHERE THE LAURENT LAB WILL SCAN THE QPCR REACTION PLATE
-    #         elif 'rwp_id' in request.GET.keys() and 'qrp_id' in request.GET.keys():
-    #             if test_results.objects.filter(rwp_id=request.GET['rwp_id']).exclude(qrp_id='').exists() and \
-    #                     request.session['qrp_attempt'] == 1:
-    #                 messages.success(request,
-    #                                  mark_safe(
-    #                                      'qPCR Reaction Plate ID already exists for RNA Working Plate %s.<br/>Enter correct '
-    #                                      'RNA Working Plate ID else Continue with this form to overwrite exiting records.'
-    #                                      '<br/>Click <a href="/qpcr_records/?status=cancel">here</a> to cancel and return to home.'
-    #                                      % request.GET['rwp_id']))
-    #                 f1 = RNAStorageAndWorkingPlateForm(
-    #                     initial={'rwp_id': request.GET['rwp_id']})
-    #                 f2 = QPCRStorageAndReactionPlateForm(
-    #                     initial={'qrp_id': request.GET['qrp_id']})
-
-    #                 recent_plate_query = test_results.objects.filter(
-    #                     sampling_date__gte=datetime.today() - timedelta(days=2)) \
-    #                     .values_list("rwp_id", flat=True)
-    #                 plates = list(recent_plate_query)
-    #                 request.session['qrp_attempt'] = request.session['qrp_attempt'] + 1
-    #                 return render(request, 'qpcr_records/qpcr_plate_capture.html', {'form1': f1, 'form2': f2,
-    #                                                                                     'plates': plates})
-    #             else:
-    #                 objs = test_results.objects.filter(rwp_id=request.GET['rwp_id']) \
-    #                     .update(qrp_id=request.GET['qrp_id'].strip(), qpcr_date=date.today().strftime('%Y-%m-%d'),
-    #                             personnel_laurent_lab=request.user.get_full_name())
-    #                 del request.session['qrp_attempt']
-    #                 messages.success(request, mark_safe(
-    #                     'Database updated successfully.'))
-
-    #         # IF ONLY A QPR_ID WAS PASSED, THE LAURENT LAB WANTS TO REVIEW THE RESULTS FROM THIS QRP_ID
-    #         elif 'qrp_id' in request.session.keys():
-    #             for k in request.GET.keys():
-    #                 print("%s : %s\n" % (k, request.GET[k]))
-    #             for i, j in zip(test_results.objects.filter(qrp_id__iexact=request.session['qrp_id']).values_list(
-    #                     'rwp_well', flat=True), list(request.GET.values())):
-    #                 test_results.objects.filter(rwp_well=i, qrp_id__iexact=request.session['qrp_id']).update(
-    #                     final_results=j.strip(), is_reviewed=True)
-
-    #         else:
-    #             return render(request, 'qpcr_records/index.html', counter_information)
-
     # RESET ALL SESSION DATA EXCEPT FOR USER LOGIN
     reset_session(request)
     return render(request, 'qpcr_records/index.html', counter_information)
 
-    # FOR ANY POST METHOD, ASSUME THAT THE USER IS UPLOADING A FILE
-    # elif request.method == 'POST':  # User is uploading file. Can be the qPCR results or the Barcodes list
-    #     if 'Browse' in request.FILES.keys():  # qPCR Results file
-    #         # Parse file for Ct values and determine decision tree resuls
-    #         file = request.FILES['Browse']
-    #         qreaction_plate = file.name.split('.')[0]
-    #         exists = test_results.objects.filter(qrp_id=qreaction_plate)
-    #         # First see if plate ID exists
-    #         if not exists:
-    #             return render(request, 'qpcr_records/unknown_qpcr_plate.html')
-    #         else:
-    #             # Double check that this sample doesn't already have data
-    #             history = test_results.objects.filter(
-    #                 ~Q(decision_tree_results='Undetermined'), qrp_id=qreaction_plate)
-    #             if not history:
-    #                 # Upload excel file to s3
-    #                 objs = test_results.objects.filter(qrp_id=qreaction_plate).update(
-    #                     file_transfer_status='Complete')
-    #                 s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
-    #                                     aws_access_key_id=config(
-    #                                         'AWS_ACCESS_KEY_ID'),
-    #                                     aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
-    #                 s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')
-    #                           ).put_object(Key=file.name, Body=file)
-
-    #                 objs = test_results.objects.filter(qrp_id=qreaction_plate) \
-    #                     .update(pcr_results_csv='https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name)
-
-    #                 r = Results()
-    #                 data_ = r.get_results(file)
-    #                 r.read_fake_names()
-    #                 # update the database with values
-
-    #                 for well, vals in data_.items():
-    #                     if well != 'instrument':
-    #                         objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-    #                             ms2_ct_value=vals['MS2'])
-    #                         objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-    #                             n_ct_value=vals['N gene'])
-    #                         objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-    #                             orf1ab_ct_value=vals['ORF1ab'])
-    #                         objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-    #                             s_ct_value=vals['S gene'])
-    #                         objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-    #                             decision_tree_results=vals['diagnosis'])
-    #                         objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-    #                             final_results=vals['diagnosis'])
-
-    #                         if test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).count() > 0:
-    #                             barc = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).values_list(
-    #                                 'barcode', flat=True)[0]
-    #                             objs = test_results.objects.filter(qrp_id=qreaction_plate, rwp_well=well).update(
-    #                                 fake_name=r.get_fake_name(barc))
-    #                     elif well == 'instrument':
-    #                         objs = test_results.objects.filter(
-    #                             qrp_id=qreaction_plate).update(qs5_id=vals)
-
-    #                 messages.success(request, mark_safe(
-    #                     'Database updated successfully.'))
-    #                 return render(request, 'qpcr_records/index.html', counter_information)
-    #             else:
-    #                 return render(request, 'qpcr_records/qpcr_overwrite_warning.html')
-
-    #     elif 'Select Barcode List File' in request.FILES.keys():  # Barcodes list
-    #         barcodes = request.FILES['Select Barcode List File'].read().decode(
-    #             "utf-8").splitlines()
-    #         l = list()
-    #         for b in barcodes:
-    #             l.append(test_results(
-    #                 barcode=b, sampling_date=date.today().strftime('%Y-%m-%d')))
-    #         test_results.objects.bulk_create(l)
-    #         messages.success(request, mark_safe(
-    #             'Database updated successfully.'))
-    #         return render(request, 'qpcr_records/index.html', counter_information)
-    #     else:
-    #         return render(request, 'qpcr_records/index.html', counter_information)
-    # else:
-    #     return render(request, 'qpcr_records/index.html', counter_information)
-
 
 @login_required
 def barcode_list_upload(request):
-    return render(request, 'qpcr_records/barcode_list_upload.html')
+    # Show initial form
+    if request.method == 'GET':
+        f = BarcodesUploadForm()
+        return render(request, 'qpcr_records/barcode_list_upload.html', {'form': f})
+    # Upon form submission, redirect to index if valid
+    else:
+        f = BarcodesUploadForm(request.POST, request.FILES)
+
+        if f.is_valid():
+            barcodes = request.FILES['barcodes_file'].read().decode("utf-8").splitlines()
+
+            # Write barcodes to db
+            objs = list()
+            for b in barcodes:
+                objs.append(test_results(barcode=b, sampling_date=date.today().strftime('%Y-%m-%d')))
+            test_results.objects.bulk_create(objs)
+
+            messages.success(request, mark_safe('Barcodes list uploaded successfully.'))
+            return redirect('index')
+        else: # Show form again with user data and errors
+            return render(request, 'qpcr_records/barcode_list_upload.html', {'form': f})
 
 
 @login_required
@@ -270,8 +166,12 @@ def perform_safety_check(request):
     Present list of safety checks to user before starting plating.
     :param request: signal call that this function has been called
     """
+    # Show initial form
+    if request.method == 'GET':
+        f = LysisReagentLotForm(initial={'lrl_id': 'M6246109105'})
+        return render(request, 'qpcr_records/perform_safety_check.html', {'form': f})
     # Upon form submission, redirect to barcode_capture if valid
-    if request.method == 'POST':
+    else:
         f = LysisReagentLotForm(request.POST)
 
         if f.is_valid():
@@ -281,9 +181,6 @@ def perform_safety_check(request):
         else:
             return render(request, 'qpcr_records/perform_safety_check.html', {'form': f})
 
-    else:  # Show initial form
-        f = LysisReagentLotForm(initial={'lrl_id': 'M6246109105'})
-        return render(request, 'qpcr_records/perform_safety_check.html', {'form': f})
 
 
 @login_required
@@ -601,8 +498,52 @@ def search_record_form_error(request):
 
 @login_required
 def upload_qpcr_results(request):
-    f = qpcrResultUploadForm()
-    return render(request, 'qpcr_records/upload_qpcr_results.html', {'form': f})
+    if request.method == 'GET':
+        f = QPCRResultsUploadForm()
+        return render(request, 'qpcr_records/upload_qpcr_results.html', {'form': f})
+    else:
+        f = QPCRResultsUploadForm(request.POST, request.FILES)
+
+        if f.is_valid():
+            # Parse file for Ct values and determine decision tree resuls
+            file = request.FILES['qpcr_results_file']
+            qrp_id = file.name.split('.')[0]
+            exists = test_results.objects.filter(qrp_id=qrp_id)
+            # Upload excel file to s3
+            s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
+                                        aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
+                                        aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
+            s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=file.name, Body=file)
+
+            s3_filepath = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name
+            objs = test_results.objects.filter(qrp_id=qrp_id).update(file_transfer_status='Complete')
+            objs = test_results.objects.filter(qrp_id=qrp_id).update(qpcr_results_file=s3_filepath)
+
+
+            # update the database with values
+            r = Results()
+            data_ = r.get_results(file)
+            r.read_fake_names() # * Is this still needed?
+            for well, vals in data_.items():
+                if well != 'instrument':
+                    objs = test_results.objects.filter(qrp_id=qrp_id, rwp_well=well).update(
+                                                       ms2_ct_value=vals['MS2'],
+                                                       n_ct_value=vals['N gene'],
+                                                       orf1ab_ct_value=vals['ORF1ab'],
+                                                       s_ct_value=vals['S gene'],
+                                                       decision_tree_results=vals['diagnosis'],
+                                                       final_results=vals['diagnosis'])
+
+                    if test_results.objects.filter(qrp_id=qrp_id, rwp_well=well).count() > 0:
+                        barcodes = test_results.objects.filter(qrp_id=qrp_id, rwp_well=well).values_list('barcode', flat=True)[0]
+                        objs = test_results.objects.filter(qrp_id=qrp_id, rwp_well=well).update(fake_name=r.get_fake_name(barcodes))
+                elif well == 'instrument':
+                    objs = test_results.objects.filter(qrp_id=qrp_id).update(qs5_id=vals)
+
+            messages.success(request, mark_safe('qRT-PCR data uploaded successfully.'))
+            return redirect('index')
+        else:
+            return render(request, 'qpcr_records/upload_qpcr_results.html', {'form': f})
 
 
 @login_required()

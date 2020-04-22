@@ -3,6 +3,7 @@ from django.forms import ModelForm, HiddenInput, TextInput, ValidationError
 import datetime
 import django_tables2 as tables
 from django.utils import timezone
+from django.db.models import Q
 
 
 class personnel_list(models.Model):
@@ -79,7 +80,7 @@ class test_results(models.Model):
     final_results = models.CharField(max_length=15, null=False, default='', choices=sample_result_choices)
     is_reviewed = models.BooleanField(default=False, choices=is_reviewed_choices)
 
-    pcr_results_csv = models.URLField(max_length=300, null=False, default='')
+    qpcr_results_file = models.FileField(upload_to='pcr_results', null=False, default='')
     eds_results_csv = models.URLField(max_length=300, null=False, default='')
 
     file_transfer_status = models.CharField(max_length=15, null=False, default='Not Complete',
@@ -95,7 +96,7 @@ class test_resultsTable(tables.Table):
         model = test_results
         fields = ('barcode', 'sampling_date', 'ssp_id', 'ssp_well', 'sep_id', 'sep_well', 'sample_bag_id', 'rep_id',
                   'rep_well', 'rsp_id', 'rsp_well', 'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
-                  'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'pcr_results_csv',
+                  'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'qpcr_results_file',
                   'sample_release')
 
 
@@ -189,7 +190,7 @@ class QPCRStorageAndReactionPlateForm(ModelForm):
         if not test_results.objects.filter(rwp_id__iexact=rwp_id).exists():
             raise ValidationError("RNA working plate ID does not exist.", code='invalid')
         if test_results.objects.filter(rwp_id__iexact=rwp_id).exclude(qrp_id='').exists():
-            raise ValidationError(f"qRT-PCR reaction plate ID is already assigned to RNA working plate ID {rwp_id}.")
+            raise ValidationError(f"qRT-PCR reaction plate ID is already assigned to RNA working plate ID {rwp_id}.", code="invalid")
         return rwp_id
 
     def clean_qrp_id(self):
@@ -198,7 +199,20 @@ class QPCRStorageAndReactionPlateForm(ModelForm):
             raise ValidationError("qRT-PCR reaction plate ID already exists.", code='invalid')
         return qrp_id
 
-class qpcrResultUploadForm(ModelForm):
+
+class QPCRResultsUploadForm(ModelForm):
     class Meta:
         model = test_results
-        fields = ['pcr_results_csv']
+        fields = ['qpcr_results_file']
+
+    def clean_qpcr_results_file(self):
+        qpcr_results_file = self.cleaned_data['qpcr_results_file']
+
+        qrp_id = qpcr_results_file.name.split('.')[0]
+        if not test_results.objects.filter(qrp_id=qrp_id).exists():
+            raise ValidationError(f'File not uploaded. Plate \"{qrp_id}\" does not exist.', code="invalid")
+
+        if test_results.objects.filter(~Q(decision_tree_results='Undetermined'), qrp_id=qrp_id):
+            raise ValidationError(f'File not uploaded. Plate \"{qrp_id}\" already has data.', code="invalid")
+
+        return qpcr_results_file

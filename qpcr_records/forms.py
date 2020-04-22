@@ -57,30 +57,6 @@ class ArrayingForm(forms.Form):
 
         return self.cleaned_data
 
-    # def clean_barcode1(self):
-    #     barcode1 = self.cleaned_data['barcode1']
-    #     if not test_results.objects.filter(rep_id__iexact=barcode1).exists():
-    #         raise ValidationError("RNA elution plate ID does not exist.", code='invalid')
-    #     return barcode1
-
-    # def clean_barcode2(self):
-    #     barcode2 = self.cleaned_data['barcode2']
-    #     if not test_results.objects.filter(rep_id__iexact=barcode2).exists():
-    #         raise ValidationError("RNA elution plate ID does not exist.", code='invalid')
-    #     return barcode2
-
-    # def clean_barcode3(self):
-    #     barcode3 = self.cleaned_data['barcode3']
-    #     if not test_results.objects.filter(rep_id__iexact=barcode3).exists():
-    #         raise ValidationError("RNA elution plate ID does not exist.", code='invalid')
-    #     return barcode3
-
-    # def clean_barcode4(self):
-    #     barcode4 = self.cleaned_data['barcode4']
-    #     if not test_results.objects.filter(rep_id__iexact=barcode4).exists():
-    #         raise ValidationError("RNA elution plate ID does not exist.", code='invalid')
-    #     return barcode4
-
     def clean_rwp_id(self):
         rwp_id = self.cleaned_data['rwp_id']
         if test_results.objects.filter(rwp_id__iexact=rwp_id).exists():
@@ -88,5 +64,17 @@ class ArrayingForm(forms.Form):
         return rwp_id
 
 class TrackSamplesForm(forms.Form):
-    track_samples = forms.MultipleChoiceField(required=True, widget=forms.CheckboxSelectMultiple,
-                                              choices=sample_tracking_choice)
+    track_samples = forms.MultipleChoiceField(required=True, widget=forms.CheckboxSelectMultiple, choices=sample_tracking_choice)
+
+
+class BarcodesUploadForm(forms.Form):
+    barcodes_file = forms.FileField(required=True)
+
+    def clean_barcodes_file(self):
+        barcodes_file = self.cleaned_data['barcodes_file']
+
+        # TODO validations
+        # if not test_results.objects.filter(?).exists():
+        #     raise ValidationError(f'File not uploaded. {barcodes_file.name}' ??, code="invalid")
+
+        return barcodes_file
