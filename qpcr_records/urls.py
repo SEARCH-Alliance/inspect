@@ -6,8 +6,8 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('barcode_list_upload/', views.barcode_list_upload, name='barcode_list_upload'),
     path('sample_plate_capture/', views.sample_plate_capture, name='sample_plate_capture'),
-    path('search_record_form/', views.search_record_form, name='search_record_form'),
-    path('record_search/', views.record_search, name='record_search'),
+    path('search/', views.search, name='search'),
+    path('search_results/', views.search_results, name='search_results'),
     path('perform_safety_check/', views.perform_safety_check, name='perform_safety_check'),
     path('barcode_capture/', views.barcode_capture, name='barcode_capture'),
     path('update_existing_records/', views.update_existing_records, name='update_existing_records'),
@@ -20,5 +20,4 @@ urlpatterns = [
     path('upload_qpcr_results/', views.upload_qpcr_results, name='upload_qpcr_results'),
     path('review_results/', views.review_results, name='review_results'),
     path('qpcr_plate_id_to_review/', views.qpcr_plate_id_to_review, name='qpcr_plate_id_to_review'),
-    path('search_record_form_error/', views.search_record_form_error, name='search_record_form_error'),
 ]

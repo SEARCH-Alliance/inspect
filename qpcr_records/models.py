@@ -91,7 +91,7 @@ class test_results(models.Model):
         indexes = [models.Index(fields=['barcode', 'ssp_id', 'sep_id', 'rep_id', 'rsp_id', 'rwp_id', 'qrp_id'])]
 
 
-class test_resultsTable(tables.Table):
+class SearchResultsTable(tables.Table):
     class Meta:
         model = test_results
         fields = ('barcode', 'sampling_date', 'ssp_id', 'ssp_well', 'sep_id', 'sep_well', 'sample_bag_id', 'rep_id',
@@ -100,7 +100,7 @@ class test_resultsTable(tables.Table):
                   'sample_release')
 
 
-class review_resultsTable(tables.Table):
+class ReviewTable(tables.Table):
     class Meta:
         model = test_results
         fields = ['sampling_date', 'barcode', 'sep_id', 'rep_id',
@@ -216,3 +216,18 @@ class QPCRResultsUploadForm(ModelForm):
             raise ValidationError(f'File not uploaded. Plate \"{qrp_id}\" already has data.', code="invalid")
 
         return qpcr_results_file
+
+class SelectQRPPlateForm(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['qrp_id']
+        labels = {'qrp_id': 'qRT-PCR Plate Barcode'}
+
+    def clean_qrp_id(self):
+        qrp_id = self.cleaned_data['qrp_id']
+        if not test_results.objects.filter(qrp_id__iexact=qrp_id).exists():
+            raise ValidationError(f"qRT-PCR reaction plate \"{qrp_id}\" does not exist.", code='invalid')
+
+        if True in test_results.objects.filter(qrp_id__iexact=qrp_id).values_list('is_reviewed', flat=True):
+            raise ValidationError(f"qRT-PCR reaction plate \"{qrp_id}\" has already been reviewed.", code='invalid')
+        return qrp_id

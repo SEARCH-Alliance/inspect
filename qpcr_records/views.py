@@ -16,6 +16,12 @@ from django.utils.safestring import mark_safe
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
 # for user logins. If the check returns False, user will be automatically redirected to the login page
 
+def reset_session(request):
+    for k in list(request.session.keys()):
+        if k not in ['_auth_user_id', '_auth_user_backend', '_auth_user_hash']:
+            del request.session[k]
+
+
 def sample_counter_display():
     """
     Performs queries to determine the number of unprocessed samples, sample extraction plates,
@@ -132,18 +138,6 @@ def barcode_list_upload(request):
 
 
 @login_required
-def search_record_form(request):
-    """
-    Pass the search form to the django template. User has to fill at least one field for a successful search
-    :param request:
-    :param request: signal call that this function has been called
-    :return f: form to display to search forms
-    """
-    f = SearchRecords()
-    return render(request, 'qpcr_records/search_record_form.html', {'form': f})
-
-
-@login_required
 def check_information(request):
     """
     THIS FUNCTION IS NO LONGER USED
@@ -180,7 +174,6 @@ def perform_safety_check(request):
             return redirect('barcode_capture')
         else:
             return render(request, 'qpcr_records/perform_safety_check.html', {'form': f})
-
 
 
 @login_required
@@ -241,6 +234,7 @@ def barcode_capture(request):
 
 @login_required
 def update_existing_records(request):
+    reset_session(request)
     # Sample Counter Display - Will appear every time the home page is loaded
     counter_information = sample_counter_display()
     return render(request, 'qpcr_records/update_existing_records.html', counter_information)
@@ -416,7 +410,32 @@ def qpcr_plate_capture(request):
 
 
 @login_required
-def record_search(request):
+def search(request):
+    """
+    Pass the search form to the django template. User has to fill at least one field for a successful search
+    :param request:
+    :param request: signal call that this function has been called
+    :return f: form to display to search forms
+    """
+    # Show initial form
+    if request.method == 'GET':
+        f = SearchForm()
+        return render(request, 'qpcr_records/search.html', {'form': f})
+    # Upon form submission, redirect to search_results if valid
+    else:
+        f = SearchForm(request.POST)
+        if f.is_valid():
+            request.session['search'] = dict()
+            for field, value in f.cleaned_data.items():
+                request.session['search'][field] = value
+            return redirect('search_results')
+        else:
+            # Show form again with errors
+            return render(request, 'qpcr_records/search.html', {'form': f})
+
+
+@login_required
+def search_results(request):
     """
     Function to search records based on the fields. User has to enter at least one field to complete a successful search
     :param request: GET request with search parameters
@@ -424,75 +443,46 @@ def record_search(request):
     """
     if request.method == 'GET':
         # ['csrfmiddlewaretoken', 'barcode', 'sampling_date', 'plate_id', 'technician', 'result', 'sample_bag_id']
-        q = ''
-        for k in request.GET.keys():
-            if request.GET[k] != '' and k == 'barcode':
-                if q == '':
-                    q = test_results.objects.filter(
-                        barcode__iexact=request.GET[k])
-                else:
-                    q = q.filter(barcode__iexact=request.GET[k])
-            elif request.GET[k] != '' and k == 'sampling_date':
-                if q == '':
-                    q = test_results.objects.filter(
-                        sampling_date__iexact=request.GET[k])
-                else:
-                    q = q.filter(sampling_date__iexact=request.GET[k])
-            elif request.GET[k] != '' and k == 'plate_id':
-                if q == '':
-                    q = test_results.objects.filter(Q(ssp_id__iexact=request.GET[k].strip()) |
-                                                    Q(sep_id__iexact=request.GET[k].strip()) |
-                                                    Q(rep_id__iexact=request.GET[k].strip()) |
-                                                    Q(rwp_id__iexact=request.GET[k].strip()) |
-                                                    Q(rsp_id__iexact=request.GET[k].strip()) |
-                                                    Q(qrp_id__iexact=request.GET[k].strip()))
-                else:
-                    q = q.filter(Q(ssp_id__iexact=request.GET[k].strip()) | Q(sep_id__iexact=request.GET[k].strip()) |
-                                 Q(rep_id__iexact=request.GET[k].strip()) | Q(rwp_id__iexact=request.GET[k].strip()) |
-                                 Q(rsp_id__iexact=request.GET[k].strip()) | Q(qrp_id__iexact=request.GET[k].strip()))
-            elif request.GET[k] != '' and k == 'technician':
-                if q == '':
-                    q = test_results.objects.filter(Q(personnel1_andersen_lab__iexact=request.GET[k]) |
-                                                    Q(personnel2_andersen_lab__iexact=request.GET[k]) |
-                                                    Q(personnel_knight_lab__iexact=request.GET[k]) |
-                                                    Q(personnel_laurent_lab__iexact=request.GET[k]))
-                else:
-                    q = q.filter(Q(personnel1_andersen_lab__iexact=request.GET[k]) |
-                                 Q(personnel2_andersen_lab__iexact=request.GET[k]) |
-                                 Q(personnel_knight_lab__iexact=request.GET[k]) |
-                                 Q(personnel_laurent_lab__iexact=request.GET[k]))
-            elif request.GET[k] != '' and k == 'result':
-                if q == '':
-                    q = test_results.objects.filter(
-                        final_results__iexact=request.GET[k].strip())
-                else:
-                    q = q.filter(final_results__iexact=request.GET[k].strip())
-            elif request.GET[k] != '' and k == 'bag_id':
-                if q == '':
-                    q = test_results.objects.filter(
-                        sample_bag_id__iexact=request.GET[k])
-                else:
-                    q = q.filter(sample_bag_id__iexact=request.GET[k])
-            else:
-                continue
+        objs = ''
 
-        if q == '':
-            return render(request, 'qpcr_records/search_record_form_error.html')
+        query_fields = dict()
+
+        # Populate query with form values
+        plate_fields = ['ssp_id', 'ssp_id', 'sep_id', 'rep_id', 'rsp_id', 'rwp_id', 'qsp_id', 'qrp_id']
+        technician_fields = ['personnel1_andersen_lab', 'personnel2_andersen_lab', 'personnel_knight_lab', 'personnel_laurent_lab']
+        for field, value in request.session['search'].items():
+            if value == "" or value == None:
+                continue
+            else:
+                # Expand plate_id field for exact match
+                if field == 'plate_id':
+                    for p_field in plate_fields:
+                        query_fields[f'{p_field}__iexact'] = value
+
+                # Expand technician field for exact match
+                elif field == 'technician':
+                    for t_field in technician_fields:
+                        query_fields[f'{t_field}__iexact'] = value
+
+                # Reformat all other fields for exact match
+                else:
+                    field = f'{field}__iexact'
+                    query_fields[field] = value
+
+        objs = test_results.objects.filter(**query_fields)
+
+        if len(objs) == 0:
+            return render(request, 'qpcr_records/search_results.html')
         else:
-            table = test_resultsTable(q)
+            # Export query as table
+            table = SearchResultsTable(objs)
             RequestConfig(request).configure(table)
             export_format = request.GET.get('_export', None)
             if TableExport.is_valid_format(export_format):
                 exporter = TableExport(export_format, table)
                 return exporter.response('table.{}'.format(export_format))
 
-            # table.columns.hide('id')
-            return render(request, 'qpcr_records/record_search.html', {'table': table})
-
-
-@login_required
-def search_record_form_error(request):
-    return render(request, 'qpcr_records/search_record_form_error.html')
+            return render(request, 'qpcr_records/search_results.html', {'table': table})
 
 
 @login_required
@@ -547,16 +537,44 @@ def upload_qpcr_results(request):
 
 @login_required()
 def qpcr_plate_id_to_review(request):
-    return render(request, 'qpcr_records/qpcr_plate_id_to_review.html', {'form': QPCRStorageAndReactionPlateForm})
+    # Show initial form
+    if request.method == 'GET':
+        f = SelectQRPPlateForm()
+        return render(request, 'qpcr_records/qpcr_plate_id_to_review.html', {'form': f})
+    # Upon form submission, redirect to search_results if valid
+    else:
+        f = SelectQRPPlateForm(request.POST)
+
+        if f.is_valid():
+            request.session['qrp_id'] = f.cleaned_data['qrp_id']
+            return redirect('review_results')
+        else:
+            # Show form again with errors
+            return render(request, 'qpcr_records/qpcr_plate_id_to_review.html', {'form': f})
 
 
 @login_required
 def review_results(request):
-    request.session['qrp_id'] = request.GET['qrp_id']
-    q = test_results.objects.filter(qrp_id__iexact=request.GET['qrp_id'])
-    table = review_resultsTable(q)
-    RequestConfig(request, paginate=False).configure(table)
-    return render(request, 'qpcr_records/review_results.html', {'table': table, "choices": sample_result_choices})
+    if request.method == 'GET':
+        q = test_results.objects.filter(qrp_id__iexact=request.session['qrp_id'])
+        table = ReviewTable(q)
+        RequestConfig(request, paginate=False).configure(table)
+        return render(request, 'qpcr_records/review_results.html', {'table': table, "choices": sample_result_choices})
+    else:
+        # Get wells
+        qrp_id = request.session['qrp_id']
+        qrp_wells = test_results.objects.filter(qrp_id__iexact=qrp_id).values_list('qrp_well', flat=True)
+
+        # Get input from review form
+        # - 1 to exclude CSRF token
+        form_data = [request.POST[f"row{i}"] for i in range(len(request.POST)-1)]
+
+        # Update results and review status
+        for qrp_well, choice in zip(qrp_wells, form_data):
+            test_results.objects.filter(qrp_well=qrp_well, qrp_id__iexact=qrp_id).update(final_results=choice, is_reviewed=True)
+
+        messages.success(request, mark_safe(f'Review status updated for all samples in plate \"{qrp_id}\".'))
+        return redirect('index')
 
 
 @login_required
@@ -607,7 +625,7 @@ def track_samples(request):
             q = test_results.objects.all()
             break
 
-    table = test_resultsTable(q)
+    table = SearchResultsTable(q)
     RequestConfig(request).configure(table)
 
     export_format = request.GET.get('_export', None)
@@ -617,8 +635,3 @@ def track_samples(request):
 
     return render(request, 'qpcr_records/track_samples.html', {'table': table})
 
-
-def reset_session(request):
-    for k in list(request.session.keys()):
-        if k not in ['_auth_user_id', '_auth_user_backend', '_auth_user_hash']:
-            del request.session[k]
