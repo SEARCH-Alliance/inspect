@@ -40,13 +40,11 @@ def sample_counter_display():
 
     q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gte=time_thresh,decision_tree_results='Undetermined').count()
 
-
     q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh,pcr_results_csv='').count()
     s = list(set(test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).values_list(
         'qrp_id', flat=True).order_by('qrp_id')))
     qrp_id = ', '.join(s)
     qrp_plate = len(s)
-
 
     # RNA plate counters
     rwp_count = test_results.objects.filter(~Q(rwp_id=''),
@@ -73,23 +71,20 @@ def sample_counter_display():
     sep_id = ', '.join(s)
     sep_count_plate = len(list(set(
         test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh,rep_id='').values_list('sep_id', flat=True))))
+    
     # Unprocessed sample counter
     unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh,sep_id='').count()
 
     # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
-        'data_cleared': data_cleared,
-        'q_processed': q_processed,
+        'unproc_samples': unproc_samples,
+        'sep_count': sep_count, 'sep_count_plate': sep_count_plate, 'sep_ids': sep_id,
+        'rep_count': rep_count, 'rep_count_plate': rep_count_plate, 'rep_ids': rep_id,
+        'rwp_count': rwp_count, 'rwp_count_plate': rwp_count_plate, 'rwp_ids': rwp_id, 
+        'q_running': q_running, 'q_running_plate': qrp_plate, 'q_running_ids': qrp_id,
         'q_recorded': q_recorded,
-        'q_running': q_running,'qrp_plate':qrp_plate,
-        'q_running_ids': qrp_id,
-        'qrp_ids': qrp_id,
-        'rwp_count': rwp_count, 'rwp_count_plate': rwp_count_plate,
-        'rep_count': rep_count, 'rep_count_plate': rep_count_plate,
-        'rwp_ids': rwp_id, 'rep_ids': rep_id,
-        'sep_count': sep_count, 'sep_count_plate': sep_count_plate,
-        'sep_ids': sep_id,
-        'unproc_samples': unproc_samples
+        'q_processed': q_processed,
+        'data_cleared': data_cleared,
     }
     return counter_information
 
