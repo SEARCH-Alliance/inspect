@@ -60,7 +60,8 @@ class ArrayingForm(forms.Form):
         if test_results.objects.filter(rep_id__in=barcodes).exclude(rwp_id='').exists():
             raise ValidationError("One or more RNA elution plate IDs are already assigned to an RNA working plate.")
 
-        if len(set(barcodes)) != 4:
+        barcodes_no_empty = [b for b in barcodes if b]
+        if len(barcodes_no_empty) != len(set(barcodes_no_empty)):
             raise ValidationError("Duplicated RNA elution plate IDs not allowed.")
 
         for e in errors:
