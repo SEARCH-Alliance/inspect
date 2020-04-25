@@ -1,0 +1,16 @@
+{% extends 'qpcr_records/base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="container"><br>
+    <h2 class="mb-3">Record Search Form</h2>
+    <div class="card">
+    <div class="card-body">
+        <form action="" method="POST">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </div>
+    </div>
+</div>
+{% endblock %}
