@@ -111,8 +111,8 @@
                     <thead>
                         <tr>
                             <th scope="col">Step Name</th>
-                            <th scope="col">Number of Samples</th>
-                            <th scope="col">Number of Plates Evaluated</th>
+                            <th scope="col">Number of Samples in Step</th>
+                            <th scope="col">Number of Plates Already Evaluated</th>
                             <th scope="col">Evaluated Plate IDs</th>
                         </tr>
                     </thead>
@@ -144,8 +144,8 @@
                         <tr class="table-success">
                             <th scope="row">Running qPCR Plate (QRP)</th>
                             <td>{{ q_running }}</td>
-                            <td>-</td>
-                            <td>{{ qrp_ids }}</td>
+                            <td>{{ q_running_plate }}</td>
+                            <td>{{ q_running_ids }}</td>
                         </tr>
                         <tr class="table-success">
                             <th scope="row">Recorded qPCR Plate (QRP)</th>
