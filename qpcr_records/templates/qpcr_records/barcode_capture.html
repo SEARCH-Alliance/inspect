@@ -147,17 +147,17 @@
                 // Set square width/height size
                 well.classList.add("well");
 
-
+                // Style control wells
                 if (label == 'A1' | label == 'H1') {
                     well.classList.add("control-well");
                 }
-                var activeRow = activeWell[0];
-                var activeCol = activeWell.substring(1);
 
-                for (const loadedWell in {{ barcodes|safe }}) {
-                    $("#"+loadedWell).addClass("loaded-well");
+                // Style loaded wells
+                if (label in {{barcodes|safe}}) {
+                    well.classList.add("loaded-well");
                 }
 
+                // Style active well
                 if (label == activeWell) {
                     well.classList.add("active-well");
                     well.classList.add("active");
@@ -176,10 +176,6 @@
         var wellSize = getWellSize();
 
         var cols = document.querySelectorAll('.plate-col');
-        // cols.forEach(c => {
-        //     c.style.marginLeft = wellSize / 10 - .1 + "px";
-        //     c.style.marginRight = wellSize / 10 - .1 + "px";
-        // });
 
         var wells = document.querySelectorAll('.well');
         wells.forEach(w => {
@@ -198,7 +194,6 @@
 
         var barcodes = {{ barcodes|safe }};
         for (const well in barcodes) {
-            console.log(well);
             var $well = $('<th>').attr('scope', 'row')
                                         .text(well);
             var $barcode = $('<td>').text(barcodes[well]);
@@ -223,8 +218,6 @@
         validateForm({{ form.barcode.id_for_label }}, function() {
             // return false if barcode already exists
             var value = {{ form.barcode.id_for_label }}.value.trim();
-            console.log(barcodes);
-            console.log(value);
             return !barcodes.includes(value);
         }, "Barcode already exists!");
     };
