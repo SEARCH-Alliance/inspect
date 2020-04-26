@@ -1,14 +1,7 @@
 from django.test import TestCase
 
-import datetime
 from qpcr_records.models import personnel_list
 from qpcr_records.models import test_results
-
-from qpcr_records.models import SampleStorageAndExtractionPlateForm
-from qpcr_records.models import RNAExtractionPlateForm
-from qpcr_records.models import QPCRStorageAndReactionPlateForm
-from qpcr_records.models import QPCRResultsUploadForm
-from qpcr_records.models import SelectQRPPlateForm
 
 ######################################################################
 # Models test
