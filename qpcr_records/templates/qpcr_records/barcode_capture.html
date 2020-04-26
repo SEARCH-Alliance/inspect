@@ -1,6 +1,7 @@
 {% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
 
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+
 <div class="jumbotron jumbotron-fluid mb-0 py-3">
     <!-- Header Information -->
     <div class="container">
@@ -18,22 +19,29 @@
                             <div>Load control sample into the indicated well below.</div>
                             {% endif %}
                             <div class="rounded mt-3 d-flex flex-col align-items-center justify-content-middle" style="background: lightgrey; display: inline-block !important;">
-                                <h4 class="text-capitalize p-2 mb-0">Well {{ well }}</h4>
+
+                                <h4 class="p-2 mb-0">
+                                {% if form.ssp_well.value == 'A1' %}
+                                    Control Wells: <code>A1 & H1</code>
+                                {% else %}
+                                    Well: <code>{{ form.ssp_well.value }}</code>
+                                {% endif %}
+                                </h4>
                             </div>
                             <div class="d-flex flex-row align-items-end">
-                                <form class="needs-validation col-10 p-0 mt-3" action="/qpcr_records/barcode_capture/" method="GET" novalidate>
+                                <form class="needs-validation col-10 p-0 mt-3" action="/qpcr_records/barcode_capture/" method="POST" novalidate>
                                     {% csrf_token %}
                                     <div class="d-flex flex-row align-items-end">
                                                     <!-- Load controls step: hide barcode field -->
-                                        {% if form.ssp_well.value != 'A1' and form.ssp_well.value != 'H1' %}
-                                            {{ form.barcode|as_crispy_field }}
-                                        {% endif %}
-                                            {{ form.ssp_well|as_crispy_field }}
-                                            {{ form.sep_well|as_crispy_field }}
-                                        <button type="submit" class="btn btn-primary ml-3 form-group" style="height: calc(2.25rem + 2px);">Next Well</button>
+                                            {% if form.ssp_well.value != 'A1' and form.ssp_well.value != 'H1' %}
+                                                <div class="mr-3">{{ form.barcode|as_crispy_field }}</div>
+                                            {% endif %}
+                                                {{ form.ssp_well|as_crispy_field }}
+                                                {{ form.sep_well|as_crispy_field }}
+                                        <button type="submit" class="btn btn-primary form-group" style="height: calc(2.25rem + 2px);">Next Well</button>
                                     </div>
                                 </form>
-                                <form class="mb-3 p-0 col-2 d-flex justify-content-end" action="/qpcr_records/scan_plate_1_2_barcode/" method="GET">
+                                <form class="mb-3 p-0 col-2 d-flex justify-content-end" action="{% url 'sample_plate_capture' %}" method="POST">
                                     {% csrf_token %}
                                     <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-danger">End Plate</button>
                                 </form>
@@ -49,24 +57,24 @@
             <div class="col-md-4 px-0">
             <!-- Platemap Legend Information -->
                 <div class="card mb-3">
-                    <div class="card-body">
+                    <div class="card-body pb-0">
                         <ul id="legend" class="list-group list-group-flush">
-                            <li class="list-group-item p-0"><h5>Plate Legend</h5></li>
-                            <li class="list-group-item p-0 pt-3 d-flex flex-row align-items-center justify-content-start">
+                            <li class="list-group-item border-0 p-0 pb-3"><h4>Plate Legend</h4></li>
+                            <li class="list-group-item border-0 p-0 pb-3 d-flex flex-row align-items-center justify-content-start">
                                 <div class="well"></div>
-                                <span class="pl-2 my-auto text-capitalize">Sample</span>
+                                <span class="pl-3 my-auto text-capitalize">Sample</span>
                             </li>
-                            <li class="list-group-item p-0 pt-3 d-flex flex-row align-items-center justify-content-start">
+                            <li class="list-group-item border-0 p-0 py-3 d-flex flex-row align-items-center justify-content-start">
                                 <div class="well control-well"></div>
-                                <span class="pl-2 my-auto text-capitalize">Control</span>
+                                <span class="pl-3 my-auto text-capitalize">Control</span>
                             </li>
-                            <li class="list-group-item p-0 pt-3 d-flex flex-row align-items-center justify-content-start">
+                            <li class="list-group-item border-0 p-0 py-3 d-flex flex-row align-items-center justify-content-start">
                                 <div class="well active-well"></div>
-                                <span class="pl-2 my-auto text-capitalize">Current Sample</span>
+                                <span class="pl-3 my-auto text-capitalize">Current Sample</span>
                             </li>
-                            <li class="list-group-item p-0 pt-3 d-flex flex-row align-items-center justify-content-start">
+                            <li class="list-group-item border-0 p-0 py-3 d-flex flex-row align-items-center justify-content-start">
                                 <div class="well loaded-well"></div>
-                                <span class="pl-2 my-auto text-capitalize">Loaded Samples</span>
+                                <span class="pl-3 my-auto text-capitalize">Loaded Samples</span>
                             </li>
                         </ul>
                     </div>
@@ -74,7 +82,7 @@
                 <!-- Previously Scanned Barcode List -->
                 <div class="card">
                     <h5 class="card-header">
-                        Previously Scanned Barcodes
+                        Scanned Barcodes
                     </h5>
                     <div class="overflow-auto" style="max-height: 300px;">
                     <table class="table table-hover table-bordered overflow-auto border-top-0 mb-0">
@@ -92,11 +100,6 @@
         </div>
     </div>
 </div>
-</div>
-
-<!-- Input Sample Barcode Information -->
-<div class="container">
-
 </div>
 
 <script>
@@ -126,7 +129,7 @@
             plateCol.id = "col" + col;
             plateCol.classList.add("col-1");
             plateCol.classList.add("plate-col");
-            if (col == activeWell[1]) {
+            if (col == activeWell.substring(1)) {
                 plateCol.classList.add("active-col");
             }
             // Create wells in column
@@ -299,5 +302,10 @@
     #legend span {
         margin: auto 0;
     }
+
+    .invalid-feedback {
+        margin-bottom: -23px;
+    }
+
 </style>
 {% endblock %}

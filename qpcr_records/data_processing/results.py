@@ -4,6 +4,7 @@ import boto3
 import os
 import sys
 from io import StringIO
+from decouple import config
 
 class Results:
 

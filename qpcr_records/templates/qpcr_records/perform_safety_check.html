@@ -3,7 +3,7 @@
     integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 <div class="container">
     <h2 class="my-3">Perform Safety Checks</h2>
-    <form action="/qpcr_records/barcode_capture/" method="GET">
+    <form action="" method="POST">
         {% csrf_token %}
         <div class="card mb-3">
             <div class="card-body">
@@ -28,12 +28,12 @@
             </div>
         </div>
 
-        <div class="form-group col-md-4 mb-0">
-            {{ form1.lrl_id|as_crispy_field }}
+        <div class="col-md-4 m-0 p-0">
+            {{ form.lrl_id|as_crispy_field }}
         </div>
 
-        <div class="form-group col-md-4 mb-0">
-            {{ form2.personnel2_andersen_lab|as_crispy_field }}
+        <div class="col-md-4 m-0 p-0">
+            {{ form.personnel2_andersen_lab|as_crispy_field }}
         </div>
 
         <button type="submit" class="btn btn-primary">Start</button>

@@ -1,0 +1,45 @@
+{% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
+
+
+<div class="container">
+    <div class="alert alert-primary my-3">
+        <div class="font-weight-bold d-inline">Reminder: </div>Add MS2 PHAGE.
+    </div>
+    <form action="" method="POST">
+        {% csrf_token %}
+        <div class="form-row">
+            <div class="form-group col-md-6 mb-0">
+                {{ form.ms2_lot_id|as_crispy_field }}
+            </div>
+            <div class="form-group col-md-6 mb-0">
+                {{ form.kfr_id|as_crispy_field }}
+            </div>
+            <div class="form-group col-md-6 mb-0">
+                {{ form.rna_extract_kit_id|as_crispy_field }}
+            </div>
+            <div class="form-group col-md-6 mb-0">
+                {{ form.megabeads_id|as_crispy_field }}
+            </div>
+            <div class="form-group col-md-6 mb-0">
+                {{ form.carrier_rna_id|as_crispy_field }}
+            </div>
+        </div>
+        <br>
+        <div class="alert alert-primary my-3">
+            <div class="font-weight-bold d-inline">Reminder: </div>RNA Elution Plate ID will be recorded as the RNA Storage Plate ID.
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-6 mb-0">
+                {{ form.sep_id|as_crispy_field }}
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-6 mb-0">
+                {{ form.rep_id|as_crispy_field }}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Assign Plates</button>
+    </form>
+</div>
+{% endblock %}

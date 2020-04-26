@@ -1,0 +1,19 @@
+{% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
+
+
+<div class="container">
+    <form action="" method="POST">
+        {% csrf_token %}
+        <div class="form-row">
+            <div class="form-group col-md-6 mb-0">
+                {{ form.rwp_id|as_crispy_field }}
+            </div>
+            <div class="form-group col-md-6 mb-0">
+                {{ form.qrp_id|as_crispy_field }}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Assign Plates</button>
+    </form>
+</div>
+{% endblock %}

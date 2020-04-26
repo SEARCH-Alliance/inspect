@@ -1,5 +1,6 @@
 {% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+
 <div class="container">
     <div class="container">
         <h1 class="display-4 my-3">Scan Plate Barcodes</h1>
@@ -28,7 +29,7 @@
         </div>
         {% endif %}
 
-        <form action="/qpcr_records/" method="GET">
+        <form action="" method="POST">
             {% csrf_token %}
             <div class="form-row">
                 <div class="form-group col-md-6 mb-0">
