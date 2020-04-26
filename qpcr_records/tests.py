@@ -1,7 +1,12 @@
 from django.test import TestCase
 
+# Models that we create in the database
 from qpcr_records.models import personnel_list
 from qpcr_records.models import test_results
+
+# Import the Model Forms that we validate with clean functions
+from django.forms import ValidationError
+from qpcr_records.models import *
 
 ######################################################################
 # Models test
@@ -60,3 +65,51 @@ class TestResultsTest(TestCase):
 		self.assertEqual(tr.is_reviewed, False)
 		self.assertEqual(tr.file_transfer_status, "Not Complete")
 		self.assertEqual(tr.sample_release, "No")
+
+######################################################################
+# ModelForms test
+######################################################################
+
+class TestSampleStoragenAndExtractionPlateForm(TestCase):
+    def setUp(self):
+        """Create a test result entry with sample storage and extraction info"""
+        test_results.objects.create(ssp_id='SSP1', sep_id='SEP1', sample_bag_id='SB1')
+
+    def test_ssp_valid(self):
+        """Test if new sample storage and extractioin info can be added"""
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP2', sep_id='SEP2', sample_bag_id='SB2'))
+        self.assertEqual(len(f.errors),0)
+        self.assertTrue(f.is_valid()) # should be a valid entry without errors
+
+    def test_ssp_repeat(self):
+        """Test if duplicate Sample Storage Plates are detected"""
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP1', sep_id='SEP2', sample_bag_id='SB2'))
+        self.assertEqual(len(f.errors),1) # duplicate SSP1
+        self.assertRaises(ValidationError) 
+
+    def test_sep_repeat(self):
+        """Test if duplicate Sample Extraction Plates are detected"""
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP2', sep_id='SEP1', sample_bag_id='SB2'))
+        self.assertEqual(len(f.errors),1) # duplicate SEP1
+        self.assertRaises(ValidationError) 
+
+    def test_sb_repeat(self):
+        """Test if duplicate Sample Extraction Plates are detected"""
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP2', sep_id='SEP2', sample_bag_id='SB1'))
+        self.assertEqual(len(f.errors),1) # duplicate SB1
+        self.assertRaises(ValidationError) 
+
+    def test_ssp_sep_repeat(self):
+        """Test if duplicate Sample Storage Plate and Extraction plate are detected"""
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP1', sep_id='SEP1', sample_bag_id='SB2'))
+        self.assertEqual(len(f.errors),2) # duplicate SSP1 and SEP1
+
+    def test_ssp_sb_repeat(self):
+        """Test if duplicate Sample Storage Plate and Sample Bag are detected"""
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP1', sep_id='SEP2', sample_bag_id='SB1'))
+        self.assertEqual(len(f.errors),2) # duplicate SSP1 and SB1
+
+    def test_sep_sb_repeat(self):
+        """Test if duplicate Sample Extraction Plate and Sample Bag are detected"""
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP2', sep_id='SEP1', sample_bag_id='SB1'))
+        self.assertEqual(len(f.errors),2) # duplicate SEP1 and SB1
