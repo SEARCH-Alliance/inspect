@@ -193,3 +193,31 @@ class TestRNAExtractionPlateForm(TestCase):
             megabeads_id="MEGA",carrier_rna_id="CARRIER"))
         self.assertEqual(len(f.errors),1)
         self.assertRaises(ValidationError)        
+
+class TestQPCRStorageAndReactionPlateForm(TestCase):
+    def setUp(self):
+        test_results.objects.create(rwp_id="RWP1",qrp_id="QRP1") # rwp with qrp added
+        test_results.objects.create(rwp_id="RWP2")               # rwp with qrp not added yet
+
+    def test_qpcr_reaction_valid(self):
+        """Test if new qPCR reaction information can be added for a plate (RWP2)"""
+        f = QPCRStorageAndReactionPlateForm(dict(rwp_id="RWP2",qrp_id="QRP2"))
+        self.assertEqual(len(f.errors),0)
+
+    def test_rwp_dne(self):
+        """Test if RNA Working Plate to associate with a qPCR Reaction plate does not exist"""
+        f = QPCRStorageAndReactionPlateForm(dict(rwp_id="RWP3",qrp_id="QRP3"))
+        self.assertEqual(len(f.errors),1)
+        self.assertRaises(ValidationError)
+
+    def test_rep_multiple_qrp(self):
+        """Test if multiple qPCR Reaction plates are detected to associate with a single RNA Working plate"""
+        f = QPCRStorageAndReactionPlateForm(dict(rwp_id="RWP1",qrp_id="QRP2"))
+        self.assertEqual(len(f.errors),1)
+        self.assertRaises(ValidationError)
+
+    def test_qrp_multiple(self):
+        """Test if duplicate qPCR Reaction plates are detected"""
+        f = QPCRStorageAndReactionPlateForm(dict(rwp_id="RWP2",qrp_id="QRP1"))
+        self.assertEqual(len(f.errors),1)
+        self.assertRaises(ValidationError)
