@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'storages',
     'django_tables2',
+    'coverage'
 ]
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
