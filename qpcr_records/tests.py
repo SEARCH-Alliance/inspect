@@ -196,6 +196,7 @@ class TestRNAExtractionPlateForm(TestCase):
 
 class TestQPCRStorageAndReactionPlateForm(TestCase):
     def setUp(self):
+        """Create a test result entry with qPCR Storage and Reaction plate info"""
         test_results.objects.create(rwp_id="RWP1",qrp_id="QRP1") # rwp with qrp added
         test_results.objects.create(rwp_id="RWP2")               # rwp with qrp not added yet
 
@@ -221,3 +222,21 @@ class TestQPCRStorageAndReactionPlateForm(TestCase):
         f = QPCRStorageAndReactionPlateForm(dict(rwp_id="RWP2",qrp_id="QRP1"))
         self.assertEqual(len(f.errors),1)
         self.assertRaises(ValidationError)
+
+class TestQPCRResultsUploadForm(TestCase):
+    def setUp(self):
+        """Create a test result entry with qPCR Results info"""
+        test_results.objects.create(qrp_id="QRP1",qpcr_results_file="results1.txt") # random filename for results
+        test_results.objects.create(qrp_id="QRP2")                                  # no results added yet
+
+    def test_qrp_results_valid(self):
+        """Test if new qPCR Results can be added for a plate (QRP2)"""
+        self.fail("!TODO : This test is not implemented yet")
+
+    def test_qrp_dne(self):
+        """Test if qPCR Reaction plate does not exist"""
+        self.fail("!TODO : This test is not implemented yet")
+
+    def test_qrp_multiple_qrp_results(self):
+        """Test if multiple qPCR Results files are detected to associate with a single qPCR Reaction plate"""
+        self.fail("!TODO : This test is not implemented yet")
