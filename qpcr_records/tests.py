@@ -43,28 +43,28 @@ class TestResultsTest(TestCase):
 
 	def test_default_test_results_creation(self):
 		"""Test if non-date default parameters are set properly"""
-		tr = test_results.objects.get(barcode="Default_Fields", fake_name="Default")
-		self.assertTrue(isinstance(tr, test_results))
+		f = test_results.objects.get(barcode="Default_Fields", fake_name="Default")
+		self.assertTrue(isinstance(f, test_results))
 		
 		# Andersson Lab Information
-		self.assertEqual(tr.lrl_id, "M6246109105")
+		self.assertEqual(f.lrl_id, "M6246109105")
 
 		# Knight Lab Information
-		self.assertEqual(tr.ms2_lot_id, "2003001")
+		self.assertEqual(f.ms2_lot_id, "2003001")
 		
 		# Laurent Lab Information
-		self.assertEqual(tr.enzyme_mix_id, "2219127")
-		self.assertEqual(tr.mhv_id, "MHV-041")
+		self.assertEqual(f.enzyme_mix_id, "2219127")
+		self.assertEqual(f.mhv_id, "MHV-041")
 
 		# Results Information
-		self.assertEqual(tr.ms2_ct_value, -1)
-		self.assertEqual(tr.n_ct_value, -1)
-		self.assertEqual(tr.orf1ab_ct_value, -1)
-		self.assertEqual(tr.s_ct_value, -1)
-		self.assertEqual(tr.decision_tree_results, "Undetermined")
-		self.assertEqual(tr.is_reviewed, False)
-		self.assertEqual(tr.file_transfer_status, "Not Complete")
-		self.assertEqual(tr.sample_release, "No")
+		self.assertEqual(f.ms2_ct_value, -1)
+		self.assertEqual(f.n_ct_value, -1)
+		self.assertEqual(f.orf1ab_ct_value, -1)
+		self.assertEqual(f.s_ct_value, -1)
+		self.assertEqual(f.decision_tree_results, "Undetermined")
+		self.assertEqual(f.is_reviewed, False)
+		self.assertEqual(f.file_transfer_status, "Not Complete")
+		self.assertEqual(f.sample_release, "No")
 
 ######################################################################
 # ModelForms test
@@ -117,8 +117,8 @@ class TestSampleStoragenAndExtractionPlateForm(TestCase):
 class TestRNAExtractionPlateForm(TestCase):
     def setUp(self):
         """Create a test result entry with RNA extraction info"""
-        test_results.objects.create(sep_id="SEP1",rep_id="REP1")
-        test_results.objects.create(sep_id="SEP2")
+        test_results.objects.create(sep_id="SEP1",rep_id="REP1") # sep with rep already added
+        test_results.objects.create(sep_id="SEP2")               # sep with rep not added yet
 
     def test_rna_extraction_valid(self):
         """Test if new RNA extraction information can be added for a plate (SEP2)"""
