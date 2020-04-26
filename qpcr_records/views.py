@@ -33,67 +33,62 @@ def sample_counter_display():
     # subtracting the number of plates in the current stage being evaluated
     # timestamp threshold
     time_thresh = date.today() - timedelta(days=2)
-    dub_count = 0  # tracks plates in previous stages
 
     # Cleared plate counter
     data_cleared = test_results.objects.filter(~Q(final_results=''),
-                                               sampling_date__gte=time_thresh).count() - dub_count
-    dub_count += data_cleared
+                                               sampling_date__gte=time_thresh).count()
 
     # qPCR plate counters
     q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined'),
-                                              sampling_date__gte=time_thresh).count() - dub_count
-    dub_count += q_processed
+                                              sampling_date__gte=time_thresh,final_results='').count()
 
-    q_recorded = test_results.objects.filter(
-        ~Q(qpcr_results_file=''), sampling_date__gte=time_thresh).count() - dub_count
-    dub_count += q_recorded
+    q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gte=time_thresh,decision_tree_results='Undetermined').count()
 
-    q_running = test_results.objects.filter(
-        ~Q(qrp_id=''), sampling_date__gte=time_thresh).count() - dub_count
-    s = list(set(test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list(
+    q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh,pcr_results_csv='').count()
+    s = list(set(test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).values_list(
         'qrp_id', flat=True).order_by('qrp_id')))
     qrp_id = ', '.join(s)
-    dub_count += q_running
+    qrp_plate = len(s)
 
     # RNA plate counters
     rwp_count = test_results.objects.filter(~Q(rwp_id=''),
-                                            sampling_date__gte=time_thresh).count() - dub_count  # rna working plate
+                                            sampling_date__gte=time_thresh,qrp_id='').count() # rna working plate
     s = list(set(
-        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True)))
+        test_results.objects.filter(~Q(rwp_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True)))
     rwp_id = ', '.join(s)
-    dub_count += rwp_count
+    rwp_count_plate = len(list(set(
+        test_results.objects.filter(~Q(rwp_id=''), sampling_date__gte=time_thresh,qrp_id='').values_list('rwp_id', flat=True))))
+    rwp_id = ', '.join(s)
 
     rep_count = test_results.objects.filter(~Q(rep_id=''),
-                                            sampling_date__gte=time_thresh).count() - dub_count  # rna extraction plate
+                                            sampling_date__gte=time_thresh,rwp_id='').count()  # rna extraction plate
     s = list(set(
-        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True)))
+        test_results.objects.filter(~Q(rep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True)))
     rep_id = ', '.join(s)
-    dub_count += rep_count
+    rep_count_plate = len(list(set(
+        test_results.objects.filter(~Q(rep_id=''), sampling_date__gte=time_thresh,rwp_id='').values_list('rep_id', flat=True))))
 
     # Sample extraction plate counter
-    sep_count = test_results.objects.filter(
-        ~Q(sep_id=''), sampling_date__gte=time_thresh).count() - dub_count
+    sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh,rep_id='').count()
     s = list(set(
         test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id', flat=True)))
     sep_id = ', '.join(s)
-    dub_count += sep_count
-
+    sep_count_plate = len(list(set(
+        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh,rep_id='').values_list('sep_id', flat=True))))
+    
     # Unprocessed sample counter
-    unproc_samples = test_results.objects.filter(
-        ~Q(barcode=''), sampling_date__gte=time_thresh).count() - dub_count
+    unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh,sep_id='').count()
 
     # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
+        'unproc_samples': unproc_samples,
+        'sep_count': sep_count, 'sep_count_plate': sep_count_plate, 'sep_ids': sep_id,
+        'rep_count': rep_count, 'rep_count_plate': rep_count_plate, 'rep_ids': rep_id,
+        'rwp_count': rwp_count, 'rwp_count_plate': rwp_count_plate, 'rwp_ids': rwp_id, 
+        'q_running': q_running, 'q_running_plate': qrp_plate, 'q_running_ids': qrp_id,
+        'q_recorded': q_recorded,
+        'q_processed': q_processed,
         'data_cleared': data_cleared,
-        'q_processed': q_processed, 'q_recorded': q_recorded, 'q_running': q_running,
-        'q_running_ids': qrp_id,
-        'qrp_ids': qrp_id,
-        'rwp_count': rwp_count, 'rep_count': rep_count,
-        'rwp_ids': rwp_id, 'rep_ids': rep_id,
-        'sep_count': sep_count,
-        'sep_ids': sep_id,
-        'unproc_samples': unproc_samples
     }
     return counter_information
 
@@ -167,7 +162,6 @@ def perform_safety_check(request):
     # Upon form submission, redirect to barcode_capture if valid
     else:
         f = LysisReagentLotForm(request.POST)
-
         if f.is_valid():
             request.session['lrl_id'] = f.cleaned_data['lrl_id']
             request.session['personnel2_andersen_lab'] = f.cleaned_data['personnel2_andersen_lab']
@@ -234,6 +228,11 @@ def barcode_capture(request):
 
 @login_required
 def update_existing_records(request):
+    """
+    Index page for updating existing records
+    :param request:
+    :return:
+    """
     reset_session(request)
     # Sample Counter Display - Will appear every time the home page is loaded
     counter_information = sample_counter_display()
@@ -329,7 +328,6 @@ def rwp_plate_capture(request):
     :param request:
     :return:
     """
-    # TODO
     if request.method == 'GET':
         f = ArrayingForm()
         return render(request, 'qpcr_records/rwp_plate_capture.html', {'form': f})
