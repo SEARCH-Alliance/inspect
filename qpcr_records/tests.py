@@ -73,43 +73,123 @@ class TestResultsTest(TestCase):
 class TestSampleStoragenAndExtractionPlateForm(TestCase):
     def setUp(self):
         """Create a test result entry with sample storage and extraction info"""
-        test_results.objects.create(ssp_id='SSP1', sep_id='SEP1', sample_bag_id='SB1')
+        test_results.objects.create(ssp_id="SSP1", sep_id="SEP1", sample_bag_id="SB1")
 
-    def test_ssp_valid(self):
-        """Test if new sample storage and extractioin info can be added"""
-        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP2', sep_id='SEP2', sample_bag_id='SB2'))
+    def test_sample_valid(self):
+        """Test if new sample storage and extraction info can be added"""
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id="SSP2", sep_id="SEP2", sample_bag_id="SB2"))
         self.assertEqual(len(f.errors),0)
         self.assertTrue(f.is_valid()) # should be a valid entry without errors
 
     def test_ssp_repeat(self):
         """Test if duplicate Sample Storage Plates are detected"""
-        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP1', sep_id='SEP2', sample_bag_id='SB2'))
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id="SSP1", sep_id="SEP2", sample_bag_id="SB2"))
         self.assertEqual(len(f.errors),1) # duplicate SSP1
         self.assertRaises(ValidationError) 
 
     def test_sep_repeat(self):
         """Test if duplicate Sample Extraction Plates are detected"""
-        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP2', sep_id='SEP1', sample_bag_id='SB2'))
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id="SSP2", sep_id="SEP1", sample_bag_id="SB2"))
         self.assertEqual(len(f.errors),1) # duplicate SEP1
         self.assertRaises(ValidationError) 
 
     def test_sb_repeat(self):
         """Test if duplicate Sample Extraction Plates are detected"""
-        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP2', sep_id='SEP2', sample_bag_id='SB1'))
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id="SSP2", sep_id="SEP2", sample_bag_id="SB1"))
         self.assertEqual(len(f.errors),1) # duplicate SB1
         self.assertRaises(ValidationError) 
 
     def test_ssp_sep_repeat(self):
         """Test if duplicate Sample Storage Plate and Extraction plate are detected"""
-        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP1', sep_id='SEP1', sample_bag_id='SB2'))
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id="SSP1", sep_id="SEP1", sample_bag_id="SB2"))
         self.assertEqual(len(f.errors),2) # duplicate SSP1 and SEP1
 
     def test_ssp_sb_repeat(self):
         """Test if duplicate Sample Storage Plate and Sample Bag are detected"""
-        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP1', sep_id='SEP2', sample_bag_id='SB1'))
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id="SSP1", sep_id="SEP2", sample_bag_id="SB1"))
         self.assertEqual(len(f.errors),2) # duplicate SSP1 and SB1
 
     def test_sep_sb_repeat(self):
         """Test if duplicate Sample Extraction Plate and Sample Bag are detected"""
-        f = SampleStorageAndExtractionPlateForm(dict(ssp_id='SSP2', sep_id='SEP1', sample_bag_id='SB1'))
+        f = SampleStorageAndExtractionPlateForm(dict(ssp_id="SSP2", sep_id="SEP1", sample_bag_id="SB1"))
         self.assertEqual(len(f.errors),2) # duplicate SEP1 and SB1
+
+class TestRNAExtractionPlateForm(TestCase):
+    def setUp(self):
+        """Create a test result entry with RNA extraction info"""
+        test_results.objects.create(sep_id="SEP1",rep_id="REP1")
+        test_results.objects.create(sep_id="SEP2")
+
+    def test_rna_extraction_valid(self):
+        """Test if new RNA extraction information can be added for a plate (SEP2)"""
+        f = RNAExtractionPlateForm(dict(sep_id="SEP2",rep_id="REP2",
+            # The KingFisherID, MS2 Lot Number, RNA Extraction Kit ID, 
+            # Megabeads ID, and Carrier RNA ID are required entires
+            kfr_id="KFR",ms2_lot_id="MS2",rna_extract_kit_id="KIT",
+            megabeads_id="MEGA",carrier_rna_id="CARRIER"))
+        
+        self.assertEqual(len(f.errors),0)
+
+    ##### Test all of the mandatory fields that need to be included 
+    ##### (all of the lot numbers for different extraction kits and machines)
+
+    def test_kfr_id(self):
+        """Test if an error is called when KingFisherID is omitted"""
+        f = RNAExtractionPlateForm(dict(sep_id="SEP2",rep_id="REP2",
+            ms2_lot_id="MS2",rna_extract_kit_id="KIT",
+            megabeads_id="MEGA",carrier_rna_id="CARRIER"))
+        self.assertEqual(len(f.errors),1)
+
+    def test_ms2_id(self):
+        """Test if an error is called when MS2 Lot Number is omitted"""
+        f = RNAExtractionPlateForm(dict(sep_id="SEP2",rep_id="REP2",
+            kfr_id="KFR",rna_extract_kit_id="KIT",
+            megabeads_id="MEGA",carrier_rna_id="CARRIER"))
+        self.assertEqual(len(f.errors),1)
+
+    def test_rna_extract_kit_id(self):
+        """Test if an error is called when RNA Extraction Kit Lot Number is omitted"""
+        f = RNAExtractionPlateForm(dict(sep_id="SEP2",rep_id="REP2",
+            kfr_id="KFR",ms2_lot_id="MS2",
+            megabeads_id="MEGA",carrier_rna_id="CARRIER"))
+        self.assertEqual(len(f.errors),1)
+
+    def test_megabeads_id(self):
+        """Test if an error is called when Megabeads ID is omitted"""
+        f = RNAExtractionPlateForm(dict(sep_id="SEP2",rep_id="REP2",
+            kfr_id="KFR",ms2_lot_id="MS2",rna_extract_kit_id="KIT",
+            carrier_rna_id="CARRIER"))
+        self.assertEqual(len(f.errors),1)
+
+    def test_carrier_rna_id(self):
+        """Test if an error is called when Carrier RNA ID is omitted"""
+        f = RNAExtractionPlateForm(dict(sep_id="SEP2",rep_id="REP2",
+            kfr_id="KFR",ms2_lot_id="MS2",rna_extract_kit_id="KIT",
+            megabeads_id="MEGA"))
+        self.assertEqual(len(f.errors),1)
+
+    ##### Test that we don't add duplicate entries to the database or conflicting entries
+
+    def test_sep_multiple_rep(self):
+        """Test if duplicate Sample Extraction plate is detected"""
+        f = RNAExtractionPlateForm(dict(sep_id="SEP1",rep_id="REP2",
+            kfr_id="KFR",ms2_lot_id="MS2",rna_extract_kit_id="KIT",
+            megabeads_id="MEGA",carrier_rna_id="CARRIER"))
+        self.assertEqual(len(f.errors),1)
+        self.assertRaises(ValidationError)
+
+    def test_sep_dne_rep(self):
+        """Test if Sample Extraction plate to associate with a RNA Elution plate does not exist"""
+        f = RNAExtractionPlateForm(dict(sep_id="SEP3",rep_id="REP3",
+            kfr_id="KFR",ms2_lot_id="MS2",rna_extract_kit_id="KIT",
+            megabeads_id="MEGA",carrier_rna_id="CARRIER"))
+        self.assertEqual(len(f.errors),1)
+        self.assertRaises(ValidationError)
+
+    def test_rep_multiple(self):
+        """Test if duplicate RNA Elution plates are detected"""
+        f = RNAExtractionPlateForm(dict(sep_id="SEP2",rep_id="REP1",
+            kfr_id="KFR",ms2_lot_id="MS2",rna_extract_kit_id="KIT",
+            megabeads_id="MEGA",carrier_rna_id="CARRIER"))
+        self.assertEqual(len(f.errors),1)
+        self.assertRaises(ValidationError)        
