@@ -42,9 +42,9 @@ def sample_counter_display():
     q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined'),
                                               sampling_date__gte=time_thresh,final_results='').count()
 
-    q_recorded = test_results.objects.filter(~Q(pcr_results_csv=''), sampling_date__gte=time_thresh,decision_tree_results='Undetermined').count()
+    q_recorded = test_results.objects.filter(~Q(qpcr_results_file=''), sampling_date__gte=time_thresh,decision_tree_results='Undetermined').count()
 
-    q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh,pcr_results_csv='').count()
+    q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh,qpcr_results_file='').count()
     s = list(set(test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).values_list(
         'qrp_id', flat=True).order_by('qrp_id')))
     qrp_id = ', '.join(s)
@@ -187,6 +187,7 @@ def barcode_capture(request):
 
     # Initial visit via redirect
     if request.method == 'GET':
+        print("Here 1")
         start_well = 'A1'
         request.session['barcodes'] = dict()
         f = SampleStorageAndExtractionWellForm(initial={'ssp_well': start_well, 'sep_well': start_well})
@@ -197,6 +198,7 @@ def barcode_capture(request):
 
         # Proceed to next well accordingly
         if f.is_valid():
+            print("Here 2")
             # Save well barcodes to session
             active_well = f.cleaned_data['sep_well']
             request.session[active_well] = f.cleaned_data['barcode']
@@ -208,19 +210,24 @@ def barcode_capture(request):
                 return redirect('sample_plate_capture')
             # Next well
             else:
-                row = active_well[0]
-                col = int(active_well[1:])
-                if row == 'H':
-                    row = d1[row]
-                    col = col + 1
+                if active_well == 'G1':
+                    well = 'A2'
                 else:
-                    row = d1[row]
+                    row = active_well[0]
+                    col = int(active_well[1:])
+                    if row == 'H':
+                        row = d1[row]
+                        col = col + 1
+                    else:
+                        row = d1[row]
 
-                well = row + str(col)
+                    well = row + str(col)
+                print("%s : %s" %(active_well, well))
                 f = SampleStorageAndExtractionWellForm(initial={'sep_well': well, 'ssp_well': well})
                 return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
         else:  # Initial submission of control wells
             # Initialize variables
+            print("Here 3")
             first_sample_well = 'B1'
             f = SampleStorageAndExtractionWellForm(initial={'sep_well': first_sample_well, 'ssp_well': first_sample_well})
             return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': request.session['barcodes']})
