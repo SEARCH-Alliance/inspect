@@ -23,12 +23,12 @@
                             {% if user.is_authenticated %}
                             <ul class="navbar-nav mr-auto">
 {#                                <li><a href="{% url 'home:home' %}">Home</a></li>#}
-                                <li class="nav-item"><a class="nav-link"  href="{% url 'accounts:change_password' %}">Change Password</a></li>
+{#                                <li class="nav-item"><a class="nav-link"  href="{% url 'accounts:change_password' %}">Change Password</a></li>#}
                                 <li class="nav-item"><a class="nav-link"  href="{% url 'accounts:logout' %}">Log out</a></li>
                             </ul>
                             {% else %}
                             <ul class="navbar-nav mr-auto">
-                                <li class="nav-item"><a class="nav-link"  href="{% url 'accounts:reset_password' %}">Reset Password</a></li>
+{#                                <li class="nav-item"><a class="nav-link"  href="{% url 'accounts:reset_password' %}">Reset Password</a></li>#}
                               <li class="nav-item"><a  class="nav-link" href="{% url 'accounts:login' %}">Login</a></li>
                               <li class="nav-item"><a class="nav-link"  href="{% url 'accounts:register' %}">Register</a></li>
                             </ul>
