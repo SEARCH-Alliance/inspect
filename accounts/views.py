@@ -1,8 +1,7 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.urls import reverse
 from .models import create_profile
 from django.http import Http404
-
 
 from accounts.forms import (
     RegistrationForm,
@@ -10,9 +9,8 @@ from accounts.forms import (
 )
 
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserChangeForm, PasswordChangeForm
+from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth.decorators import login_required
 
 
 def register(request):
