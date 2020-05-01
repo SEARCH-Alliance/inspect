@@ -45,11 +45,11 @@ class PersonnelListTest(TestCase):
 class TestResultsTest(TestCase):
 	def setUp(self):
 		"""Create a test result entry with mostly default parameters"""
-		test_results.objects.create(barcode="Default_Fields", fake_name="Default")
+		test_results.objects.create(barcode="DEFAULT", fake_name="Default")
 
 	def test_default_test_results_creation(self):
 		"""Test if non-date default parameters are set properly"""
-		f = test_results.objects.get(barcode="Default_Fields", fake_name="Default")
+		f = test_results.objects.get(barcode="DEFAULT", fake_name="Default")
 		self.assertTrue(isinstance(f, test_results))
 
 		# Andersson Lab Information
