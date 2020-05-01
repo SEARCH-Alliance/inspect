@@ -1,12 +1,18 @@
-from django.test import TestCase
-
-# Models that we create in the database
-from qpcr_records.models import personnel_list
-from qpcr_records.models import test_results
-
+from django.conf import settings
 # Import the Model Forms that we validate with clean functions
 from django.forms import ValidationError
+from django.test import TestCase
+
 from qpcr_records.models import *
+# Models that we create in the database
+from qpcr_records.models import personnel_list, test_results
+
+######################################################################
+# Models test
+######################################################################
+class SettingsTest(TestCase):
+    def test_debug(self):
+        self.assertFalse(settings.DEBUG)
 
 ######################################################################
 # Models test
