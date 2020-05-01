@@ -40,11 +40,11 @@ def sample_counter_display():
 
     # qPCR plate counters
     q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined'),
-                                              sampling_date__gte=time_thresh,final_results='').count()
+                                              sampling_date__gte=time_thresh, final_results='').count()
 
-    q_recorded = test_results.objects.filter(~Q(qpcr_results_file=''), sampling_date__gte=time_thresh,decision_tree_results='Undetermined').count()
+    q_recorded = test_results.objects.filter(~Q(qpcr_results_file=''), sampling_date__gte=time_thresh, decision_tree_results='Undetermined').count()
 
-    q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh,qpcr_results_file='').count()
+    q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh, qpcr_results_file='').count()
     s = list(set(test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).values_list(
         'qrp_id', flat=True).order_by('qrp_id')))
     qrp_id = ', '.join(s)
@@ -52,39 +52,39 @@ def sample_counter_display():
 
     # RNA plate counters
     rwp_count = test_results.objects.filter(~Q(rwp_id=''),
-                                            sampling_date__gte=time_thresh,qrp_id='').count() # rna working plate
+                                            sampling_date__gte=time_thresh, qrp_id='').count()  # rna working plate
     s = list(set(
         test_results.objects.filter(~Q(rwp_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True)))
     rwp_id = ', '.join(s)
     rwp_count_plate = len(list(set(
-        test_results.objects.filter(~Q(rwp_id=''), sampling_date__gte=time_thresh,qrp_id='').values_list('rwp_id', flat=True))))
+        test_results.objects.filter(~Q(rwp_id=''), sampling_date__gte=time_thresh, qrp_id='').values_list('rwp_id', flat=True))))
     rwp_id = ', '.join(s)
 
     rep_count = test_results.objects.filter(~Q(rep_id=''),
-                                            sampling_date__gte=time_thresh,rwp_id='').count()  # rna extraction plate
+                                            sampling_date__gte=time_thresh, rwp_id='').count()  # rna extraction plate
     s = list(set(
         test_results.objects.filter(~Q(rep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True)))
     rep_id = ', '.join(s)
     rep_count_plate = len(list(set(
-        test_results.objects.filter(~Q(rep_id=''), sampling_date__gte=time_thresh,rwp_id='').values_list('rep_id', flat=True))))
+        test_results.objects.filter(~Q(rep_id=''), sampling_date__gte=time_thresh, rwp_id='').values_list('rep_id', flat=True))))
 
     # Sample extraction plate counter
-    sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh,rep_id='').count()
+    sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh, rep_id='').count()
     s = list(set(
         test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id', flat=True)))
     sep_id = ', '.join(s)
     sep_count_plate = len(list(set(
-        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh,rep_id='').values_list('sep_id', flat=True))))
-    
+        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh, rep_id='').values_list('sep_id', flat=True))))
+
     # Unprocessed sample counter
-    unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh,sep_id='').count()
+    unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh, sep_id='').count()
 
     # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
         'unproc_samples': unproc_samples,
         'sep_count': sep_count, 'sep_count_plate': sep_count_plate, 'sep_ids': sep_id,
         'rep_count': rep_count, 'rep_count_plate': rep_count_plate, 'rep_ids': rep_id,
-        'rwp_count': rwp_count, 'rwp_count_plate': rwp_count_plate, 'rwp_ids': rwp_id, 
+        'rwp_count': rwp_count, 'rwp_count_plate': rwp_count_plate, 'rwp_ids': rwp_id,
         'q_running': q_running, 'q_running_plate': qrp_plate, 'q_running_ids': qrp_id,
         'q_recorded': q_recorded,
         'q_processed': q_processed,
