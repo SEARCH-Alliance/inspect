@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://unpkg.com/tailwindcss@^1.2/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tailwindcss/ui@latest/dist/tailwind-ui.min.css">
+<!--    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+-->
+</head>
+<body class="antialiased font-sans bg-gray-200">
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+{% block sidebar %}
+{% if user.is_authenticated %}
+<li>User: {{ user.get_username }}</li>
+<li><a href="{% url 'logout'%}?next={{request.path}}">Logout</a></li>
+{% else %}
+<li><a href="{% url 'login'%}?next={{request.path}}">Login</a></li>
+{% endif %}
+
+{% endblock %}
+
+
+</body>
+</html>

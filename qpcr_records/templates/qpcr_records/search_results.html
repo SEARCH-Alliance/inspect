@@ -2,13 +2,18 @@
 {% load render_table from django_tables2 %}
 {% load querystring from django_tables2 %}
 {% block content %}
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+
     <div class="container">
         <h2 align="center">Search Results</h2>
         <br>
         <br>
         <a href="{% querystring '_export'='csv' %}"> Download All Results</a>
         </p>
-        {% render_table table %}
+        {% if table %}
+            {% render_table table %}
+        {% else %}
+        No entries found.
+        {% endif %}
     </div>
 {% endblock %}

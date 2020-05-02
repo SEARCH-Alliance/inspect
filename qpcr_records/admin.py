@@ -10,7 +10,7 @@ class test_overlapAdmin(admin.ModelAdmin):
                     're_date', 'qrp_id', 'qrp_well', 'probe_mix_id', 'enzyme_mix_id', 'mhv_id', 'qs5_id',
                     'laurent_lab_frz_id', 'personnel_laurent_lab', 'qpcr_date', 'ms2_ct_value', 'n_ct_value',
                     'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'is_reviewed',
-                    'pcr_results_csv', 'eds_results_csv', 'file_transfer_status')
+                    'qpcr_results_file', 'eds_results_csv', 'file_transfer_status')
 
 
 class personnel_listAdmin(admin.ModelAdmin):

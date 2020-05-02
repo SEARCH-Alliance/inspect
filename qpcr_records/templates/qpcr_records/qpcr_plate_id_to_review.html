@@ -2,14 +2,17 @@
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
     integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 <div class="container">
-    <h2 class="my-3">Enter qRT-PCR Reaction Plate ID to review</h2>
-    <form action="/qpcr_records/review_results/" method="GET">
-        {% csrf_token %}
-        <div class="form-group col-md-4 mb-0">
-            {{ form.qrp_id|as_crispy_field }}
+    <h2 class="my-3">Review Results</h2>
+    <div class="card">
+        <div class="card-body">
+            <form action="" method="POST">
+                {% csrf_token %}
+                <div class="form-group col-md-5 p-0 mb-0">
+                    {{ form.qrp_id|as_crispy_field }}
+                </div>
+                <button type="submit" class="btn btn-primary">Start</button>
+            </form>
         </div>
-
-        <button type="submit" class="btn btn-primary">Start</button>
-    </form>
-
+    </div>
+</div>
     {% endblock %}

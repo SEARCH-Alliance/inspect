@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+from decouple import config
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,8 +43,10 @@ INSTALLED_APPS = [
     'crispy_forms',
     'storages',
     'django_tables2',
+    'coverage'
 ]
 
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 DJANGO_TABLES2_TEMPLATE = "django_tables2/bootstrap4.html"
 
@@ -84,8 +87,12 @@ WSGI_APPLICATION = 'covid_qPCR_test.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'qpcr_samples',
+        'USER': config('db_user'),
+        'PASSWORD': config('db_pw'),
+        'HOST': 'localhost',
+        'PORT': '',
     }
 }
 
