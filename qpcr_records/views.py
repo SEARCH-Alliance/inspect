@@ -8,10 +8,11 @@ from django_tables2.export.export import TableExport
 from decouple import config
 from datetime import date, datetime, timedelta
 import boto3
+from django.forms import model_to_dict
 from django.db.models import Q
 from django.contrib import messages
 from django.utils.safestring import mark_safe
-
+import pandas as pd
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
 # for user logins. If the check returns False, user will be automatically redirected to the login page
@@ -282,6 +283,16 @@ def sample_plate_capture(request):
                         l.append(entry)
 
             test_results.objects.bulk_create(l)
+
+            # Backup results to file and upload to S3 bucket
+            backup_filename = f'{f.cleaned_data["sep_id"]}_{date.today().strftime("%y-%m-%d")}'
+            df = pd.DataFrame([model_to_dict(entry) for entry in l])
+            s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
+                                aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
+                                aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
+            s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=backup_filename, Body=df.to_csv())
+
+
             messages.success(request, mark_safe(f'{len(l)} samples added successfully.'))
             return redirect('index')
         # Invalid form
