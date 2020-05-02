@@ -1,12 +1,18 @@
-from django.test import TestCase
-
-# Models that we create in the database
-from qpcr_records.models import personnel_list
-from qpcr_records.models import test_results
-
+from django.conf import settings
 # Import the Model Forms that we validate with clean functions
 from django.forms import ValidationError
+from django.test import TestCase
+
 from qpcr_records.models import *
+# Models that we create in the database
+from qpcr_records.models import personnel_list, test_results
+
+######################################################################
+# Models test
+######################################################################
+class SettingsTest(TestCase):
+    def test_debug(self):
+        self.assertFalse(settings.DEBUG)
 
 ######################################################################
 # Models test
@@ -16,10 +22,10 @@ class PersonnelListTest(TestCase):
 	def setUp(self):
 		"""Create two personnel: one with default parameters, one with params filled"""
 		personnel_list.objects.create(technician_name="Default_Fields")
-		personnel_list.objects.create(technician_name="John Doe", 
-			technician_lab="John Doe", 
+		personnel_list.objects.create(technician_name="John Doe",
+			technician_lab="John Doe",
 			technician_institute="UCSD")
-		
+
 	def test_default_personnel_creation(self):
 		"""Test if default parameters are set properly"""
 		p = personnel_list.objects.get(technician_name="Default_Fields")
@@ -39,19 +45,19 @@ class PersonnelListTest(TestCase):
 class TestResultsTest(TestCase):
 	def setUp(self):
 		"""Create a test result entry with mostly default parameters"""
-		test_results.objects.create(barcode="Default_Fields", fake_name="Default")
+		test_results.objects.create(barcode="DEFAULT", fake_name="Default")
 
 	def test_default_test_results_creation(self):
 		"""Test if non-date default parameters are set properly"""
-		f = test_results.objects.get(barcode="Default_Fields", fake_name="Default")
+		f = test_results.objects.get(barcode="DEFAULT", fake_name="Default")
 		self.assertTrue(isinstance(f, test_results))
-		
+
 		# Andersson Lab Information
 		self.assertEqual(f.lrl_id, "M6246109105")
 
 		# Knight Lab Information
 		self.assertEqual(f.ms2_lot_id, "2003001")
-		
+
 		# Laurent Lab Information
 		self.assertEqual(f.enzyme_mix_id, "2219127")
 		self.assertEqual(f.mhv_id, "MHV-041")
@@ -85,19 +91,19 @@ class TestSampleStoragenAndExtractionPlateForm(TestCase):
         """Test if duplicate Sample Storage Plates are detected"""
         f = SampleStorageAndExtractionPlateForm(dict(ssp_id="SSP1", sep_id="SEP2", sample_bag_id="SB2"))
         self.assertEqual(len(f.errors),1) # duplicate SSP1
-        self.assertRaises(ValidationError) 
+        self.assertRaises(ValidationError)
 
     def test_sep_repeat(self):
         """Test if duplicate Sample Extraction Plates are detected"""
         f = SampleStorageAndExtractionPlateForm(dict(ssp_id="SSP2", sep_id="SEP1", sample_bag_id="SB2"))
         self.assertEqual(len(f.errors),1) # duplicate SEP1
-        self.assertRaises(ValidationError) 
+        self.assertRaises(ValidationError)
 
     def test_sb_repeat(self):
         """Test if duplicate Sample Extraction Plates are detected"""
         f = SampleStorageAndExtractionPlateForm(dict(ssp_id="SSP2", sep_id="SEP2", sample_bag_id="SB1"))
         self.assertEqual(len(f.errors),1) # duplicate SB1
-        self.assertRaises(ValidationError) 
+        self.assertRaises(ValidationError)
 
     def test_ssp_sep_repeat(self):
         """Test if duplicate Sample Storage Plate and Extraction plate are detected"""
@@ -123,14 +129,14 @@ class TestRNAExtractionPlateForm(TestCase):
     def test_rna_extraction_valid(self):
         """Test if new RNA extraction information can be added for a plate (SEP2)"""
         f = RNAExtractionPlateForm(dict(sep_id="SEP2",rep_id="REP2",
-            # The KingFisherID, MS2 Lot Number, RNA Extraction Kit ID, 
+            # The KingFisherID, MS2 Lot Number, RNA Extraction Kit ID,
             # Megabeads ID, and Carrier RNA ID are required entires
             kfr_id="KFR",ms2_lot_id="MS2",rna_extract_kit_id="KIT",
             megabeads_id="MEGA",carrier_rna_id="CARRIER"))
-        
+
         self.assertEqual(len(f.errors),0)
 
-    ##### Test all of the mandatory fields that need to be included 
+    ##### Test all of the mandatory fields that need to be included
     ##### (all of the lot numbers for different extraction kits and machines)
 
     def test_kfr_id(self):
@@ -192,7 +198,7 @@ class TestRNAExtractionPlateForm(TestCase):
             kfr_id="KFR",ms2_lot_id="MS2",rna_extract_kit_id="KIT",
             megabeads_id="MEGA",carrier_rna_id="CARRIER"))
         self.assertEqual(len(f.errors),1)
-        self.assertRaises(ValidationError)        
+        self.assertRaises(ValidationError)
 
 class TestQPCRStorageAndReactionPlateForm(TestCase):
     def setUp(self):

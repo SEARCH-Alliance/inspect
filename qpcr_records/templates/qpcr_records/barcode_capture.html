@@ -41,7 +41,7 @@
                                         <button type="submit" class="btn btn-primary form-group" style="height: calc(2.25rem + 2px);">Next Well</button>
                                     </div>
                                 </form>
-                                <form class="mb-3 p-0 col-2 d-flex justify-content-end" action="{% url 'sample_plate_capture' %}" method="POST">
+                                <form class="mb-3 p-0 col-2 d-flex justify-content-end" action="{% url 'sample_plate_capture' %}" method="GET">
                                     {% csrf_token %}
                                     <button type="submit" onclick="return confirm('Are you sure?')" class="btn btn-danger">End Plate</button>
                                 </form>
