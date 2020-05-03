@@ -11,6 +11,7 @@ import boto3
 from django.db.models import Q
 from django.contrib import messages
 from django.utils.safestring import mark_safe
+from django.contrib.postgres.search import SearchVector
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
@@ -42,7 +43,8 @@ def sample_counter_display():
     q_processed = test_results.objects.filter(~Q(decision_tree_results='Undetermined'),
                                               sampling_date__gte=time_thresh, final_results='').count()
 
-    q_recorded = test_results.objects.filter(~Q(qpcr_results_file=''), sampling_date__gte=time_thresh, decision_tree_results='Undetermined').count()
+    q_recorded = test_results.objects.filter(~Q(qpcr_results_file=''), sampling_date__gte=time_thresh,
+                                             decision_tree_results='Undetermined').count()
 
     q_running = test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh, qpcr_results_file='').count()
     s = list(set(test_results.objects.filter(~Q(qrp_id=''), sampling_date__gte=time_thresh).values_list(
@@ -57,7 +59,8 @@ def sample_counter_display():
         test_results.objects.filter(~Q(rwp_id=''), sampling_date__gte=time_thresh).values_list('rwp_id', flat=True)))
     rwp_id = ', '.join(s)
     rwp_count_plate = len(list(set(
-        test_results.objects.filter(~Q(rwp_id=''), sampling_date__gte=time_thresh, qrp_id='').values_list('rwp_id', flat=True))))
+        test_results.objects.filter(~Q(rwp_id=''), sampling_date__gte=time_thresh, qrp_id='').values_list('rwp_id',
+                                                                                                          flat=True))))
     rwp_id = ', '.join(s)
 
     rep_count = test_results.objects.filter(~Q(rep_id=''),
@@ -66,7 +69,8 @@ def sample_counter_display():
         test_results.objects.filter(~Q(rep_id=''), sampling_date__gte=time_thresh).values_list('rep_id', flat=True)))
     rep_id = ', '.join(s)
     rep_count_plate = len(list(set(
-        test_results.objects.filter(~Q(rep_id=''), sampling_date__gte=time_thresh, rwp_id='').values_list('rep_id', flat=True))))
+        test_results.objects.filter(~Q(rep_id=''), sampling_date__gte=time_thresh, rwp_id='').values_list('rep_id',
+                                                                                                          flat=True))))
 
     # Sample extraction plate counter
     sep_count = test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh, rep_id='').count()
@@ -74,7 +78,8 @@ def sample_counter_display():
         test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh).values_list('sep_id', flat=True)))
     sep_id = ', '.join(s)
     sep_count_plate = len(list(set(
-        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh, rep_id='').values_list('sep_id', flat=True))))
+        test_results.objects.filter(~Q(sep_id=''), sampling_date__gte=time_thresh, rep_id='').values_list('sep_id',
+                                                                                                          flat=True))))
 
     # Unprocessed sample counter
     unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh, sep_id='').count()
@@ -128,7 +133,7 @@ def barcode_list_upload(request):
 
             messages.success(request, mark_safe('Barcodes list uploaded successfully.'))
             return redirect('index')
-        else: # Show form again with user data and errors
+        else:  # Show form again with user data and errors
             return render(request, 'qpcr_records/barcode_list_upload.html', {'form': f})
 
 
@@ -191,7 +196,8 @@ def barcode_capture(request):
         start_well = 'A1'
         request.session['barcodes'] = dict()
         f = SampleStorageAndExtractionWellForm(initial={'ssp_well': start_well, 'sep_well': start_well})
-        return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': request.session['barcodes']})
+        return render(request, 'qpcr_records/barcode_capture.html',
+                      {'form': f, 'barcodes': request.session['barcodes']})
     # Progressing through wells
     else:
         f = SampleStorageAndExtractionWellForm(request.POST)
@@ -222,15 +228,17 @@ def barcode_capture(request):
                         row = d1[row]
 
                     well = row + str(col)
-                print("%s : %s" %(active_well, well))
+                print("%s : %s" % (active_well, well))
                 f = SampleStorageAndExtractionWellForm(initial={'sep_well': well, 'ssp_well': well})
                 return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
         else:  # Initial submission of control wells
             # Initialize variables
             print("Here 3")
             first_sample_well = 'B1'
-            f = SampleStorageAndExtractionWellForm(initial={'sep_well': first_sample_well, 'ssp_well': first_sample_well})
-            return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': request.session['barcodes']})
+            f = SampleStorageAndExtractionWellForm(
+                initial={'sep_well': first_sample_well, 'ssp_well': first_sample_well})
+            return render(request, 'qpcr_records/barcode_capture.html',
+                          {'form': f, 'barcodes': request.session['barcodes']})
 
 
 @login_required
@@ -248,7 +256,6 @@ def update_existing_records(request):
 
 @login_required
 def sample_plate_capture(request):
-
     # Render initial form
     if request.method == 'GET':
         f = SampleStorageAndExtractionPlateForm()
@@ -344,7 +351,8 @@ def rwp_plate_capture(request):
         # Array form
         if f.is_valid():
             objs = test_results.objects.filter(rep_id__in=[f.cleaned_data['barcode1'], f.cleaned_data['barcode2'],
-                                                           f.cleaned_data['barcode3'], f.cleaned_data['barcode4']]).update(
+                                                           f.cleaned_data['barcode3'],
+                                                           f.cleaned_data['barcode4']]).update(
                 rwp_id=f.cleaned_data['rwp_id'],
                 epm_id=f.cleaned_data['epm_id'])
 
@@ -358,10 +366,10 @@ def rwp_plate_capture(request):
                 for col1, col2 in zip([1, 3, 5, 7, 9, 11], [2, 4, 6, 8, 10, 12]):
                     for row in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
                         d[str(z) + row + str(col1)] = rows_384[row_index] + \
-                            str(cols_384[col_index])
+                                                      str(cols_384[col_index])
                         row_index = row_index + 1
                         d[str(z) + row + str(col2)] = rows_384[row_index] + \
-                            str(cols_384[col_index])
+                                                      str(cols_384[col_index])
                         row_index = row_index + 1
 
                     col_index = col_index + 1
@@ -448,39 +456,65 @@ def search_results(request):
     """
     if request.method == 'GET':
         # ['csrfmiddlewaretoken', 'barcode', 'sampling_date', 'plate_id', 'technician', 'result', 'sample_bag_id']
-        objs = ''
 
-        query_fields = dict()
-
-        # Populate query with form values
-        plate_fields = ['ssp_id', 'ssp_id', 'sep_id', 'rep_id', 'rsp_id', 'rwp_id', 'qsp_id', 'qrp_id']
-        technician_fields = ['personnel1_andersen_lab', 'personnel2_andersen_lab', 'personnel_knight_lab', 'personnel_laurent_lab']
+        q = ''
         for field, value in request.session['search'].items():
-            if value == "" or value == None:
+            if value == "" or value is None:
                 continue
             else:
-                # Expand plate_id field for exact match
-                if field == 'plate_id':
-                    for p_field in plate_fields:
-                        query_fields[f'{p_field}__iexact'] = value
-
-                # Expand technician field for exact match
+                if field == 'barcode':
+                    if q == '':
+                        q = test_results.objects.filter(barcode__iexact=value)
+                    else:
+                        q = q.filter(barcode__iexact=value)
+                elif field == 'sampling_date':
+                    if q == '':
+                        q = test_results.objects.filter(sampling_date__iexact=value)
+                    else:
+                        q = q.filter(sampling_date__iexact=value)
+                elif field == 'plate_id':
+                    if q == '':
+                        q = test_results.objects.filter(Q(ssp_id__iexact=value.strip()) |
+                                                        Q(sep_id__iexact=value.strip()) |
+                                                        Q(rep_id__iexact=value.strip()) |
+                                                        Q(rwp_id__iexact=value.strip()) |
+                                                        Q(rsp_id__iexact=value.strip()) |
+                                                        Q(qrp_id__iexact=value.strip()))
+                    else:
+                        q = q.filter(
+                            Q(ssp_id__iexact=value.strip()) | Q(sep_id__iexact=value.strip()) |
+                            Q(rep_id__iexact=value.strip()) | Q(rwp_id__iexact=value.strip()) |
+                            Q(rsp_id__iexact=value.strip()) | Q(qrp_id__iexact=value.strip()))
                 elif field == 'technician':
-                    for t_field in technician_fields:
-                        query_fields[f'{t_field}__iexact'] = value
-
-                # Reformat all other fields for exact match
+                    if q == '':
+                        q = test_results.objects.filter(Q(personnel1_andersen_lab__iexact=value) |
+                                                        Q(personnel2_andersen_lab__iexact=value) |
+                                                        Q(personnel_knight_lab__iexact=value) |
+                                                        Q(personnel_laurent_lab__iexact=value))
+                    else:
+                        q = q.filter(Q(personnel1_andersen_lab__iexact=value) |
+                                     Q(personnel2_andersen_lab__iexact=value) |
+                                     Q(personnel_knight_lab__iexact=value) |
+                                     Q(personnel_laurent_lab__iexact=value))
+                elif field == 'result':
+                    if q == '':
+                        q = test_results.objects.filter(final_results__iexact=value.strip())
+                    else:
+                        q = q.filter(final_results__iexact=value.strip())
+                elif field == 'bag_id':
+                    if q == '':
+                        q = test_results.objects.filter(sample_bag_id__iexact=value)
+                    else:
+                        q = q.filter(sample_bag_id__iexact=value)
                 else:
-                    field = f'{field}__iexact'
-                    query_fields[field] = value
+                    continue
 
-        objs = test_results.objects.filter(**query_fields)
-
-        if len(objs) == 0:
+        if len(q) == 0:
             return render(request, 'qpcr_records/search_results.html')
         else:
             # Export query as table
-            table = SearchResultsTable(objs)
+            table = SearchResultsTable(q)
+            print(table)
             RequestConfig(request).configure(table)
             export_format = request.GET.get('_export', None)
             if TableExport.is_valid_format(export_format):
@@ -505,32 +539,34 @@ def upload_qpcr_results(request):
             exists = test_results.objects.filter(qrp_id=qrp_id)
             # Upload excel file to s3
             s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
-                                        aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
-                                        aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
+                                aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
+                                aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
             s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=file.name, Body=file)
 
             s3_filepath = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name
             objs = test_results.objects.filter(qrp_id=qrp_id).update(file_transfer_status='Complete')
             objs = test_results.objects.filter(qrp_id=qrp_id).update(qpcr_results_file=s3_filepath)
 
-
             # update the database with values
             r = Results()
             data_ = r.get_results(file)
-            r.read_fake_names() # * Is this still needed?
+            r.read_fake_names()  # * Is this still needed?
             for well, vals in data_.items():
                 if well != 'instrument':
                     objs = test_results.objects.filter(qrp_id=qrp_id, rwp_well=well).update(
-                                                       ms2_ct_value=vals['MS2'],
-                                                       n_ct_value=vals['N gene'],
-                                                       orf1ab_ct_value=vals['ORF1ab'],
-                                                       s_ct_value=vals['S gene'],
-                                                       decision_tree_results=vals['diagnosis'],
-                                                       final_results=vals['diagnosis'])
+                        ms2_ct_value=vals['MS2'],
+                        n_ct_value=vals['N gene'],
+                        orf1ab_ct_value=vals['ORF1ab'],
+                        s_ct_value=vals['S gene'],
+                        decision_tree_results=vals['diagnosis'],
+                        final_results=vals['diagnosis'])
 
                     if test_results.objects.filter(qrp_id=qrp_id, rwp_well=well).count() > 0:
-                        barcodes = test_results.objects.filter(qrp_id=qrp_id, rwp_well=well).values_list('barcode', flat=True)[0]
-                        objs = test_results.objects.filter(qrp_id=qrp_id, rwp_well=well).update(fake_name=r.get_fake_name(barcodes))
+                        barcodes = \
+                            test_results.objects.filter(qrp_id=qrp_id, rwp_well=well).values_list('barcode', flat=True)[
+                                0]
+                        objs = test_results.objects.filter(qrp_id=qrp_id, rwp_well=well).update(
+                            fake_name=r.get_fake_name(barcodes))
                 elif well == 'instrument':
                     objs = test_results.objects.filter(qrp_id=qrp_id).update(qs5_id=vals)
 
@@ -572,11 +608,12 @@ def review_results(request):
 
         # Get input from review form
         # - 1 to exclude CSRF token
-        form_data = [request.POST[f"row{i}"] for i in range(len(request.POST)-1)]
+        form_data = [request.POST[f"row{i}"] for i in range(len(request.POST) - 1)]
 
         # Update results and review status
         for qrp_well, choice in zip(qrp_wells, form_data):
-            test_results.objects.filter(qrp_well=qrp_well, qrp_id__iexact=qrp_id).update(final_results=choice, is_reviewed=True)
+            test_results.objects.filter(qrp_well=qrp_well, qrp_id__iexact=qrp_id).update(final_results=choice,
+                                                                                         is_reviewed=True)
 
         messages.success(request, mark_safe(f'Review status updated for all samples in plate \"{qrp_id}\".'))
         return redirect('index')
@@ -639,4 +676,3 @@ def track_samples(request):
         return exporter.response('table.{}'.format(export_format))
 
     return render(request, 'qpcr_records/track_samples.html', {'table': table})
-

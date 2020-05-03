@@ -54,8 +54,12 @@ class ArrayingForm(forms.Form):
 
         errors = []
         for b, f in zip(barcodes, ['barcode1', 'barcode2', 'barcode3', 'barcode4']):
-            if not test_results.objects.filter(rep_id__iexact=b).exists():
+            if b == '':
+                continue
+            elif not test_results.objects.filter(rep_id__iexact=b).exists():
                 errors.append((f, ValidationError(f"RNA extraction plate \"{b}\" does not exist.")))
+            else:
+                continue
 
         if test_results.objects.filter(rep_id__in=barcodes).exclude(rwp_id='').exists():
             raise ValidationError("One or more RNA elution plate IDs are already assigned to an RNA working plate.")
