@@ -31,7 +31,8 @@ class test_results(models.Model):
     lrl_id = models.CharField(max_length=15, null=False, default='M6246109105', help_text='Lysis Reagent Lot #')
     ssp_id = models.CharField(max_length=15, null=False, default='', help_text='Sample Storage Plate (SSP)')
     ssp_well = models.CharField(max_length=3, null=False, default='')
-    sampling_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
+    sampling_date = models.DateField(null=False, default=datetime.date.today().strftime('%m/%d/%Y'))
+    sampling_time = models.TimeField(null=False, default=datetime.datetime.now().strftime("%H:%M:%S"))
 
     sep_id = models.CharField(max_length=15, null=False, default='', help_text='Scan or Enter Barcode of Sample Extraction Plate (SEP)')
     sep_well = models.CharField(max_length=3, null=False, default='')
@@ -39,6 +40,7 @@ class test_results(models.Model):
     personnel1_andersen_lab = models.CharField(max_length=25, null=False, default='')
     personnel2_andersen_lab = models.CharField(max_length=25, null=False, default='', help_text='Name of Assisting Technician')
     sample_bag_id = models.CharField(max_length=15, null=False, default='')
+    sampling_plate_csv = models.URLField(max_length=300, null=False, default='')
 
     # KNIGHT LAB INFORMATION
     epm_id = models.CharField(max_length=15, null=False, default='', help_text='Enter EpMotion ID')
@@ -55,6 +57,8 @@ class test_results(models.Model):
     rwp_well = models.CharField(max_length=3, null=False, default='')
     personnel_knight_lab = models.CharField( max_length=25, null=False, default='')
     re_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
+    rna_extraction_time = models.TimeField(null=False, default=datetime.datetime.now().strftime("%H:%M:%S"))
+    arraying_time = models.TimeField(null=False, default=datetime.datetime.now().strftime("%H:%M:%S"))
     ms2_lot_id = models.CharField(max_length=15, null=False, default='2003001', help_text='Enter MS2 Control Lot #')
 
     # LAURENT LAB INFORMATION
@@ -68,7 +72,10 @@ class test_results(models.Model):
     qs5_id = models.CharField(max_length=15, null=False, default='', help_text='Enter QS5 Number')
     laurent_lab_frz_id = models.CharField(max_length=15, null=False, default='', help_text='Enter RNA Storage Freezer Number')
     personnel_laurent_lab = models.CharField(max_length=25, null=False, default='')
+    personnel_qpcr_file_upload = models.CharField(max_length=25, null=False, default='')
     qpcr_date = models.DateField(null=False, default=datetime.date.today().strftime('%Y-%m-%d'))
+    qpcr_reaction_time = models.TimeField(null=False, default=datetime.datetime.now().strftime("%H:%M:%S"))
+    qpcr_file_upload_time = models.TimeField(null=False, default=datetime.datetime.now().strftime("%H:%M:%S"))
 
     # RESULTS INFORMATION
     ms2_ct_value = models.FloatField(null=False, default=-1)
@@ -80,7 +87,7 @@ class test_results(models.Model):
     final_results = models.CharField(max_length=15, null=False, default='', choices=sample_result_choices)
     is_reviewed = models.BooleanField(default=False, choices=is_reviewed_choices)
 
-    qpcr_results_file = models.FileField(upload_to='pcr_results', null=False, default='')
+    qpcr_results_file = models.URLField(max_length=300, null=False, default='')
     eds_results_csv = models.URLField(max_length=300, null=False, default='')
 
     file_transfer_status = models.CharField(max_length=15, null=False, default='Not Complete',
@@ -94,10 +101,10 @@ class test_results(models.Model):
 class SearchResultsTable(tables.Table):
     class Meta:
         model = test_results
-        fields = ('barcode', 'sampling_date', 'ssp_id', 'ssp_well', 'sep_id', 'sep_well', 'sample_bag_id', 'rep_id',
-                  'rep_well', 'rsp_id', 'rsp_well', 'rwp_id', 'rwp_well', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
-                  'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results', 'qpcr_results_file',
-                  'sample_release')
+        fields = ('barcode', 'sampling_date', 'ssp_id', 'ssp_well', 'sep_id', 'sep_well', 'sample_bag_id',
+                  'sampling_plate_csv', 'rep_id', 'rep_well', 'rsp_id', 'rsp_well', 'rwp_id', 'rwp_well', 'qrp_id',
+                  'qrp_well', 'ms2_ct_value', 'n_ct_value', 'orf1ab_ct_value', 's_ct_value', 'decision_tree_results',
+                  'final_results', 'qpcr_results_file', 'sample_release')
 
 
 class ReviewTable(tables.Table):

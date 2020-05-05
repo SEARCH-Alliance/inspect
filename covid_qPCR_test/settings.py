@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'django_tables2',
-    'coverage'
+    'coverage',
+    'storages',
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -82,17 +83,27 @@ WSGI_APPLICATION = 'covid_qPCR_test.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'qpcr_samples',
-        'USER': config('db_user'),
-        'PASSWORD': config('db_pw'),
-        'HOST': 'localhost',
-        'PORT': '',
-    }
+     'default': {
+         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+         'NAME': config('RDS_DB_NAME'),
+         'USER': config('RDS_USERNAME'),
+         'PASSWORD': config('RDS_PASSWORD'),
+         'HOST': config('RDS_HOSTNAME'),
+         'PORT': config('RDS_PORT'),
+     }
 }
+
+# DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#        'NAME': 'qpcr_samples',
+#        'USER': config('db_user'),
+#        'PASSWORD': config('db_pw'),
+#        'HOST': 'localhost',
+#        'PORT': '',
+#    }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators

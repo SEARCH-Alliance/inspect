@@ -15,7 +15,8 @@ result_choices = [('', ''), ('Undetermined', 'Undetermined'), ('Inconclusive', '
 
 class SearchForm(forms.Form):
     barcode = forms.CharField(max_length=30, label='Sample Barcode', required=False, initial='')
-    sampling_date = forms.DateField(help_text='(YYYY-MM-DD)', required=False, initial='', widget=forms.DateInput(format='%m/%d/%Y'), input_formats=('%m/%d/%Y',))
+    sampling_date = forms.DateField(help_text='(MM/DD/YYYY)', required=False, initial='',
+                                    widget=forms.DateInput(format='%m/%d/%Y'), input_formats=('%m/%d/%Y',))
     plate_id = forms.CharField(help_text='Enter a Plate Barcode', max_length=15, required=False, initial='')
     technician = forms.CharField(max_length=30, label=' Technician', required=False, initial='')
     final_results = forms.CharField(label='Final Result', required=False, widget=forms.Select(choices=result_choices), initial='')
@@ -23,6 +24,7 @@ class SearchForm(forms.Form):
 
     def clean(self):
         cleaned_data = self.cleaned_data
+        cleaned_data['sampling_date'] = str(cleaned_data['sampling_date'])
 
         empty_count = 0
         for field_name, value in cleaned_data.items():
@@ -32,11 +34,10 @@ class SearchForm(forms.Form):
         # All fields can't be empty
         if empty_count == len(cleaned_data):
             raise ValidationError("Enter at least one field to search records.", code="invalid")
-
         return cleaned_data
 
-class ArrayingForm(forms.Form):
 
+class ArrayingForm(forms.Form):
     epm_id = forms.CharField(max_length=15, label='EpMotion ID', help_text="Enter EpMotion ID")
     barcode1 = forms.CharField(max_length=30, label='First 96-Well Plate in Array Position B2', required=True)
     barcode2 = forms.CharField(max_length=30, label='Second 96-Well Plate in Array Position B3', required=False)

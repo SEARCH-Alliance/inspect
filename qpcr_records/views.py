@@ -1,17 +1,20 @@
+# django imports
 from django.shortcuts import render, redirect
-from qpcr_records.models import *
-from qpcr_records.forms import *
-from qpcr_records.data_processing.results import Results
 from django.contrib.auth.decorators import login_required
 from django_tables2 import RequestConfig
 from django_tables2.export.export import TableExport
-from decouple import config
-from datetime import date, datetime, timedelta
-import boto3
 from django.forms import model_to_dict
-from django.db.models import Q
+from django.core.files import File
 from django.contrib import messages
 from django.utils.safestring import mark_safe
+# models, tables and forms import
+from qpcr_records.models import *
+from qpcr_records.forms import *
+from qpcr_records.data_processing.results import Results
+# miscellaneous imports
+from decouple import config
+from datetime import date, timedelta, datetime
+import boto3
 import pandas as pd
 
 
@@ -193,7 +196,6 @@ def barcode_capture(request):
 
     # Initial visit via redirect
     if request.method == 'GET':
-        print("Here 1")
         start_well = 'A1'
         request.session['barcodes'] = dict()
         f = SampleStorageAndExtractionWellForm(initial={'ssp_well': start_well, 'sep_well': start_well})
@@ -205,7 +207,6 @@ def barcode_capture(request):
 
         # Proceed to next well accordingly
         if f.is_valid():
-            print("Here 2")
             # Save well barcodes to session
             active_well = f.cleaned_data['sep_well']
             request.session[active_well] = f.cleaned_data['barcode']
@@ -229,12 +230,10 @@ def barcode_capture(request):
                         row = d1[row]
 
                     well = row + str(col)
-                print("%s : %s" % (active_well, well))
                 f = SampleStorageAndExtractionWellForm(initial={'sep_well': well, 'ssp_well': well})
                 return render(request, 'qpcr_records/barcode_capture.html', {'form': f, 'barcodes': barcodes})
         else:  # Initial submission of control wells
             # Initialize variables
-            print("Here 3")
             first_sample_well = 'B1'
             f = SampleStorageAndExtractionWellForm(
                 initial={'sep_well': first_sample_well, 'ssp_well': first_sample_well})
@@ -283,6 +282,7 @@ def sample_plate_capture(request):
                                              rep_well=well,
                                              rsp_well=well,
                                              sampling_date=date.today().strftime('%Y-%m-%d'),
+                                             sampling_time=datetime.now().strftime("%H:%M:%S"),
                                              lrl_id=request.session['lrl_id'].strip(),
                                              personnel1_andersen_lab=request.user.get_full_name(),
                                              personnel2_andersen_lab=request.session['personnel2_andersen_lab'].strip(),
@@ -292,13 +292,15 @@ def sample_plate_capture(request):
             test_results.objects.bulk_create(l)
 
             # Backup results to file and upload to S3 bucket
-            backup_filename = f'{f.cleaned_data["sep_id"]}_{date.today().strftime("%y-%m-%d")}'
-            df = pd.DataFrame([model_to_dict(entry) for entry in l])
-            s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
-                                aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
-                                aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
-            s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=backup_filename, Body=df.to_csv())
 
+            backup_filename = f.cleaned_data["sep_id"] + '_' + str(date.today().strftime("%y-%m-%d")) + '.csv'
+            df = pd.DataFrame([model_to_dict(entry) for entry in l])
+            s3 = boto3.resource('s3', region_name=config('aws_s3_region_name'),
+                                aws_access_key_id=config('aws_access_key_id'),
+                                aws_secret_access_key=config('aws_secret_access_key'))
+            s3.Bucket(config('aws_storage_bucket_name')).put_object(Key=backup_filename, Body=df.to_csv())
+            s3_filepath = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + backup_filename
+            objs = test_results.objects.filter(sep_id=f.cleaned_data['sep_id']).update(sampling_plate_csv=s3_filepath)
 
             messages.success(request, mark_safe(f'{len(l)} samples added successfully.'))
             return redirect('index')
@@ -334,6 +336,7 @@ def rna_plate_capture(request):
                 kfr_id=f.cleaned_data['kfr_id'].strip(),
                 rna_extract_kit_id=f.cleaned_data['rna_extract_kit_id'],
                 megabeads_id=f.cleaned_data['megabeads_id'],
+                rna_extraction_time=datetime.now().strftime("%H:%M:%S"),
                 carrier_rna_id=f.cleaned_data['carrier_rna_id'])
 
             # Redirect to homepage
@@ -396,6 +399,7 @@ def rwp_plate_capture(request):
                     for z in test_results.objects.filter(rep_id=b).values_list('sep_well', flat=True):
                         test_results.objects.filter(rep_id=b, sep_well=z).update(rwp_well=d[str(i) + z],
                                                                                  rsp_well=d[str(i) + z],
+                                                                                 arraying_time=datetime.now().strftime("%H:%M:%S"),
                                                                                  qrp_well=d[str(i) + z])
                     i = i + 1
 
@@ -425,6 +429,7 @@ def qpcr_plate_capture(request):
             objs = test_results.objects.filter(rwp_id=f.cleaned_data['rwp_id']).update(
                 qrp_id=f.cleaned_data['qrp_id'],
                 qpcr_date=date.today().strftime('%Y-%m-%d'),
+                qpcr_reaction_time=datetime.now().strftime("%H:%M:%S"),
                 personnel_laurent_lab=request.user.get_full_name())
 
             messages.success(request, mark_safe('qRT-PCR plate added successfully.'))
@@ -470,21 +475,27 @@ def search_results(request):
 
         q = ''
         for field, value in request.session['search'].items():
-            if value == "" or value is None:
+            print(field)
+            print(value)
+            print(type(value))
+            if value == "" or value == 'None':
                 continue
             else:
                 if field == 'barcode':
                     if q == '':
+                        print('1')
                         q = test_results.objects.filter(barcode__iexact=value)
                     else:
                         q = q.filter(barcode__iexact=value)
                 elif field == 'sampling_date':
                     if q == '':
+                        print('2')
                         q = test_results.objects.filter(sampling_date__iexact=value)
                     else:
                         q = q.filter(sampling_date__iexact=value)
                 elif field == 'plate_id':
                     if q == '':
+                        print('3')
                         q = test_results.objects.filter(Q(ssp_id__iexact=value.strip()) |
                                                         Q(sep_id__iexact=value.strip()) |
                                                         Q(rep_id__iexact=value.strip()) |
@@ -498,6 +509,7 @@ def search_results(request):
                             Q(rsp_id__iexact=value.strip()) | Q(qrp_id__iexact=value.strip()))
                 elif field == 'technician':
                     if q == '':
+                        print('4')
                         q = test_results.objects.filter(Q(personnel1_andersen_lab__iexact=value) |
                                                         Q(personnel2_andersen_lab__iexact=value) |
                                                         Q(personnel_knight_lab__iexact=value) |
@@ -509,18 +521,20 @@ def search_results(request):
                                      Q(personnel_laurent_lab__iexact=value))
                 elif field == 'result':
                     if q == '':
+                        print('5')
                         q = test_results.objects.filter(final_results__iexact=value.strip())
                     else:
                         q = q.filter(final_results__iexact=value.strip())
-                elif field == 'bag_id':
+                elif field == 'sample_bag_id':
                     if q == '':
+                        print('6')
                         q = test_results.objects.filter(sample_bag_id__iexact=value)
                     else:
                         q = q.filter(sample_bag_id__iexact=value)
                 else:
                     continue
 
-        if len(q) == 0:
+        if q.count() == 0:
             return render(request, 'qpcr_records/search_results.html')
         else:
             # Export query as table
@@ -549,10 +563,10 @@ def upload_qpcr_results(request):
             qrp_id = file.name.split('.')[0]
             exists = test_results.objects.filter(qrp_id=qrp_id)
             # Upload excel file to s3
-            s3 = boto3.resource('s3', region_name=config('AWS_S3_REGION_NAME'),
-                                aws_access_key_id=config('AWS_ACCESS_KEY_ID'),
-                                aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
-            s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=file.name, Body=file)
+            s3 = boto3.resource('s3', region_name=config('aws_s3_region_name'),
+                                aws_access_key_id=config('aws_access_key_id'),
+                                aws_secret_access_key=config('aws_secret_access_key'))
+            s3.Bucket(config('aws_storage_bucket_name')).put_object(Key=file.name, Body=file)
 
             s3_filepath = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name
             objs = test_results.objects.filter(qrp_id=qrp_id).update(file_transfer_status='Complete')
@@ -570,7 +584,9 @@ def upload_qpcr_results(request):
                         orf1ab_ct_value=vals['ORF1ab'],
                         s_ct_value=vals['S gene'],
                         decision_tree_results=vals['diagnosis'],
-                        final_results=vals['diagnosis'])
+                        final_results=vals['diagnosis'],
+                        qpcr_file_upload_time=datetime.now().strftime("%H:%M:%S"),
+                        personnel_qpcr_file_upload=request.user.get_full_name())
 
                     if test_results.objects.filter(qrp_id=qrp_id, rwp_well=well).count() > 0:
                         barcodes = \
