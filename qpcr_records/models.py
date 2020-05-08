@@ -77,7 +77,7 @@ class test_results(models.Model):
     s_ct_value = models.FloatField(null=False, default=-1)
     decision_tree_results = models.CharField(max_length=15, null=False, default='Undetermined',
                                              choices=sample_result_choices)
-    final_results = models.CharField(max_length=15, null=False, default='', choices=sample_result_choices)
+    final_results = models.CharField(max_length=15, null=False, default='Undetermined', choices=sample_result_choices)
     is_reviewed = models.BooleanField(default=False, choices=is_reviewed_choices)
 
     qpcr_results_file = models.FileField(upload_to='pcr_results', null=False, default='')
