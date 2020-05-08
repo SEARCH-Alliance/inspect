@@ -80,6 +80,17 @@ def sample_counter_display():
     # Unprocessed sample counter
     unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh, sep_id='').count()
 
+    # General results tabulation
+    final_results = list(test_results.objects.values_list('final_results',flat=True))
+    num_positives, num_negatives, num_undetermined = 0,0,0
+    for result in final_results:
+        if result == 'Positive': 
+            num_positives += 1
+        elif result == 'Negative': 
+            num_negatives += 1
+        elif result == 'Undetermined':
+            num_undetermined += 1
+
     # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
         'unproc_samples': unproc_samples,
@@ -90,6 +101,11 @@ def sample_counter_display():
         'q_recorded': q_recorded,
         'q_processed': q_processed,
         'data_cleared': data_cleared,
+        'num_samples': len(final_results), # total number of samples present
+        'num_positives':num_positives,'num_negatives':num_negatives,'num_undetermined':num_undetermined,
+        'p_positive':round(num_positives/len(final_results)*100,2),
+        'p_negative':round(num_negatives/len(final_results)*100,2),
+        'p_undetermined':round(num_undetermined/len(final_results)*100,2),
     }
     return counter_information
 
