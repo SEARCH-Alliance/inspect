@@ -79,9 +79,6 @@ class ArrayingForm(forms.Form):
             raise ValidationError("RNA working plate ID already exists.", code='invalid')
         return rwp_id
 
-class TrackSamplesForm(forms.Form):
-    track_samples = forms.MultipleChoiceField(required=True, widget=forms.CheckboxSelectMultiple, choices=sample_tracking_choice)
-
 
 class BarcodesUploadForm(forms.Form):
     barcodes_file = forms.FileField(required=True)
