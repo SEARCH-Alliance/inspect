@@ -155,23 +155,6 @@ def barcode_list_upload(request):
 
 
 @login_required
-def check_information(request):
-    """
-    THIS FUNCTION IS NO LONGER USED
-
-    Redirect to this view when user wants to start a new platemap. Before the user starts loading a fresh plate, some
-    information such as collection site, protocol version, technician name, lab, etc; will need to be reviewed by the
-    user. If the default values for the fields are correct, the user has the option to process with loading the samples
-    into the plate. If not, the user can edit the field values and then proceed to loading samples in the plate.
-    :param request: signal call that this function has been called
-    :return barcode: captured barcode
-    :return next_well: Since the plate barcode has been recorded here, the next well will always be A1
-    """
-    f = ArrayingForm()
-    return render(request, 'qpcr_records/check_information.html', {'form': f})
-
-
-@login_required
 def perform_safety_check(request):
     """
     Present list of safety checks to user before starting plating.
