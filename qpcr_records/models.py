@@ -14,6 +14,7 @@ class personnel_list(models.Model):
         max_length=20, null=False, default='')
 
 
+sample_bag_is_stored_choices = ((True, True), (False, False))
 sample_result_choices = (('', ''), ('Undetermined', 'Undetermined'), ('Invalid', 'Invalid'), ('Inconclusive', 'Inconclusive'),
                          ('Positive', 'Positive'), ('Negative', 'Negative'))
 is_reviewed_choices = ((True, True), (False, False))
@@ -39,6 +40,7 @@ class test_results(models.Model):
     personnel1_andersen_lab = models.CharField(max_length=25, null=False, default='')
     personnel2_andersen_lab = models.CharField(max_length=25, null=False, default='', help_text='Name of Assisting Technician')
     sample_bag_id = models.CharField(max_length=15, null=False, default='')
+    sample_bag_is_stored = models.BooleanField(default=True, choices=sample_bag_is_stored_choices)
 
     # KNIGHT LAB INFORMATION
     epm_id = models.CharField(max_length=15, null=False, default='', help_text='Enter EpMotion ID')
@@ -238,3 +240,16 @@ class SelectQRPPlateForm(ModelForm):
         if True in test_results.objects.filter(qrp_id__iexact=qrp_id).values_list('is_reviewed', flat=True):
             raise ValidationError(f"qRT-PCR reaction plate \"{qrp_id}\" has already been reviewed.", code='invalid')
         return qrp_id
+
+class SelectBagForm(ModelForm):
+    class Meta:
+        model = test_results
+        fields = ['sample_bag_id']
+        labels = {'sample_bag_id': 'Sample Bag ID'}
+
+    def clean_sample_bag_id(self):
+        sample_bag_id = self.cleaned_data['sample_bag_id']
+        if not test_results.objects.filter(sample_bag_id__iexact=sample_bag_id).exists():
+                raise ValidationError(f"Sample bag ID \"{sample_bag_id}\" does not exist.", code = 'invalid')
+
+        return sample_bag_id

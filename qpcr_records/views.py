@@ -657,3 +657,28 @@ def sample_release(request):
 
         messages.success(request, mark_safe(f'{len(form_data)} samples marked as released.'))
         return redirect('index')
+
+
+@login_required
+def discard_storage_bag(request):
+    # Show initial form
+    if request.method == 'GET':
+        f = SelectBagForm()
+        return render(request, 'qpcr_records/discard_storage_bag.html', {'form': f})
+    # Upon form submission, redirect to search_results if valid
+    else:
+        f = SelectBagForm(request.POST)
+
+        if f.is_valid():
+            q = list(test_results.objects.filter(sample_bag_id__iexact=f.cleaned_data['sample_bag_id']))
+
+            for entry in q:
+                entry.sample_bag_is_stored = 'False'
+            test_results.objects.bulk_update(q, ['sample_bag_is_stored'])
+
+
+            messages.success(request, mark_safe(f'Bag status updated.'))
+            return redirect('index')
+        else:
+            # Show form again with errors
+            return render(request, 'qpcr_records/discard_storage_bag.html', {'form': f})
