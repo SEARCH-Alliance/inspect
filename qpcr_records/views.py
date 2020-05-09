@@ -89,9 +89,9 @@ def sample_counter_display():
     final_results = list(test_results.objects.values_list('final_results',flat=True))
     num_positives, num_negatives, num_undetermined = 0,0,0
     for result in final_results:
-        if result == 'Positive': 
+        if result == 'Positive':
             num_positives += 1
-        elif result == 'Negative': 
+        elif result == 'Negative':
             num_negatives += 1
         elif result == 'Undetermined':
             num_undetermined += 1
@@ -630,7 +630,6 @@ def review_results(request):
 
 @login_required
 def sample_release(request):
-    pass
     q = test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True')
 
     if request.method == 'GET':
