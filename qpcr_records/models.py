@@ -1,5 +1,5 @@
 from django.db import models
-from django.forms import ModelForm, HiddenInput, TextInput, ValidationError
+from django.forms import ModelForm, HiddenInput, TextInput, CheckboxInput, ValidationError
 import datetime
 import django_tables2 as tables
 from django.utils import timezone
@@ -14,10 +14,10 @@ class personnel_list(models.Model):
         max_length=20, null=False, default='')
 
 
-sample_release_choices = (('Yes', 'Yes'), ('No', 'No'))
 sample_result_choices = (('', ''), ('Undetermined', 'Undetermined'), ('Invalid', 'Invalid'), ('Inconclusive', 'Inconclusive'),
                          ('Positive', 'Positive'), ('Negative', 'Negative'))
 is_reviewed_choices = ((True, True), (False, False))
+sample_release_choices = ((True, True), (False, False))
 file_transfer_status_choices = (
     ('Complete', 'Complete'), ('Not Complete', 'Not Complete'))
 
@@ -85,7 +85,7 @@ class test_results(models.Model):
 
     file_transfer_status = models.CharField(max_length=15, null=False, default='Not Complete',
                                             choices=file_transfer_status_choices)
-    sample_release = models.CharField(max_length=15, null=False, default='No', choices=sample_release_choices)
+    sample_release = models.BooleanField(default=False, choices=sample_release_choices)
 
     class Meta:
         indexes = [models.Index(fields=['barcode', 'ssp_id', 'sep_id', 'rep_id', 'rsp_id', 'rwp_id', 'qrp_id'])]
@@ -106,6 +106,13 @@ class ReviewTable(tables.Table):
         fields = ['sampling_date', 'barcode', 'sep_id', 'rep_id',
                   'rwp_id', 'qrp_id', 'qrp_well', 'ms2_ct_value', 'n_ct_value',
                   'orf1ab_ct_value', 's_ct_value', 'final_results']
+
+
+class SampleReleaseTable(tables.Table):
+    class Meta:
+        model = test_results
+        fields = ['sampling_date', 'barcode', 'sep_id', 'rep_id', 'rwp_id', 'qrp_id', 'qrp_well', 'final_results']
+        orderable = False
 
 
 class LysisReagentLotForm(ModelForm):

@@ -298,7 +298,6 @@ def sample_plate_capture(request):
                                 aws_secret_access_key=config('AWS_SECRET_ACCESS_KEY'))
             s3.Bucket(config('AWS_STORAGE_BUCKET_NAME')).put_object(Key=backup_filename, Body=df.to_csv())
 
-
             messages.success(request, mark_safe(f'{len(l)} samples added successfully.'))
             return redirect('index')
         # Invalid form
@@ -376,10 +375,10 @@ def rwp_plate_capture(request):
                 for col1, col2 in zip([1, 3, 5, 7, 9, 11], [2, 4, 6, 8, 10, 12]):
                     for row in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
                         d[str(z) + row + str(col1)] = rows_384[row_index] + \
-                                                      str(cols_384[col_index])
+                            str(cols_384[col_index])
                         row_index = row_index + 1
                         d[str(z) + row + str(col2)] = rows_384[row_index] + \
-                                                      str(cols_384[col_index])
+                            str(cols_384[col_index])
                         row_index = row_index + 1
 
                     col_index = col_index + 1
@@ -628,3 +627,26 @@ def review_results(request):
         messages.success(request, mark_safe(f'Review status updated for all samples in plate \"{qrp_id}\".'))
         return redirect('index')
 
+
+@login_required
+def sample_release(request):
+    pass
+    q = test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True')
+
+    if request.method == 'GET':
+    #     # TODO query all positive samples
+        table = SampleReleaseTable(q)
+        RequestConfig(request, paginate=False).configure(table)
+        return render(request, 'qpcr_records/sample_release.html', {'table': table, 'sample_release': list(q.values_list('sample_release', flat=True))})
+    else:
+        form_data = [request.POST[f"release{i}"] for i in range(len(request.POST) - 1)]
+        form_data = ['True' if v == 'true' else v for v in form_data]
+        form_data = ['False' if v == 'false' else v for v in form_data]
+
+        # Update query sample_release values
+        for entry, release_value in zip(q.all(), form_data):
+            entry.sample_release = release_value
+            entry.save()
+
+        messages.success(request, mark_safe(f'{len(form_data)} samples marked as released.'))
+        return redirect('index')
