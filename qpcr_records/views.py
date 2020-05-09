@@ -630,22 +630,30 @@ def review_results(request):
 
 @login_required
 def sample_release(request):
-    q = test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True')
 
     if request.method == 'GET':
     #     # TODO query all positive samples
+        q = test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True')
         table = SampleReleaseTable(q)
         RequestConfig(request, paginate=False).configure(table)
-        return render(request, 'qpcr_records/sample_release.html', {'table': table, 'sample_release': list(q.values_list('sample_release', flat=True))})
+
+        sample_release = list(q.values_list('sample_release', flat=True))
+        sample_release = ['true' if v is True else v for v in sample_release]
+        sample_release = ['false' if v is False else v for v in sample_release]
+
+        return render(request, 'qpcr_records/sample_release.html', {'table': table, 'sample_release': sample_release})
     else:
         form_data = [request.POST[f"release{i}"] for i in range(len(request.POST) - 1)]
-        form_data = ['True' if v == 'true' else v for v in form_data]
-        form_data = ['False' if v == 'false' else v for v in form_data]
+        form_data = [True if v == 'true' else v for v in form_data]
+        form_data = [False if v == 'false' else v for v in form_data]
+        print(form_data)
 
         # Update query sample_release values
-        for entry, release_value in zip(q.all(), form_data):
+        q = list(test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True'))
+        for entry, release_value in zip(q, form_data):
             entry.sample_release = release_value
-            entry.save()
+
+        test_results.objects.bulk_update(q, ['sample_release'])
 
         messages.success(request, mark_safe(f'{len(form_data)} samples marked as released.'))
         return redirect('index')
