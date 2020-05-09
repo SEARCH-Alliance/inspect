@@ -108,9 +108,9 @@ def sample_counter_display():
         'data_cleared': data_cleared,
         'num_samples': len(final_results), # total number of samples present
         'num_positives':num_positives,'num_negatives':num_negatives,'num_undetermined':num_undetermined,
-        'p_positive':round(num_positives/len(final_results)*100,2),
-        'p_negative':round(num_negatives/len(final_results)*100,2),
-        'p_undetermined':round(num_undetermined/len(final_results)*100,2),
+        'p_positive':round(num_positives/len(final_results)*100,2) if len(final_results) > 0 else 0,
+        'p_negative':round(num_negatives/len(final_results)*100,2) if len(final_results) > 0 else 0,
+        'p_undetermined':round(num_undetermined/len(final_results)*100,2) if len(final_results) > 0 else 0,
     }
     return counter_information
 
