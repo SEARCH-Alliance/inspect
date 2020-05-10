@@ -24,7 +24,7 @@ SECRET_KEY = config('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*', 'Inspect.us-west-1.elasticbeanstalk.com']
+ALLOWED_HOSTS = ['*', 'inspect-env.eba-mt7mzfth.us-west-2.elasticbeanstalk.com']
 
 # Application definition
 
@@ -84,25 +84,25 @@ WSGI_APPLICATION = 'covid_qPCR_test.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 DATABASES = {
-     'default': {
-         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-         'NAME': config('RDS_DB_NAME'),
-         'USER': config('RDS_USERNAME'),
-         'PASSWORD': config('RDS_PASSWORD'),
-         'HOST': config('RDS_HOSTNAME'),
-         'PORT': config('RDS_PORT'),
-     }
+      'default': {
+          'ENGINE': 'django.db.backends.postgresql_psycopg2',
+          'NAME': config('RDS_DB_NAME'),
+          'USER': config('RDS_USERNAME'),
+          'PASSWORD': config('RDS_PASSWORD'),
+          'HOST': config('RDS_HOSTNAME'),
+          'PORT': config('RDS_PORT'),
+      }
 }
 
 # DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#        'NAME': 'qpcr_samples',
-#        'USER': config('db_user'),
-#        'PASSWORD': config('db_pw'),
-#        'HOST': 'localhost',
-#        'PORT': '',
-#    }
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': 'qpcr_samples',
+#         'USER': config('db_user'),
+#         'PASSWORD': config('db_pw'),
+#         'HOST': 'localhost',
+#         'PORT': '',
+#     }
 # }
 
 # Password validation
