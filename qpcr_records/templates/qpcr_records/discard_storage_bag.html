@@ -1,16 +1,17 @@
 {% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
 <div class="container">
-    <h2 class="my-3">Review Results</h2>
+    <h2 class="my-3">Update Bag Status</h2>
     <div class="card">
         <div class="card-body">
+            <div class="mb-3">Enter the sample bag ID to mark as discarded.</div>
             <form action="" method="POST">
                 {% csrf_token %}
                 <div class="form-group col-md-5 p-0 mb-0">
-                    {{ form.qrp_id|as_crispy_field }}
+                    {{ form.sample_bag_id|as_crispy_field }}
                 </div>
-                <button type="submit" class="btn btn-primary">Start</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
             </form>
         </div>
     </div>
 </div>
-    {% endblock %}
+{% endblock %}

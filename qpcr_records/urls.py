@@ -14,10 +14,9 @@ urlpatterns = [
     path('rna_plate_capture/', views.rna_plate_capture, name='rna_plate_capture'),
     path('rwp_plate_capture/', views.rwp_plate_capture, name='rwp_plate_capture'),
     path('qpcr_plate_capture/', views.qpcr_plate_capture, name='qpcr_plate_capture'),
-    path('track_samples_form/', views.track_samples_form, name='track_samples_form'),
-    path('track_samples/', views.track_samples, name='track_samples'),
-    path('check_information/', views.check_information, name='check_information'),
     path('upload_qpcr_results/', views.upload_qpcr_results, name='upload_qpcr_results'),
     path('review_results/', views.review_results, name='review_results'),
     path('qpcr_plate_id_to_review/', views.qpcr_plate_id_to_review, name='qpcr_plate_id_to_review'),
+    path('sample_release/', views.sample_release, name='sample_release'),
+    path('discard_storage_bag/', views.discard_storage_bag, name='discard_storage_bag')
 ]

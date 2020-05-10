@@ -15,7 +15,8 @@ result_choices = [('', ''), ('Undetermined', 'Undetermined'), ('Inconclusive', '
 
 class SearchForm(forms.Form):
     barcode = forms.CharField(max_length=30, label='Sample Barcode', required=False, initial='')
-    sampling_date = forms.DateField(help_text='(YYYY-MM-DD)', required=False, initial='', widget=forms.DateInput(format='%m/%d/%Y'), input_formats=('%m/%d/%Y',))
+    sampling_date = forms.DateField(help_text='(YYYY-MM-DD)', required=False, initial='',
+                                    widget=forms.DateInput(format='%m/%d/%Y'), input_formats=('%m/%d/%Y',))
     plate_id = forms.CharField(help_text='Enter a Plate Barcode', max_length=15, required=False, initial='')
     technician = forms.CharField(max_length=30, label=' Technician', required=False, initial='')
     final_results = forms.CharField(label='Final Result', required=False, widget=forms.Select(choices=result_choices), initial='')
@@ -34,6 +35,7 @@ class SearchForm(forms.Form):
             raise ValidationError("Enter at least one field to search records.", code="invalid")
 
         return cleaned_data
+
 
 class ArrayingForm(forms.Form):
 
@@ -79,9 +81,6 @@ class ArrayingForm(forms.Form):
             raise ValidationError("RNA working plate ID already exists.", code='invalid')
         return rwp_id
 
-class TrackSamplesForm(forms.Form):
-    track_samples = forms.MultipleChoiceField(required=True, widget=forms.CheckboxSelectMultiple, choices=sample_tracking_choice)
-
 
 class BarcodesUploadForm(forms.Form):
     barcodes_file = forms.FileField(required=True)
@@ -94,3 +93,4 @@ class BarcodesUploadForm(forms.Form):
         #     raise ValidationError(f'File not uploaded. {barcodes_file.name}' ??, code="invalid")
 
         return barcodes_file
+
