@@ -88,6 +88,17 @@ def sample_counter_display():
     # Unprocessed sample counter
     unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh, sep_id='').count()
 
+    # General results tabulation
+    final_results = list(test_results.objects.values_list('final_results',flat=True))
+    num_positives, num_negatives, num_undetermined = 0,0,0
+    for result in final_results:
+        if result == 'Positive':
+            num_positives += 1
+        elif result == 'Negative':
+            num_negatives += 1
+        elif result == 'Undetermined':
+            num_undetermined += 1
+
     # Compile all of the results into a dictionary to return to webpages via Django
     counter_information = {
         'unproc_samples': unproc_samples,
@@ -98,6 +109,11 @@ def sample_counter_display():
         'q_recorded': q_recorded,
         'q_processed': q_processed,
         'data_cleared': data_cleared,
+        'num_samples': len(final_results), # total number of samples present
+        'num_positives':num_positives,'num_negatives':num_negatives,'num_undetermined':num_undetermined,
+        'p_positive':round(num_positives/len(final_results)*100,2) if len(final_results) > 0 else 0,
+        'p_negative':round(num_negatives/len(final_results)*100,2) if len(final_results) > 0 else 0,
+        'p_undetermined':round(num_undetermined/len(final_results)*100,2) if len(final_results) > 0 else 0,
     }
     return counter_information
 
@@ -139,23 +155,6 @@ def barcode_list_upload(request):
             return redirect('index')
         else:  # Show form again with user data and errors
             return render(request, 'qpcr_records/barcode_list_upload.html', {'form': f})
-
-
-@login_required
-def check_information(request):
-    """
-    THIS FUNCTION IS NO LONGER USED
-
-    Redirect to this view when user wants to start a new platemap. Before the user starts loading a fresh plate, some
-    information such as collection site, protocol version, technician name, lab, etc; will need to be reviewed by the
-    user. If the default values for the fields are correct, the user has the option to process with loading the samples
-    into the plate. If not, the user can edit the field values and then proceed to loading samples in the plate.
-    :param request: signal call that this function has been called
-    :return barcode: captured barcode
-    :return next_well: Since the plate barcode has been recorded here, the next well will always be A1
-    """
-    f = ArrayingForm()
-    return render(request, 'qpcr_records/check_information.html', {'form': f})
 
 
 @login_required
@@ -380,10 +379,10 @@ def rwp_plate_capture(request):
                 for col1, col2 in zip([1, 3, 5, 7, 9, 11], [2, 4, 6, 8, 10, 12]):
                     for row in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
                         d[str(z) + row + str(col1)] = rows_384[row_index] + \
-                                                      str(cols_384[col_index])
+                            str(cols_384[col_index])
                         row_index = row_index + 1
                         d[str(z) + row + str(col2)] = rows_384[row_index] + \
-                                                      str(cols_384[col_index])
+                            str(cols_384[col_index])
                         row_index = row_index + 1
 
                     col_index = col_index + 1
@@ -647,59 +646,56 @@ def review_results(request):
 
 
 @login_required
-def track_samples_form(request):
-    f = TrackSamplesForm()
-    return render(request, 'qpcr_records/track_samples_form.html', {'form': f})
+def sample_release(request):
+
+    if request.method == 'GET':
+    #     # TODO query all positive samples
+        q = test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True')
+        table = SampleReleaseTable(q)
+        RequestConfig(request, paginate=False).configure(table)
+
+        sample_release = list(q.values_list('sample_release', flat=True))
+        sample_release = ['true' if v is True else v for v in sample_release]
+        sample_release = ['false' if v is False else v for v in sample_release]
+
+        return render(request, 'qpcr_records/sample_release.html', {'table': table, 'sample_release': sample_release})
+    else:
+        form_data = [request.POST[f"release{i}"] for i in range(len(request.POST) - 1)]
+        form_data = [True if v == 'true' else v for v in form_data]
+        form_data = [False if v == 'false' else v for v in form_data]
+        print(form_data)
+
+        # Update query sample_release values
+        q = list(test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True'))
+        for entry, release_value in zip(q, form_data):
+            entry.sample_release = release_value
+
+        test_results.objects.bulk_update(q, ['sample_release'])
+
+        messages.success(request, mark_safe(f'{len(form_data)} samples marked as released.'))
+        return redirect('index')
 
 
 @login_required
-def track_samples(request):
-    l = ['Sample_Plated', 'Sample_Stored', 'RNA_Extraction',
-         'Sample_Arrayed', 'qPCR_BackUp', 'qPCR_Reaction']
-    l2 = list()
-    for k in l:
-        if k in request.GET['track_samples']:
-            l2.append(k)
+def discard_storage_bag(request):
+    # Show initial form
+    if request.method == 'GET':
+        f = SelectBagForm()
+        return render(request, 'qpcr_records/discard_storage_bag.html', {'form': f})
+    # Upon form submission, redirect to search_results if valid
+    else:
+        f = SelectBagForm(request.POST)
+
+        if f.is_valid():
+            q = list(test_results.objects.filter(sample_bag_id__iexact=f.cleaned_data['sample_bag_id']))
+
+            for entry in q:
+                entry.sample_bag_is_stored = 'False'
+            test_results.objects.bulk_update(q, ['sample_bag_is_stored'])
+
+
+            messages.success(request, mark_safe(f'Bag status updated.'))
+            return redirect('index')
         else:
-            continue
-
-    q = ''
-    for k in l2:
-        if k == 'Sample_Plated':
-            if q == '':
-                q = test_results.objects.filter(~Q(ssp_id=''))
-            else:
-                q = q.filter(~Q(ssp_id=''))
-        elif k == 'Sample_Stored':
-            if q == '':
-                q = test_results.objects.filter(~Q(sep_id=''))
-            else:
-                q = q.filter(~Q(sep_id=''))
-        elif k == 'RNA_Extraction':
-            if q == '':
-                q = test_results.objects.filter(~Q(rep_id=''))
-            else:
-                q = q.filter(~Q(rep_id=''))
-        elif k == 'Sample_Arrayed':
-            if q == '':
-                q = test_results.objects.filter(~Q(rsp_id=''))
-            else:
-                q = q.filter(~Q(rsp_id=''))
-        elif k == 'qPCR_BackUp':
-            if q == '':
-                q = test_results.objects.filter(~Q(rwp_id=''))
-            else:
-                q = q.filter(~Q(rwp_id=''))
-        else:
-            q = test_results.objects.all()
-            break
-
-    table = SearchResultsTable(q)
-    RequestConfig(request).configure(table)
-
-    export_format = request.GET.get('_export', None)
-    if TableExport.is_valid_format(export_format):
-        exporter = TableExport(export_format, table)
-        return exporter.response('table.{}'.format(export_format))
-
-    return render(request, 'qpcr_records/track_samples.html', {'table': table})
+            # Show form again with errors
+            return render(request, 'qpcr_records/discard_storage_bag.html', {'form': f})
