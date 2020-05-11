@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import ValidationError
-
+from django.db.models import Q
 from qpcr_records.models import test_results
 
 sample_tracking_choice = [('Sample_Plated', 'Sample Plated into 96 well Plates'),
@@ -92,4 +92,20 @@ class BarcodesUploadForm(forms.Form):
         #     raise ValidationError(f'File not uploaded. {barcodes_file.name}' ??, code="invalid")
 
         return barcodes_file
+
+
+class QPCRResultsUploadForm(forms.Form):
+    qpcr_results_file = forms.FileField(required=True)
+
+    def clean_qpcr_results_file(self):
+        qpcr_results_file = self.cleaned_data['qpcr_results_file']
+
+        qrp_id = qpcr_results_file.name.split('.')[0]
+        if not test_results.objects.filter(qrp_id=qrp_id).exists():
+            raise ValidationError(f'File not uploaded. Plate \"{qrp_id}\" does not exist.', code="invalid")
+
+        if test_results.objects.filter(~Q(decision_tree_results='Undetermined'), qrp_id=qrp_id):
+            raise ValidationError(f'File not uploaded. Plate \"{qrp_id}\" already has data.', code="invalid")
+
+        return qpcr_results_file
 

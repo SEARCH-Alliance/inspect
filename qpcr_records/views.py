@@ -518,7 +518,7 @@ def search_results(request):
                                      Q(personnel2_andersen_lab__iexact=value) |
                                      Q(personnel_knight_lab__iexact=value) |
                                      Q(personnel_laurent_lab__iexact=value))
-                elif field == 'result':
+                elif field == 'final_results':
                     if q == '':
                         print('5')
                         q = test_results.objects.filter(final_results__iexact=value.strip())
@@ -533,7 +533,7 @@ def search_results(request):
                 else:
                     continue
 
-        if q.count() == 0:
+        if q == '':
             return render(request, 'qpcr_records/search_results.html')
         else:
             # Export query as table
@@ -550,16 +550,21 @@ def search_results(request):
 
 @login_required
 def upload_qpcr_results(request):
+    print("Here")
     if request.method == 'GET':
+        print("Here2")
         f = QPCRResultsUploadForm()
         return render(request, 'qpcr_records/upload_qpcr_results.html', {'form': f})
     else:
         f = QPCRResultsUploadForm(request.POST, request.FILES)
+        print("Here3")
 
         if f.is_valid():
+            print("Here4")
             # Parse file for Ct values and determine decision tree resuls
             file = request.FILES['qpcr_results_file']
             qrp_id = file.name.split('.')[0]
+            print(qrp_id)
             exists = test_results.objects.filter(qrp_id=qrp_id)
             # Upload excel file to s3
             s3 = boto3.resource('s3', region_name=config('aws_s3_region_name'),
@@ -599,6 +604,7 @@ def upload_qpcr_results(request):
             messages.success(request, mark_safe('qRT-PCR data uploaded successfully.'))
             return redirect('index')
         else:
+            print("Here5")
             return render(request, 'qpcr_records/upload_qpcr_results.html', {'form': f})
 
 
