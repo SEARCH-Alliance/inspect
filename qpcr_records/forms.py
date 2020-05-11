@@ -24,7 +24,8 @@ class SearchForm(forms.Form):
 
     def clean(self):
         cleaned_data = self.cleaned_data
-        cleaned_data['sampling_date'] = str(cleaned_data['sampling_date'])
+        if 'sampling_date' in cleaned_data.keys():
+            cleaned_data['sampling_date'] = str(cleaned_data['sampling_date'])
 
         empty_count = 0
         for field_name, value in cleaned_data.items():

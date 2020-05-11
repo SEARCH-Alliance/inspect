@@ -26,7 +26,7 @@ file_transfer_status_choices = (
 class test_results(models.Model):
     # SAMPLE INFORMATION : MOST UPSTREAM INFORMATION TO CAPTURE
     barcode = models.CharField(max_length=10, null=False, default='')
-    fake_name = models.CharField(max_length=40, null=False, default='')
+    fake_name = models.CharField(max_length=60, null=False, default='')
 
     # ANDERSSON LAB INFORMATION
     lrl_id = models.CharField(max_length=15, null=False, default='M6246109105', help_text='Lysis Reagent Lot #')
