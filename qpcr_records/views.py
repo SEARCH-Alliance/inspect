@@ -26,7 +26,65 @@ def reset_session(request):
         if k not in ['_auth_user_id', '_auth_user_backend', '_auth_user_hash']:
             del request.session[k]
 
+# login not required for viewing the dashboard display page
+def dashboard_display():
+    """
+    Performs queries to show sample information for the overall dashboard public view
+    """
+    # Gather the results of all the cases we've extracted so far
+    all_cases = list(test_results.objects.values_list('final_results',flat=True))    
+    num_tot_cases = len(all_cases)
 
+    # Determine the number of each case type we've tested
+    num_cases = {'Positive':0, 'Negative':0, 'Undetermined':0}
+    for result in all_cases:
+        num_cases[result] += 1
+    pct_pos_cases = float(num_cases['Positive'])/num_tot_cases
+    pct_neg_cases = float(num_cases['Negative'])/num_tot_cases
+    pct_und_cases = float(num_cases['Undetermined'])/num_tot_cases
+
+    ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### 
+    ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### 
+
+    # Gather just the results from the cases we've extracted so far
+    todays_date = date.today() 
+    todays_cases = list(test_results.objects.filter(
+        sampling_date__gte=todays_date).values_list('final_results',flat=True))
+    tod_tot_cases = len(todays_cases)
+
+    # Determine the number of each case type we've tested
+    tod_num_cases = {'Positive':0, 'Negative':0, 'Undetermined':0}
+    for result in todays_cases:
+        tod_num_cases[result] += 1
+    tod_pct_pos_cases = float(tod_num_cases['Positive'])/tod_tot_cases
+    tod_pct_neg_cases = float(tod_num_cases['Negative'])/tod_tot_cases
+    tod_pct_und_cases = float(tod_num_cases['Undetermined'])/tod_tot_cases
+
+    ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### 
+    ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
+
+    # Compile all of our values before returning them for HTML input
+    dashboard_information = {
+        # All of the overall testing numbers to include in the dashboard
+        'overall_num_tot_cases':num_tot_cases,
+        'overall_num_pos_cases':num_cases['Positive'],
+        'overall_num_neg_cases':num_cases['Negative'],
+        'overall_num_und_cases':num_cases['Undetermined'],
+        'overall_pct_pos_cases':pct_pos_cases,
+        'overall_pct_neg_cases':pct_neg_cases,
+        'overall_pct_und_cases':pct_und_cases,
+        # All of the to-date testing numbers to include in the dashboard
+        'today_num_tot_cases':tod_tot_cases,
+        'today_num_pos_cases':tod_num_cases['Positive'],
+        'today_num_neg_cases':tod_num_cases['Negative'],
+        'today_num_und_cases':tod_num_cases['Undetermined'],
+        'today_pct_pos_cases':tod_pct_pos_cases,
+        'today_pct_neg_cases':tod_pct_neg_cases,
+        'today_pct_und_cases':tod_pct_und_cases
+    }
+    return(dashboard_information)
+
+@login_required
 def sample_counter_display():
     """
     Performs queries to determine the number of unprocessed samples, sample extraction plates,
