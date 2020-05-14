@@ -31,8 +31,11 @@ def dashboard_display():
     """
     Performs queries to show sample information for the overall dashboard public view
     """
-    # Gather the results of all the cases we've extracted so far
-    all_cases = list(test_results.objects.values_list('final_results',flat=True))    
+    # Gather the results of all the cases we've extracted so far along with when they were sampled
+    all_cases_with_date = list(test_results.objects.values_list('sampling_date','final_results'))
+
+    # Extract just the case result information for overall dashboard
+    all_cases = [e[1] for e in all_cases_with_date]
     num_tot_cases = len(all_cases)
 
     # Determine the number of each case type we've tested
@@ -65,27 +68,39 @@ def dashboard_display():
 
     # Compile all of our values before returning them for HTML input
     dashboard_information = {
+        'result_summary':all_cases_with_date,
         # All of the overall testing numbers to include in the dashboard
-        'overall_num_tot_cases':num_tot_cases,
-        'overall_num_pos_cases':num_cases['Positive'],
-        'overall_num_neg_cases':num_cases['Negative'],
-        'overall_num_und_cases':num_cases['Undetermined'],
-        'overall_pct_pos_cases':pct_pos_cases,
-        'overall_pct_neg_cases':pct_neg_cases,
-        'overall_pct_und_cases':pct_und_cases,
+        'overall_num_tot_cases':['Total Number of Cases',num_tot_cases],
+        'overall_num_pos_cases':['Total Number of Positive Cases',num_cases['Positive']],
+        'overall_num_neg_cases':['Total Number of Negative Cases',num_cases['Negative']],
+        'overall_num_und_cases':['Total Number of Undetermined Cases',num_cases['Undetermined']],
+        'overall_pct_pos_cases':['Percent Positive Cases Overall',pct_pos_cases],
+        'overall_pct_neg_cases':['Percent Negative Cases Overall',pct_neg_cases],
+        'overall_pct_und_cases':['Percent Undetermined Cases Overall',pct_und_cases],
         # All of the to-date testing numbers to include in the dashboard
-        'todays_date':todays_date,
-        'today_num_tot_cases':tod_tot_cases,
-        'today_num_pos_cases':tod_num_cases['Positive'],
-        'today_num_neg_cases':tod_num_cases['Negative'],
-        'today_num_und_cases':tod_num_cases['Undetermined'],
-        'today_pct_pos_cases':tod_pct_pos_cases,
-        'today_pct_neg_cases':tod_pct_neg_cases,
-        'today_pct_und_cases':tod_pct_und_cases
+        'todays_date':["Today's Date",todays_date],
+        'today_num_tot_cases':["Today's Total Number of Cases",tod_tot_cases],
+        'today_num_pos_cases':["Today's Number of Positive Cases",tod_num_cases['Positive']],
+        'today_num_neg_cases':["Today's Number of Negative Cases",tod_num_cases['Negative']],
+        'today_num_und_cases':["Today's Number of Undetermined Cases",tod_num_cases['Undetermined']],
+        'today_pct_pos_cases':["Today's Percentage of Positive Cases",tod_pct_pos_cases],
+        'today_pct_neg_cases':["Today's Percentage of Negative Cases",tod_pct_neg_cases],
+        'today_pct_und_cases':["Today's Percentage of Undetermined Cases",tod_pct_und_cases],
     }
     return(dashboard_information)
 
-@login_required
+def dashboard_page(request):
+    """
+    Using Bokeh, generate a dashboard for the public page of the site
+    """
+    dashboard_data = dashboard_display()
+
+    # Parse the daily information from the dashboard data 
+
+
+    reset_session(request)
+    return render(request, 'qpcr_records/index.html', counter_information)
+
 def sample_counter_display():
     """
     Performs queries to determine the number of unprocessed samples, sample extraction plates,
