@@ -16,6 +16,7 @@ from decouple import config
 from datetime import date, timedelta, datetime
 import boto3
 import pandas as pd
+from bokeh.plotting import figure, output_file, show
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
@@ -95,11 +96,33 @@ def dashboard_page(request):
     """
     dashboard_data = dashboard_display()
 
+    # Parse the sampling data for the Bokeh dashboard by summing the 
+    # number of positive, negative or undetermined samples per date
+    result_summary = pd.DataFrame(dashboard_data['result_summary'])
+    result_summary.columns = ['sampling_date','final_results']
+    result_summary = result_summary.groupby('sampling_date').apply(lambda r: r['final_results'].value_counts()).reset_index()
+    result_summary = result_summary.pivot('sampling_date','level_1').fillna(0)
+    
+    # Remove the multiindexed rows and columns to complete parsing the dataframe
+    result_summary.rename_axis(None,inplace=True)
+    result_summary.columns = result_summary.columns.droplevel()
+    result_summary.columns.name = None
+    result_summary = result_summary.reset_index()
+
+    # Plot the information in Bokeh
+    #      default format for date information ----- datetime.date.today().strftime('%m/%d/%Y')
+    #      default format for final results    ----- either Positive, Negative, or Undetermined
+    result_summary['date'] = pd.to_datetime(result_summary['index'])
+
+    p = figure(plot_width=800, plot_height=250, x_axis_type="datetime")
+    p.line(result_summary['date'], result_summary['Positive'], color='red', alpha=0.5)
+    p.line(result_summary['date'], result_summary['Negative'], color='green', alpha=0.5)
+    p.line(result_summary['date'], result_summary['Undetermined'], color='grey', alpha=0.5)
+    dashboard_data['plot'] = p # add the plot as new information that we're returning
+
     # Parse the daily information from the dashboard data 
-
-
     reset_session(request)
-    return render(request, 'qpcr_records/index.html', counter_information)
+    return render(request, 'qpcr_records/index.html', dashboard_data)
 
 def sample_counter_display():
     """
