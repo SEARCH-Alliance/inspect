@@ -74,6 +74,7 @@ def dashboard_display():
         'overall_pct_neg_cases':pct_neg_cases,
         'overall_pct_und_cases':pct_und_cases,
         # All of the to-date testing numbers to include in the dashboard
+        'todays_date':todays_date,
         'today_num_tot_cases':tod_tot_cases,
         'today_num_pos_cases':tod_num_cases['Positive'],
         'today_num_neg_cases':tod_num_cases['Negative'],
