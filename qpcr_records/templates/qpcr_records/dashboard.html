@@ -105,5 +105,23 @@
 {{ summary_data.plot_script | safe }}
 {{ summary_data.box_script | safe }}
 {{ summary_data.slider_script | safe }}
+<script>
+function iniframe() {
+    try {
+        return window.self !== window.top;
+        } catch (e) {
+    return true;
+    }
+}
 
+function hideNav() {
+    if (iniframe()) {
+        $('#main-navbar').remove();
+    }
+}
+
+window.addEventListener("load", () => {
+    hideNav();
+});
+</script>
 {% endblock %}
