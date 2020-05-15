@@ -15,11 +15,16 @@ from qpcr_records.data_processing.results import Results
 from decouple import config
 from datetime import date, timedelta, datetime
 import boto3
+import numpy as np
 import pandas as pd
-# plotting 
+# plotting
 from bokeh.plotting import figure, output_file, show
+from bokeh.models import RangeTool
+from bokeh.models.tools import HoverTool
 from bokeh.embed import components
-from bokeh.models import DateRangeSlider, BoxAnnotation
+from bokeh.models import DateRangeSlider, BoxAnnotation, Range1d
+from bokeh.models.tickers import AdaptiveTicker
+from bokeh.layouts import column
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
@@ -63,8 +68,6 @@ def get_dashboard_data():
     todays_cases = list(obj.filter(
         sampling_date=todays_date).values_list('final_results', flat=True))
     tod_tot_cases = len(todays_cases)
-    print(num_tot_cases)
-    print(tod_tot_cases)
 
     # Determine the number of each case type we've tested
     tod_num_cases = {'Positive': 0, 'Negative': 0, 'Undetermined': 0}
@@ -76,16 +79,13 @@ def get_dashboard_data():
 
     # Parse the sampling data for the Bokeh dashboard by summing the
     # number of positive, negative or undetermined samples per date
-    plot_script, plot_div, slider_script, slider_div, box_script, box_div = plot_trend_chart(all_cases_with_date)
+    plots_script, plot_divs = plot_trend_chart(all_cases_with_date)
 
     # Compile all of our values before returning them for HTML input
     dashboard_information = {
-        'plot_script': plot_script,
-        'plot_div': plot_div,
-        'slider_script': slider_script,
-        'slider_div': slider_div,
-        'box_script': box_script,
-        'box_div':box_div,
+        'plots_script': plots_script,
+        'main_plot': plot_divs[0],
+        'select_plot': plot_divs[1],
         # All of the overall testing numbers to include in the dashboard
         'overall_num_tot_cases': num_tot_cases,
         'overall_num_pos_cases': num_cases['Positive'],
@@ -110,88 +110,89 @@ def get_dashboard_data():
 def plot_trend_chart(cases):
     if not cases:
         return None, None
-    else:
-        result_summary = pd.DataFrame(cases)
-        result_summary.columns = ['sampling_date', 'final_results']
-        result_summary = result_summary.groupby('sampling_date').apply(lambda r: r['final_results'].value_counts())
 
-        # If you only have a single entry in the database, you don't need to reset the index and pivot
-        if result_summary.shape[0] > 1: 
-            result_summary = result_summary.reset_index().pivot(index='sampling_date', columns='level_1', values='final_results')
-        result_summary.fillna(0, inplace=True)
+    # Reformat data for bokeh plotting
+    result_summary = pd.DataFrame(cases)
+    result_summary.columns = ['sampling_date', 'final_results']
+    result_summary = result_summary.groupby('sampling_date').apply(lambda r: r['final_results'].value_counts())
 
-        # Create bokeh figure
-        tools = 'pan, box_zoom, wheel_zoom, reset, undo, redo, save'
-        p = figure(x_axis_type="datetime",tools=tools)
-        p.sizing_mode = 'stretch_both'
-        p.outline_line_color = None
+    # If you only have a single entry in the database, you don't need to reset the index and pivot
+    if result_summary.shape[0] > 1:
+        result_summary = result_summary.reset_index().pivot(index='sampling_date', columns='level_1', values='final_results')
+    result_summary.fillna(0, inplace=True)
 
-        # TODO replace fake_df with result_summary
-        # date_range = pd.date_range('1/1/2020', '5/14/2020')
-        # pos_data = range(len(date_range))
-        # neg_data = range(len(date_range))
-        # und_data = [2 for d in date_range]
-        # fake_index = ['sampling_date', 'Positive', 'Negative', 'Undetermined']
-        # fake_df = pd.DataFrame([date_range, pos_data, neg_data, und_data], index=fake_index).T
+    result_summary.index = result_summary.index.astype('datetime64[ns]')
+    result_summary[['Undetermined', 'Positive', 'Negative']] = result_summary[['Undetermined', 'Positive', 'Negative']].astype(int)
 
-        # Style plot
-        p.toolbar.logo = None
-        p.toolbar.autohide = False
-        p.xgrid.grid_line_color = None
+    # Limit default view to 1 month prior to today
+    start_date = max([min(result_summary.index), date.today() - timedelta(days=30)])
+    start_date = np.datetime64(start_date)
+    end_date = np.datetime64(date.today())
 
-        p.legend.location = "top_left"
-        p.legend.title = "Case Status"
-        p.legend.title_text_font_style = "bold"
-        p.legend.title_text_font_size = "20px"
+    # Create bokeh figure
+    x_range = Range1d(start_date, end_date, bounds=(None, end_date))
+    y_range = Range1d(0, result_summary.sum(axis=0).max())
+    p = figure(x_axis_type="datetime", tools="xpan, reset, save", x_range=(start_date, end_date), y_range=y_range)
 
-        p.xaxis.axis_label = "Date"
-        p.xaxis.axis_label_text_font_style = "bold"
-        p.xaxis.axis_label_text_font_size = "16px"
+    hover_tool = HoverTool(
+        tooltips=[("Date", "@sampling_date{%F}"),
+                  ("Undetermined", "@Undetermined"),
+                  ("Positive", "@Positive"),
+                  ("Negative", "@Negative")],
+        formatters={"@sampling_date": "datetime"}
+    )
 
-        p.yaxis.axis_label = "Cumulative Samples Tested"
-        p.yaxis.axis_label_text_font_style = "bold"
-        p.yaxis.axis_label_text_font_size = "16px"
+    p.add_tools(hover_tool)
 
-        # Create slider figure for plot
-        s = figure(x_axis_type='datetime')
-        s.yaxis.major_label_text_color = None
-        s.yaxis.major_tick_line_color= None
-        s.yaxis.minor_tick_line_color= None
-        s.grid.grid_line_color=None
+    # Plot the information
+    # https://stackoverflow.com/questions/45711567/categorical-y-axis-and-datetime-x-axis-with-bokeh-vbar-plot
+    status_order = ['Undetermined', 'Positive', 'Negative']
+    status_colors = ['gray', 'red', 'green']
+    bar_width = timedelta(days=1).total_seconds() * 1000 * 0.9
+    p.vbar_stack(status_order, x='sampling_date', color=status_colors, fill_alpha=0.2, line_alpha=0.2, width=bar_width, legend_label=status_order, source=result_summary)
 
-        # Date selection
-        all_dates = sorted(result_summary.index)
-        start_date, end_date = all_dates[0], date.today()
+    # Style plot
+    p.sizing_mode = 'stretch_both'
+    p.outline_line_color = None
+    p.toolbar.logo = None
+    p.toolbar.autohide = False
+    p.ygrid.grid_line_color = None
 
-        date_range_slider = DateRangeSlider(title="Date Range: ", 
-            start=start_date, end=end_date, value=(start_date, end_date), show_value=False, step=1)
+    p.legend.location = "top_left"
+    p.legend.title = "Case Status"
+    p.legend.title_text_font_style = "bold"
+    p.legend.title_text_font_size = "20px"
 
-        # Box selection
-        box = BoxAnnotation(fill_alpha=0.5, line_alpha=0.5, level='underlay', left=start_date, right=end_date)
+    p.xaxis.axis_label = "Date"
+    p.xaxis.axis_label_text_font_style = "bold"
+    p.xaxis.axis_label_text_font_size = "16px"
 
-        def update_range(attr, old, new):
-            box.left = new[0]
-            box.right = new[1]
-            p.x_range.start = new[0]
-            p.x_range.end = new[1]
+    p.yaxis.axis_label = "Samples Tested Per Day"
+    p.yaxis.axis_label_text_font_style = "bold"
+    p.yaxis.axis_label_text_font_size = "16px"
+    p.yaxis.minor_tick_line_color = None
+    p.yaxis.ticker = AdaptiveTicker(min_interval=1)
+    p.yaxis
 
-        date_range_slider.on_change('value',update_range)
+    # RangeTool
+    p_select = figure(title="Drag the the selection box to change the date range.",
+                      y_range=p.y_range, y_axis_type=None, x_axis_type="datetime")
 
-        # Plot the information
-        p.varea_stack(['Undetermined', 'Positive', 'Negative'],
-                      x='sampling_date',
-                      color=['gray', 'red', 'green'],
-                      fill_alpha=0.2,
-                      legend_label=['Undetermined', 'Positive', 'Negative'],
-                      source=result_summary)
-        p.vline_stack(['Undetermined', 'Positive', 'Negative'],
-                      x='sampling_date',
-                      color=['gray', 'red', 'green'],
-                      line_width=1,
-                      legend_label=['Undetermined', 'Positive', 'Negative'],
-                      source=result_summary)
+    range_tool = RangeTool(x_range=p.x_range)
+    range_tool.overlay.fill_color = "navy"
+    range_tool.overlay.fill_alpha = 0.2
 
-        return *components(p), *components(date_range_slider), *components(box)
+    p_select.vbar_stack(status_order, x='sampling_date', color=status_colors, fill_alpha=0.2, line_alpha=0.2, width=bar_width, source=result_summary)
+    p_select.yaxis.axis_label = ""
+
+    p_select.sizing_mode = 'stretch_both'
+    p_select.outline_line_color = None
+    p_select.toolbar.logo = None
+    p_select.ygrid.grid_line_color = None
+    p_select.add_tools(range_tool)
+    p_select.toolbar.active_multi = range_tool
+
+    return components([p, p_select])
 
 
 def sample_counter_display():
