@@ -7,6 +7,7 @@ urlpatterns = [
     path('barcode_list_upload/', views.barcode_list_upload, name='barcode_list_upload'),
     path('sample_plate_capture/', views.sample_plate_capture, name='sample_plate_capture'),
     path('search/', views.search, name='search'),
+    path('dashboard/', views.dashboard, name='dashboard'),
     path('search_results/', views.search_results, name='search_results'),
     path('perform_safety_check/', views.perform_safety_check, name='perform_safety_check'),
     path('barcode_capture/', views.barcode_capture, name='barcode_capture'),
