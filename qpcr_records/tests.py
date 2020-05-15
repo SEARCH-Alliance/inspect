@@ -7,6 +7,8 @@ from qpcr_records.models import *
 # Models that we create in the database
 from qpcr_records.models import personnel_list, test_results
 
+import itertools
+
 ######################################################################
 # Models test
 ######################################################################
@@ -246,3 +248,12 @@ class TestQPCRResultsUploadForm(TestCase):
     def test_qrp_multiple_qrp_results(self):
         """Test if multiple qPCR Results files are detected to associate with a single qPCR Reaction plate"""
         self.fail("!TODO : This test is not implemented yet")
+
+
+# TODO
+class TestSampleReleaseForm(TestCase):
+    def setUp(self):
+        """Create a test result entries with enumerated final_results, is_reviewed, and sample_released values"""
+        test_sample_params = list(itertools.product(*[sample_result_choices, is_reviewed_choices, sample_release_choices]))
+        for param in test_sample_params:
+            test_results.objects.create(final_results=param[0][0], is_reviewed=param[1][0], sample_release=param[2][0])
