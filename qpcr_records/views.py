@@ -817,8 +817,8 @@ def review_results(request):
 def sample_release(request):
 
     if request.method == 'GET':
-        #     # TODO query all positive samples
-        q = test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True')
+        # Query all reviewed positive samples that have NOT been released
+        q = test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True', sample_release__iexact='False')
         table = SampleReleaseTable(q)
         RequestConfig(request, paginate=False).configure(table)
 
@@ -834,7 +834,7 @@ def sample_release(request):
         print(form_data)
 
         # Update query sample_release values
-        q = list(test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True'))
+        q = list(test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True', sample_release__iexact='False'))
         for entry, release_value in zip(q, form_data):
             entry.sample_release = release_value
 
