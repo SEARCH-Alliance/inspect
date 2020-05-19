@@ -15,7 +15,16 @@ from qpcr_records.data_processing.results import Results
 from decouple import config
 from datetime import date, timedelta, datetime
 import boto3
+import numpy as np
 import pandas as pd
+# plotting
+from bokeh.plotting import figure, output_file, show
+from bokeh.models import RangeTool
+from bokeh.models.tools import HoverTool
+from bokeh.embed import components
+from bokeh.models import DateRangeSlider, BoxAnnotation, Range1d
+from bokeh.models.tickers import AdaptiveTicker
+from bokeh.layouts import column
 
 
 # @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
@@ -25,6 +34,165 @@ def reset_session(request):
     for k in list(request.session.keys()):
         if k not in ['_auth_user_id', '_auth_user_backend', '_auth_user_hash']:
             del request.session[k]
+
+
+def dashboard(request):
+    summary_data = get_dashboard_data()
+
+    return render(request, 'qpcr_records/dashboard.html', {'summary_data': summary_data})
+
+
+# login not required for viewing the dashboard display page
+def get_dashboard_data():
+    """
+    Performs queries to show sample information for the overall dashboard public view
+    """
+    # Gather the results of all the cases we've extracted so far along with when they were sampled
+    obj = test_results.objects.all()
+    all_cases_with_date = list(obj.values_list('sampling_date', 'final_results'))
+
+    # Extract just the case result information for overall dashboard
+    all_cases = [e[1] for e in all_cases_with_date]
+    num_tot_cases = len(all_cases)
+
+    # Determine the number of each case type we've tested
+    num_cases = {'Positive': 0, 'Negative': 0, 'Undetermined': 0}
+    for result in all_cases:
+        num_cases[result] += 1
+    pct_pos_cases = round(float(num_cases['Positive'])/num_tot_cases * 100, 2) if num_tot_cases > 0 else 0
+    pct_neg_cases = round(float(num_cases['Negative'])/num_tot_cases * 100, 2) if num_tot_cases > 0 else 0
+    pct_und_cases = round(float(num_cases['Undetermined'])/num_tot_cases * 100, 2) if num_tot_cases > 0 else 0
+
+    # Gather just the results from the cases we've extracted so far
+    todays_date = date.today()
+    todays_cases = list(obj.filter(
+        sampling_date=todays_date).values_list('final_results', flat=True))
+    tod_tot_cases = len(todays_cases)
+
+    # Determine the number of each case type we've tested
+    tod_num_cases = {'Positive': 0, 'Negative': 0, 'Undetermined': 0}
+    for result in todays_cases:
+        tod_num_cases[result] += 1
+    tod_pct_pos_cases = round(float(tod_num_cases['Positive'])/tod_tot_cases * 100, 2) if tod_tot_cases > 0 else 0
+    tod_pct_neg_cases = round(float(tod_num_cases['Negative'])/tod_tot_cases * 100, 2) if tod_tot_cases > 0 else 0
+    tod_pct_und_cases = round(float(tod_num_cases['Undetermined'])/tod_tot_cases * 100, 2) if tod_tot_cases > 0 else 0
+
+    # Parse the sampling data for the Bokeh dashboard by summing the
+    # number of positive, negative or undetermined samples per date
+    plots_script, plot_divs = plot_trend_chart(all_cases_with_date)
+
+    # Compile all of our values before returning them for HTML input
+    dashboard_information = {
+        'plots_script': plots_script,
+        'main_plot': plot_divs[0],
+        'select_plot': plot_divs[1],
+        # All of the overall testing numbers to include in the dashboard
+        'overall_num_tot_cases': num_tot_cases,
+        'overall_num_pos_cases': num_cases['Positive'],
+        'overall_num_neg_cases': num_cases['Negative'],
+        'overall_num_und_cases': num_cases['Undetermined'],
+        'overall_pct_pos_cases': pct_pos_cases,
+        'overall_pct_neg_cases': pct_neg_cases,
+        'overall_pct_und_cases': pct_und_cases,
+        # All of the to-date testing numbers to include in the dashboard
+        'todays_date': todays_date,
+        'today_num_tot_cases': tod_tot_cases,
+        'today_num_pos_cases': tod_num_cases['Positive'],
+        'today_num_neg_cases': tod_num_cases['Negative'],
+        'today_num_und_cases': tod_num_cases['Undetermined'],
+        'today_pct_pos_cases': tod_pct_pos_cases,
+        'today_pct_neg_cases': tod_pct_neg_cases,
+        'today_pct_und_cases': tod_pct_und_cases
+    }
+    return(dashboard_information)
+
+
+def plot_trend_chart(cases):
+    if not cases:
+        return None, None
+
+    # Reformat data for bokeh plotting
+    result_summary = pd.DataFrame(cases)
+    result_summary.columns = ['sampling_date', 'final_results']
+    result_summary = result_summary.groupby('sampling_date').apply(lambda r: r['final_results'].value_counts())
+
+    # If you only have a single entry in the database, you don't need to reset the index and pivot
+    if result_summary.shape[0] > 1:
+        result_summary = result_summary.reset_index().pivot(index='sampling_date', columns='level_1', values='final_results')
+    result_summary.fillna(0, inplace=True)
+
+    result_summary.index = result_summary.index.astype('datetime64[ns]')
+    result_summary[['Undetermined', 'Positive', 'Negative']] = result_summary[['Undetermined', 'Positive', 'Negative']].astype(int)
+
+    # Limit default view to 1 month prior to today
+    start_date = max([min(result_summary.index), date.today() - timedelta(days=30)])
+    start_date = np.datetime64(start_date)
+    end_date = np.datetime64(date.today())
+
+    # Create bokeh figure
+    x_range = Range1d(start_date, end_date, bounds=(None, end_date))
+    y_range = Range1d(0, result_summary.sum(axis=0).max())
+    p = figure(x_axis_type="datetime", tools="xpan, reset, save", x_range=(start_date, end_date), y_range=y_range)
+
+    hover_tool = HoverTool(
+        tooltips=[("Date", "@sampling_date{%F}"),
+                  ("Undetermined", "@Undetermined"),
+                  ("Positive", "@Positive"),
+                  ("Negative", "@Negative")],
+        formatters={"@sampling_date": "datetime"}
+    )
+
+    p.add_tools(hover_tool)
+
+    # Plot the information
+    # https://stackoverflow.com/questions/45711567/categorical-y-axis-and-datetime-x-axis-with-bokeh-vbar-plot
+    status_order = ['Undetermined', 'Positive', 'Negative']
+    status_colors = ['gray', 'red', 'green']
+    bar_width = timedelta(days=1).total_seconds() * 1000 * 0.9
+    p.vbar_stack(status_order, x='sampling_date', color=status_colors, fill_alpha=0.2, line_alpha=0.2, width=bar_width, legend_label=status_order, source=result_summary)
+
+    # Style plot
+    p.sizing_mode = 'stretch_both'
+    p.outline_line_color = None
+    p.toolbar.logo = None
+    p.toolbar.autohide = False
+    p.ygrid.grid_line_color = None
+
+    p.legend.location = "top_left"
+    p.legend.title = "Case Status"
+    p.legend.title_text_font_style = "bold"
+    p.legend.title_text_font_size = "20px"
+
+    p.xaxis.axis_label = "Date"
+    p.xaxis.axis_label_text_font_style = "bold"
+    p.xaxis.axis_label_text_font_size = "16px"
+
+    p.yaxis.axis_label = "Samples Tested Per Day"
+    p.yaxis.axis_label_text_font_style = "bold"
+    p.yaxis.axis_label_text_font_size = "16px"
+    p.yaxis.minor_tick_line_color = None
+    p.yaxis.ticker = AdaptiveTicker(min_interval=1)
+    p.yaxis
+
+    # RangeTool
+    p_select = figure(title="Drag the the selection box to change the date range.",
+                      y_range=p.y_range, y_axis_type=None, x_axis_type="datetime")
+
+    range_tool = RangeTool(x_range=p.x_range)
+    range_tool.overlay.fill_color = "navy"
+    range_tool.overlay.fill_alpha = 0.2
+
+    p_select.vbar_stack(status_order, x='sampling_date', color=status_colors, fill_alpha=0.2, line_alpha=0.2, width=bar_width, source=result_summary)
+    p_select.yaxis.axis_label = ""
+
+    p_select.sizing_mode = 'stretch_both'
+    p_select.outline_line_color = None
+    p_select.toolbar.logo = None
+    p_select.ygrid.grid_line_color = None
+    p_select.add_tools(range_tool)
+    p_select.toolbar.active_multi = range_tool
+
+    return components([p, p_select])
 
 
 def sample_counter_display():
@@ -89,8 +257,8 @@ def sample_counter_display():
     unproc_samples = test_results.objects.filter(~Q(barcode=''), sampling_date__gte=time_thresh, sep_id='').count()
 
     # General results tabulation
-    final_results = list(test_results.objects.values_list('final_results',flat=True))
-    num_positives, num_negatives, num_undetermined = 0,0,0
+    final_results = list(test_results.objects.values_list('final_results', flat=True))
+    num_positives, num_negatives, num_undetermined = 0, 0, 0
     for result in final_results:
         if result == 'Positive':
             num_positives += 1
@@ -109,11 +277,11 @@ def sample_counter_display():
         'q_recorded': q_recorded,
         'q_processed': q_processed,
         'data_cleared': data_cleared,
-        'num_samples': len(final_results), # total number of samples present
-        'num_positives':num_positives,'num_negatives':num_negatives,'num_undetermined':num_undetermined,
-        'p_positive':round(num_positives/len(final_results)*100,2) if len(final_results) > 0 else 0,
-        'p_negative':round(num_negatives/len(final_results)*100,2) if len(final_results) > 0 else 0,
-        'p_undetermined':round(num_undetermined/len(final_results)*100,2) if len(final_results) > 0 else 0,
+        'num_samples': len(final_results),  # total number of samples present
+        'num_positives': num_positives, 'num_negatives': num_negatives, 'num_undetermined': num_undetermined,
+        'p_positive': round(num_positives/len(final_results)*100, 2) if len(final_results) > 0 else 0,
+        'p_negative': round(num_negatives/len(final_results)*100, 2) if len(final_results) > 0 else 0,
+        'p_undetermined': round(num_undetermined/len(final_results)*100, 2) if len(final_results) > 0 else 0,
     }
     return counter_information
 
@@ -692,7 +860,6 @@ def discard_storage_bag(request):
             for entry in q:
                 entry.sample_bag_is_stored = 'False'
             test_results.objects.bulk_update(q, ['sample_bag_is_stored'])
-
 
             messages.success(request, mark_safe(f'Bag status updated.'))
             return redirect('index')
