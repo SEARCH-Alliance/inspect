@@ -19,8 +19,8 @@ import numpy as np
 import pandas as pd
 # plotting
 from bokeh.plotting import figure, output_file, show
-from bokeh.models import RangeTool
-from bokeh.models.tools import HoverTool
+from bokeh.models import RangeTool, LinearAxis
+from bokeh.models.tools import HoverTool, ResetTool, BoxZoomTool, ZoomInTool, ZoomOutTool
 from bokeh.embed import components
 from bokeh.models import DateRangeSlider, BoxAnnotation, Range1d
 from bokeh.models.tickers import AdaptiveTicker
@@ -56,12 +56,12 @@ def get_dashboard_data():
     num_tot_cases = len(all_cases)
 
     # Determine the number of each case type we've tested
-    num_cases = {'Positive': 0, 'Negative': 0, 'Undetermined': 0}
+    num_cases = {'Positive': 0, 'Negative': 0}
     for result in all_cases:
-        num_cases[result] += 1
+        if result in num_cases.keys():
+            num_cases[result] += 1
     pct_pos_cases = round(float(num_cases['Positive'])/num_tot_cases * 100, 2) if num_tot_cases > 0 else 0
     pct_neg_cases = round(float(num_cases['Negative'])/num_tot_cases * 100, 2) if num_tot_cases > 0 else 0
-    pct_und_cases = round(float(num_cases['Undetermined'])/num_tot_cases * 100, 2) if num_tot_cases > 0 else 0
 
     # Gather just the results from the cases we've extracted so far
     todays_date = date.today()
@@ -70,12 +70,12 @@ def get_dashboard_data():
     tod_tot_cases = len(todays_cases)
 
     # Determine the number of each case type we've tested
-    tod_num_cases = {'Positive': 0, 'Negative': 0, 'Undetermined': 0}
+    tod_num_cases = {'Positive': 0, 'Negative': 0}
     for result in todays_cases:
-        tod_num_cases[result] += 1
+        if result in tod_num_cases.keys():
+            tod_num_cases[result] += 1
     tod_pct_pos_cases = round(float(tod_num_cases['Positive'])/tod_tot_cases * 100, 2) if tod_tot_cases > 0 else 0
     tod_pct_neg_cases = round(float(tod_num_cases['Negative'])/tod_tot_cases * 100, 2) if tod_tot_cases > 0 else 0
-    tod_pct_und_cases = round(float(tod_num_cases['Undetermined'])/tod_tot_cases * 100, 2) if tod_tot_cases > 0 else 0
 
     # Parse the sampling data for the Bokeh dashboard by summing the
     # number of positive, negative or undetermined samples per date
@@ -84,27 +84,22 @@ def get_dashboard_data():
     # Compile all of our values before returning them for HTML input
     dashboard_information = {
         'plots_script': plots_script,
-        'main_plot': plot_divs[0],
-        'select_plot': plot_divs[1],
+        'main_plot': plot_divs,
         # All of the overall testing numbers to include in the dashboard
         'overall_num_tot_cases': num_tot_cases,
         'overall_num_pos_cases': num_cases['Positive'],
         'overall_num_neg_cases': num_cases['Negative'],
-        'overall_num_und_cases': num_cases['Undetermined'],
         'overall_pct_pos_cases': pct_pos_cases,
         'overall_pct_neg_cases': pct_neg_cases,
-        'overall_pct_und_cases': pct_und_cases,
         # All of the to-date testing numbers to include in the dashboard
         'todays_date': todays_date,
         'today_num_tot_cases': tod_tot_cases,
         'today_num_pos_cases': tod_num_cases['Positive'],
         'today_num_neg_cases': tod_num_cases['Negative'],
-        'today_num_und_cases': tod_num_cases['Undetermined'],
         'today_pct_pos_cases': tod_pct_pos_cases,
         'today_pct_neg_cases': tod_pct_neg_cases,
-        'today_pct_und_cases': tod_pct_und_cases
     }
-    return(dashboard_information)
+    return dashboard_information
 
 
 def plot_trend_chart(cases):
@@ -122,7 +117,8 @@ def plot_trend_chart(cases):
     result_summary.fillna(0, inplace=True)
 
     result_summary.index = result_summary.index.astype('datetime64[ns]')
-    result_summary[['Undetermined', 'Positive', 'Negative']] = result_summary[['Undetermined', 'Positive', 'Negative']].astype(int)
+    result_summary[['Positive', 'Negative']] = result_summary[['Positive', 'Negative']].astype(int)
+    result_summary['Infection Rate'] = result_summary['Positive'].div(result_summary[['Positive', 'Negative']].sum(axis=1)).fillna(0)
 
     # Limit default view to 1 month prior to today
     start_date = max([min(result_summary.index), date.today() - timedelta(days=30)])
@@ -130,28 +126,34 @@ def plot_trend_chart(cases):
     end_date = np.datetime64(date.today())
 
     # Create bokeh figure
-    x_range = Range1d(start_date, end_date, bounds=(None, end_date))
-    y_range = Range1d(0, result_summary.sum(axis=0).max())
+    y_range = Range1d(0, result_summary['Negative'].max())
     p = figure(x_axis_type="datetime", tools="xpan, reset, save", x_range=(start_date, end_date), y_range=y_range)
 
     hover_tool = HoverTool(
         tooltips=[("Date", "@sampling_date{%F}"),
-                  ("Undetermined", "@Undetermined"),
                   ("Positive", "@Positive"),
                   ("Negative", "@Negative")],
         formatters={"@sampling_date": "datetime"}
     )
 
-    p.add_tools(hover_tool)
+    p.add_tools(hover_tool, BoxZoomTool(), ZoomInTool(), ZoomOutTool())
 
     # Plot the information
     # https://stackoverflow.com/questions/45711567/categorical-y-axis-and-datetime-x-axis-with-bokeh-vbar-plot
-    status_order = ['Undetermined', 'Positive', 'Negative']
-    status_colors = ['gray', 'red', 'green']
+    status_order = ['Positive', 'Negative']
+    status_colors = ['red', 'green']
     bar_width = timedelta(days=1).total_seconds() * 1000 * 0.9
-    p.vbar_stack(status_order, x='sampling_date', color=status_colors, fill_alpha=0.2, line_alpha=0.2, width=bar_width, legend_label=status_order, source=result_summary)
+    p.vbar_stack(status_order, x='sampling_date', color=status_colors, fill_alpha=0.7, line_alpha=0.7, width=bar_width,
+                 legend_label=status_order, source=result_summary)
+    p.yaxis.axis_label = "Samples Tested Per Day"
+    p.yaxis.ticker = AdaptiveTicker(min_interval=1)
+
+    p.extra_y_ranges = {"InfectionRate": Range1d(start=0, end=result_summary['Infection Rate'].max())}
+    p.line(x='sampling_date', y='Infection Rate', source=result_summary, line_width=2, y_range_name='InfectionRate')
+    p.add_layout(LinearAxis(y_range_name="InfectionRate", axis_label="Infection Rate"), 'right')
 
     # Style plot
+    p.toolbar_location = "above"
     p.sizing_mode = 'stretch_both'
     p.outline_line_color = None
     p.toolbar.logo = None
@@ -167,32 +169,11 @@ def plot_trend_chart(cases):
     p.xaxis.axis_label_text_font_style = "bold"
     p.xaxis.axis_label_text_font_size = "16px"
 
-    p.yaxis.axis_label = "Samples Tested Per Day"
     p.yaxis.axis_label_text_font_style = "bold"
     p.yaxis.axis_label_text_font_size = "16px"
     p.yaxis.minor_tick_line_color = None
-    p.yaxis.ticker = AdaptiveTicker(min_interval=1)
-    p.yaxis
 
-    # RangeTool
-    p_select = figure(title="Drag the the selection box to change the date range.",
-                      y_range=p.y_range, y_axis_type=None, x_axis_type="datetime")
-
-    range_tool = RangeTool(x_range=p.x_range)
-    range_tool.overlay.fill_color = "navy"
-    range_tool.overlay.fill_alpha = 0.2
-
-    p_select.vbar_stack(status_order, x='sampling_date', color=status_colors, fill_alpha=0.2, line_alpha=0.2, width=bar_width, source=result_summary)
-    p_select.yaxis.axis_label = ""
-
-    p_select.sizing_mode = 'stretch_both'
-    p_select.outline_line_color = None
-    p_select.toolbar.logo = None
-    p_select.ygrid.grid_line_color = None
-    p_select.add_tools(range_tool)
-    p_select.toolbar.active_multi = range_tool
-
-    return components([p, p_select])
+    return components([p])
 
 
 def sample_counter_display():

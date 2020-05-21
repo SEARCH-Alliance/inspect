@@ -21,3 +21,5 @@ htmlcov/
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 all_results.csv
+webcam_barcode_scanner.py
+useful_links.txt

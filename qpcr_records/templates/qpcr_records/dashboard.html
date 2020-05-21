@@ -32,16 +32,6 @@
             </div>
         </div>
     </div>
-    <div class="col-sm-3 p-3">
-        <div class="card shadow border-0">
-            <div class="card-body">
-                <h5 class="text-secondary card-title">Total Undetermined Cases</h5>
-                <h2 class="font-weight-lighter card-text">{{ summary_data.overall_num_und_cases }}
-                    <small class="text-muted">({{ summary_data.overall_pct_und_cases }})%</small>
-                </h2>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Daily Cases -->
@@ -76,34 +66,18 @@
             </div>
         </div>
     </div>
-    <div class="col-sm-3 p-3">
-        <div class="card shadow border-0">
-            <div class="card-body">
-                <h5 class="text-secondary card-title">Daily Undetermined Cases</h5>
-                <h2 class="font-weight-lighter card-text">{{ summary_data.today_num_und_cases }}
-                    <small class="text-muted">({{ summary_data.today_pct_und_cases }})%</small>
-                </h2>
-            </div>
-        </div>
-    </div>
 </div>
 
 <div class="row mx-3 p-3">
     <div class="card shadow border-0 col-12 px-0">
-        <div class="card-body">
             <h5 class="card-title">Daily Summary</h5>
             <div style="height: 400px;">
                 {{ summary_data.main_plot | safe }}
+                <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-2.0.1.min.js"></script>
+                {{ summary_data.plots_script | safe }}
             </div>
-            <div style="height: 150px;">
-                {{ summary_data.select_plot | safe }}
-            </div>
-        </div>
     </div>
 </div>
-<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-2.0.1.min.js"></script>
-
-{{ summary_data.plots_script | safe }}
 
 <script>
 function iniframe() {
