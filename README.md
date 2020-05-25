@@ -2,7 +2,7 @@
 
 # INSPECT app
 A specimen to results data tracking tool for SEARCH SARS-CoV-2 tests. The application is used by technicians to track testing samples as they are plated, reformatted, and finally tested by storing specimen and plate barcode information. The app is currently hosted here:
-http://inspect-covid.com/accounts/login/?next=/qpcr_records/
+http://inspect-covid.com/qpcr_records/
 
 # How it works
 INSPECT app is a web-based application written in the django framework.
