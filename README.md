@@ -12,8 +12,8 @@ INSPECT app is a web-based application written in the django framework.
 | ------------- |:-------------:
 | asgiref        | 3.2.7
 | bokeh    | 2.0.2 (required if you want to display a dashboard counter)
-| boto3      | 1.13.6 (required if you want to store back files on AWS S3)
-| botocore      | 1.16.6
+| boto3      | 1.13.6 (required if you want to store backup files on AWS S3)
+| botocore      | 1.16.6 (required if you want to store backup files on AWS S3)
 | coverage      | 5.1
 | Django      | 3.0.5
 | django-crispy-forms      | 1.9.0
@@ -71,4 +71,4 @@ python manage.py runserver
 ```
 
 ## Coming Soon
-Docker image for standalong instance of INSPECT tracking system
+Docker image for standalone instance of INSPECT tracking system
