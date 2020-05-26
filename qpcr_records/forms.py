@@ -13,6 +13,7 @@ result_choices = [('', ''), ('Undetermined', 'Undetermined'), ('Inconclusive', '
                   ('Negative', 'Negative'), ('Invalid', 'Invalid')]
 
 
+# SEARCH FIELDS
 class SearchForm(forms.Form):
     barcode = forms.CharField(max_length=30, label='Sample Barcode', required=False, initial='')
     sampling_date = forms.DateField(help_text='(MM/DD/YYYY)', required=False, initial='',
@@ -38,6 +39,9 @@ class SearchForm(forms.Form):
         return cleaned_data
 
 
+# FORM TO CAPTURE RNA EXTRACTION PLATE IDs WHEN MERGING PLATES INTO A SINGLE RNA WORKING PLATE
+# Needs valid and existing rna extraction plate IDs
+# All entered rna extraction palte IDs will be linked to a single rna extraction plate ID using this form
 class ArrayingForm(forms.Form):
     epm_id = forms.CharField(max_length=15, label='EpMotion ID', help_text="Enter EpMotion ID")
     barcode1 = forms.CharField(max_length=30, label='First 96-Well Plate in Array Position B2', required=True)
@@ -82,6 +86,7 @@ class ArrayingForm(forms.Form):
         return rwp_id
 
 
+# FORM TO UPLOAD FILE CONTAINING EXPECTED BARCODES
 class BarcodesUploadForm(forms.Form):
     barcodes_file = forms.FileField(required=True)
 
@@ -95,6 +100,7 @@ class BarcodesUploadForm(forms.Form):
         return barcodes_file
 
 
+# FORM TO CHOOSE QPCR PLATE FOR WHICH RESULTS FILE WILL BE UPLOADED
 class QPCRResultsUploadForm(forms.Form):
     qpcr_results_file = forms.FileField(required=True)
 

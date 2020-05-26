@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import test_results, personnel_list
+from .models import test_results
 
 
 class test_overlapAdmin(admin.ModelAdmin):
@@ -13,9 +13,4 @@ class test_overlapAdmin(admin.ModelAdmin):
                     'qpcr_results_file', 'eds_results_csv', 'file_transfer_status', 'sample_release')
 
 
-class personnel_listAdmin(admin.ModelAdmin):
-    list_display = ('technician_name', 'technician_lab', 'technician_institute')
-
-
 admin.site.register(test_results, test_overlapAdmin)
-admin.site.register(personnel_list, personnel_listAdmin)

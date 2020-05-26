@@ -2,16 +2,6 @@ from django.db import models
 from django.forms import ModelForm, HiddenInput, TextInput, CheckboxInput, ValidationError
 import datetime
 import django_tables2 as tables
-from django.utils import timezone
-from django.db.models import Q
-
-
-class personnel_list(models.Model):
-    technician_name = models.CharField(
-        max_length=20, null=False, default='', primary_key=True)
-    technician_lab = models.CharField(max_length=20, null=False, default='')
-    technician_institute = models.CharField(
-        max_length=20, null=False, default='')
 
 
 sample_bag_is_stored_choices = ((True, True), (False, False))
@@ -28,7 +18,7 @@ class test_results(models.Model):
     barcode = models.CharField(max_length=10, null=False, default='')
     fake_name = models.CharField(max_length=60, null=False, default='')
 
-    # ANDERSSON LAB INFORMATION
+    # SAMPLE PLATING LAB INFORMATION
     lrl_id = models.CharField(max_length=15, null=False, default='M6246109105', help_text='Lysis Reagent Lot #')
     ssp_id = models.CharField(max_length=15, null=False, default='', help_text='Sample Storage Plate (SSP)')
     ssp_well = models.CharField(max_length=3, null=False, default='')
@@ -44,7 +34,7 @@ class test_results(models.Model):
     sampling_plate_csv = models.URLField(max_length=300, null=False, default='')
     sample_bag_is_stored = models.BooleanField(default=True, choices=sample_bag_is_stored_choices)
 
-    # KNIGHT LAB INFORMATION
+    # RNA EXTRACTION LAB INFORMATION
     epm_id = models.CharField(max_length=15, null=False, default='', help_text='Enter EpMotion ID')
     rna_extract_kit_id = models.CharField(max_length=20, null=False, default='', help_text='Enter RNA extraction kit lot #')
     megabeads_id = models.CharField(max_length=20, null=False, default='', help_text='Enter Mag-Bind particles CNR Lot #')
@@ -63,9 +53,7 @@ class test_results(models.Model):
     arraying_time = models.TimeField(null=False, default=datetime.datetime.now().strftime("%H:%M:%S"))
     ms2_lot_id = models.CharField(max_length=15, null=False, default='2003001', help_text='Enter MS2 Control Lot #')
 
-    # LAURENT LAB INFORMATION
-    qsp_id = models.CharField(max_length=15, null=False, default='', help_text='Scan or Enter Barcode of qPCR_Storage Plate (QSP)')
-    qsp_well = models.CharField(max_length=3, null=False, default='')
+    # QPCR LAB INFORMATION
     qrp_id = models.CharField(max_length=15, null=False, default='', help_text='Scan or Enter Barcode of qRTPCR Reaction Plate (QRP)')
     qrp_well = models.CharField(max_length=3, null=False, default='')
     probe_mix_id = models.CharField(max_length=15, null=False, default='', help_text='Enter qRTPCR Reaction Probe Mix Lot Number')
@@ -97,9 +85,10 @@ class test_results(models.Model):
     sample_release = models.BooleanField(default=False, choices=sample_release_choices)
 
     class Meta:
-        indexes = [models.Index(fields=['barcode', 'ssp_id', 'sep_id', 'rep_id', 'rsp_id', 'rwp_id', 'qrp_id'])]
+        indexes = [models.Index(fields=['barcode', 'fake_name', 'ssp_id', 'sep_id', 'rep_id', 'rsp_id', 'rwp_id', 'qrp_id'])]
 
 
+# RESULT SEARCH COLUMNS TO DISPLAY
 class SearchResultsTable(tables.Table):
     class Meta:
         model = test_results
@@ -109,6 +98,7 @@ class SearchResultsTable(tables.Table):
                   'final_results', 'qpcr_results_file', 'sample_release')
 
 
+# COLUMNS TO DISPLAY WHEN REVIEWING QPCR RESULTS
 class ReviewTable(tables.Table):
     class Meta:
         model = test_results
@@ -116,6 +106,7 @@ class ReviewTable(tables.Table):
                   'n_ct_value', 'orf1ab_ct_value', 's_ct_value', 'decision_tree_results', 'final_results']
 
 
+# COLUMNS TO DISPLAY WHEN MARKING SAMPLES FOR RELEASE
 class SampleReleaseTable(tables.Table):
     class Meta:
         model = test_results
@@ -123,6 +114,7 @@ class SampleReleaseTable(tables.Table):
         orderable = False
 
 
+# SAMPLE PLATING START FORM
 class LysisReagentLotForm(ModelForm):
     class Meta:
         model = test_results
@@ -130,6 +122,9 @@ class LysisReagentLotForm(ModelForm):
         labels = {'lrl_id': 'Lysis Reagent Lot #', 'personnel2_andersen_lab': 'Assisting Technician Name'}
 
 
+# SAMPLE EXTRACTION FORM TO CAPTURE SAMPLE BARCODE AND PLATE WELL
+# It is assumed that the sample wells in extraction and storage plates will be identical.
+# Sample well in storage plate is automatically set as the value as the well in extraction plate
 class SampleStorageAndExtractionWellForm(ModelForm):
     class Meta:
         model = test_results
@@ -140,6 +135,7 @@ class SampleStorageAndExtractionWellForm(ModelForm):
                    HiddenInput(attrs={'readonly': True}), 'sep_well': HiddenInput(attrs={'readonly': True})}
 
 
+# FORM TO CAPTURE EXTRACTION PLATE ID, STORAGE PLATE ID AND STORAGE BAG ID
 class SampleStorageAndExtractionPlateForm(ModelForm):
     class Meta:
         model = test_results
@@ -166,6 +162,9 @@ class SampleStorageAndExtractionPlateForm(ModelForm):
         return sample_bag_id
 
 
+# FORM TO CAPTURE RNA EXTRACTION PLATE ID
+# Needs a valid and existing sample extraction plate ID.
+# The sample extraction plate ID and rna extraction plate ID will be linked using this form
 class RNAExtractionPlateForm(ModelForm):
     class Meta:
         model = test_results
@@ -193,6 +192,9 @@ class RNAExtractionPlateForm(ModelForm):
         return rep_id
 
 
+# FORM TO CAPTURE QPCR REACTION PLATE ID
+# Needs a valid and existing rna working plate ID.
+# The rna working plate ID and qpcr reaction plate ID will be linked using this form
 class QPCRStorageAndReactionPlateForm(ModelForm):
     class Meta:
         model = test_results
@@ -215,6 +217,7 @@ class QPCRStorageAndReactionPlateForm(ModelForm):
         return qrp_id
 
 
+# FORM TO CHOOSE QPCR PLATE WHEN REVIEWING RESULTS
 class SelectQRPPlateForm(ModelForm):
     class Meta:
         model = test_results
@@ -231,6 +234,7 @@ class SelectQRPPlateForm(ModelForm):
         return qrp_id
 
 
+# FORM TO SELECT BAG ID WHEN DISCARDING SAMPLES IN A BAG
 class SelectBagForm(ModelForm):
     class Meta:
         model = test_results

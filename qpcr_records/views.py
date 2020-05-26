@@ -4,45 +4,54 @@ from django.contrib.auth.decorators import login_required
 from django_tables2 import RequestConfig
 from django_tables2.export.export import TableExport
 from django.forms import model_to_dict
-from django.core.files import File
 from django.contrib import messages
 from django.utils.safestring import mark_safe
+
 # models, tables and forms import
 from qpcr_records.models import *
 from qpcr_records.forms import *
 from qpcr_records.data_processing.results import Results
+
 # miscellaneous imports
 from decouple import config
 from datetime import date, timedelta, datetime
 import boto3
 import numpy as np
 import pandas as pd
+
 # plotting
-from bokeh.plotting import figure, output_file, show
-from bokeh.models import RangeTool, LinearAxis
-from bokeh.models.tools import HoverTool, ResetTool, BoxZoomTool, ZoomInTool, ZoomOutTool
+from bokeh.plotting import figure
+from bokeh.models import LinearAxis
+from bokeh.models.tools import HoverTool, BoxZoomTool, ZoomInTool, ZoomOutTool
 from bokeh.embed import components
-from bokeh.models import DateRangeSlider, BoxAnnotation, Range1d
+from bokeh.models import Range1d
 from bokeh.models.tickers import AdaptiveTicker
-from bokeh.layouts import column
 
+"""
+@login_required implements a check by django for login credentials. Add this tag to every function to enforce checks for
+ user logins. If the check returns False, user will be automatically redirected to the login page
+ Functions/views without this tag will be publicly accessible
+"""
 
-# @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks
-# for user logins. If the check returns False, user will be automatically redirected to the login page
 
 def reset_session(request):
+    """
+    Deletes all session variables. Authentication variables are not reset.
+    This functions will be called each time a user user lands on the home / index view
+    """
     for k in list(request.session.keys()):
         if k not in ['_auth_user_id', '_auth_user_backend', '_auth_user_hash']:
             del request.session[k]
 
 
 def dashboard(request):
+    """
+    Generate summaries for the dashboard. Called each time a user lands on the dahboard page
+    """
     summary_data = get_dashboard_data()
-
     return render(request, 'qpcr_records/dashboard.html', {'summary_data': summary_data})
 
 
-# login not required for viewing the dashboard display page
 def get_dashboard_data():
     """
     Performs queries to show sample information for the overall dashboard public view
@@ -103,6 +112,12 @@ def get_dashboard_data():
 
 
 def plot_trend_chart(cases):
+    """
+    Generate bar and line plots to summarize data. Returns the javascript that can be embedded in web page to display
+    the plots
+    :param cases: django queryset
+    :return componenets(p): embedable javascript for plot 'p'
+    """
     if not cases:
         return None, None
 
@@ -181,11 +196,10 @@ def sample_counter_display():
     Performs queries to determine the number of unprocessed samples, sample extraction plates,
     RNA extraction plates, RNA working plates, running qPCR plates, qPCR plates with results,
     processed qPCR plates, and cleared results. Returns a dictionary with these values.
+        
+    We are calculating the plates from each stage backwards by subtracting the number of plates in the current stage
+    being evaluated timestamp threshold of 48 hours
     """
-
-    # We are calculating the plates from each stage backwards by
-    # subtracting the number of plates in the current stage being evaluated
-    # timestamp threshold
     time_thresh = date.today() - timedelta(days=2)
 
     # Cleared plate counter
