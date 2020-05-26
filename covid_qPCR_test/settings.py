@@ -83,6 +83,8 @@ WSGI_APPLICATION = 'covid_qPCR_test.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
+
+# Setting for database hosted using AWS RDS
 DATABASES = {
       'default': {
           'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -94,6 +96,7 @@ DATABASES = {
       }
 }
 
+# Setting for local database instance
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql_psycopg2',
