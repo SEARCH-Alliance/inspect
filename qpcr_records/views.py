@@ -196,7 +196,7 @@ def sample_counter_display():
     Performs queries to determine the number of unprocessed samples, sample extraction plates,
     RNA extraction plates, RNA working plates, running qPCR plates, qPCR plates with results,
     processed qPCR plates, and cleared results. Returns a dictionary with these values.
-        
+
     We are calculating the plates from each stage backwards by subtracting the number of plates in the current stage
     being evaluated timestamp threshold of 48 hours
     """
