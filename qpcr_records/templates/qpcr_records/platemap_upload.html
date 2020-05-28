@@ -1,12 +1,13 @@
 {% extends 'qpcr_records/base.html' %} {% block content %} {% load crispy_forms_tags %}
 <div class="container">
     <h1 class="display-4">Upload Barcode List</h1>
-    <form class="needs-validation col-4 p-0 my-3" action="/qpcr_records/" method="post" enctype="multipart/form-data" novalidate>
+    <form class="needs-validation col-4 p-0 my-3" action="" method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
         {{ form.platemap_file|as_crispy_field }}
         {{ form.ssp_id|as_crispy_field }}
         {{ form.sep_id|as_crispy_field }}
         {{ form.sample_bag_id|as_crispy_field }}
+        {{ form.personnel2_andersen_lab|as_crispy_field }}
 
         <button type="submit" class="btn btn-primary">Upload</button>
     </form>

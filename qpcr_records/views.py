@@ -299,26 +299,32 @@ def index(request):
 def platemap_upload(request):
     # Show initial form
     if request.method == 'GET':
+        print('Here 1')
         f = PlatemapUploadForm()
         return render(request, 'qpcr_records/platemap_upload.html', {'form': f})
     # Upon form submission, redirect to index if valid
     else:
+        print('Here 2')
         f = PlatemapUploadForm(request.POST, request.FILES)
 
         if f.is_valid():
-            platemap = pd.read_csv(request.FILES['barcodes_file'], index_col=0, names=['barcode'])
+            platemap = pd.read_csv(request.FILES['platemap_file'], index_col=0, names=['barcode'])
+            platemap = platemap.dropna()
 
             # Write barcodes to db
             objs = list()
             for i in platemap.index:
-                entry = test_results(barcode=platemap.loc[i,'barcode'], ssp_id=f.cleaned_data['ssp_id'], ssp_well=i,
-                                     sep_id=f.cleaned_data['sep_id'], sep_well=i, rep_well=i, rsp_well=i,
-                                     sampling_date=date.today().strftime('%Y-%m-%d'),
-                                     sampling_time=datetime.now().strftime("%H:%M:%S"),
-                                     personnel1_andersen_lab=request.user.get_full_name(),
-                                     personnel2_andersen_lab=request.session['personnel2_andersen_lab'].strip(),
-                                     sample_bag_id=f.cleaned_data['sample_bag_id'])
-                objs.append(entry)
+                if i in ['A1','H1']:
+                    continue
+                else:
+                    entry = test_results(barcode=platemap.loc[i,'barcode'], ssp_id=f.cleaned_data['ssp_id'], ssp_well=i,
+                                         sep_id=f.cleaned_data['sep_id'], sep_well=i, rep_well=i, rsp_well=i,
+                                         sampling_date=date.today().strftime('%Y-%m-%d'),
+                                         sampling_time=datetime.now().strftime("%H:%M:%S"),
+                                         personnel1_andersen_lab=request.user.get_full_name(),
+                                         personnel2_andersen_lab=f.cleaned_data['personnel2_andersen_lab'].strip(),
+                                         sample_bag_id=f.cleaned_data['sample_bag_id'])
+                    objs.append(entry)
             test_results.objects.bulk_create(objs)
 
             backup_filename = f.cleaned_data["sep_id"] + '_' + str(date.today().strftime("%y-%m-%d")) + '.csv'
@@ -327,7 +333,7 @@ def platemap_upload(request):
                                 aws_access_key_id=config('aws_access_key_id'),
                                 aws_secret_access_key=config('aws_secret_access_key'))
             s3.Bucket(config('aws_storage_bucket_name')).put_object(Key=backup_filename, Body=df.to_csv())
-            s3_filepath = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + backup_filename
+            s3_filepath = config('aws_bucket_link') + backup_filename
             objs = test_results.objects.filter(sep_id=f.cleaned_data['sep_id']).update(sampling_plate_csv=s3_filepath)
 
             messages.success(request, mark_safe('Barcodes list uploaded successfully.'))
@@ -477,7 +483,7 @@ def sample_plate_capture(request):
                                 aws_access_key_id=config('aws_access_key_id'),
                                 aws_secret_access_key=config('aws_secret_access_key'))
             s3.Bucket(config('aws_storage_bucket_name')).put_object(Key=backup_filename, Body=df.to_csv())
-            s3_filepath = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + backup_filename
+            s3_filepath = config('aws_bucket_link') + backup_filename
             objs = test_results.objects.filter(sep_id=f.cleaned_data['sep_id']).update(sampling_plate_csv=s3_filepath)
 
             messages.success(request, mark_safe(f'{len(l)} samples added successfully.'))
@@ -746,7 +752,7 @@ def upload_qpcr_results(request):
                                 aws_secret_access_key=config('aws_secret_access_key'))
             s3.Bucket(config('aws_storage_bucket_name')).put_object(Key=file.name, Body=file)
 
-            s3_filepath = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + file.name
+            s3_filepath = config('aws_bucket_link') + file.name
             objs = test_results.objects.filter(qrp_id=qrp_id).update(file_transfer_status='Complete')
             objs = test_results.objects.filter(qrp_id=qrp_id).update(qpcr_results_file=s3_filepath)
 
