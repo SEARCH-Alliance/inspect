@@ -86,12 +86,13 @@ class ArrayingForm(forms.Form):
         return rwp_id
 
 
-# FORM TO UPLOAD FILE CONTAINING EXPECTED BARCODES
+# FORM TO UPLOAD PLATEMAP
 class PlatemapUploadForm(forms.Form):
     platemap_file = forms.FileField(required=True)
     ssp_id = forms.CharField(max_length=30, label='Sample Storage Plate ID. Leave blank if no SSP', required=False)
-    sep_id = forms.CharField(max_length=30, label='Sample Extraction Plate ID. Leave blank if no SEP', required=False)
+    sep_id = forms.CharField(max_length=30, label='Sample Extraction Plate ID. Leave blank if no SEP', required=True)
     sample_bag_id = forms.CharField(max_length=30, label='Sample Storage Bag ID. Leave blank if no SSB', required=False)
+    personnel2_andersen_lab = forms.CharField(max_length=25, label='Name of Assisting Technician', required=False)
 
     def clean_platemap_file(self):
         platemap_file = self.cleaned_data['platemap_file']
@@ -104,20 +105,23 @@ class PlatemapUploadForm(forms.Form):
 
     def clean_ssp_id(self):
         ssp_id = self.cleaned_data['ssp_id']
-        if test_results.objects.filter(ssp_id__iexact=ssp_id).exists():
-            raise ValidationError("Sample storage plate ID already exists.", code='invalid')
+        if ssp_id != '':
+            if test_results.objects.filter(ssp_id__iexact=ssp_id).exists():
+                raise ValidationError("Sample storage plate ID already exists.", code='invalid')
         return ssp_id
 
     def clean_sep_id(self):
         sep_id = self.cleaned_data['sep_id']
-        if test_results.objects.filter(sep_id__iexact=sep_id).exists():
-            raise ValidationError("Sample extraction plate ID already exists.", code='invalid')
+        if sep_id != '':
+            if test_results.objects.filter(sep_id__iexact=sep_id).exists():
+                raise ValidationError("Sample extraction plate ID already exists.", code='invalid')
         return sep_id
 
     def clean_sample_bag_id(self):
         sample_bag_id = self.cleaned_data['sample_bag_id']
-        if test_results.objects.filter(sample_bag_id__iexact=sample_bag_id).exists():
-            raise ValidationError("Sample bag ID already exists.", code='invalid')
+        if sample_bag_id != '':
+            if test_results.objects.filter(sample_bag_id__iexact=sample_bag_id).exists():
+                raise ValidationError("Sample bag ID already exists.", code='invalid')
         return sample_bag_id
 
 
