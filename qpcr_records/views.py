@@ -296,28 +296,44 @@ def index(request):
 
 
 @login_required
-def barcode_list_upload(request):
+def platemap_upload(request):
     # Show initial form
     if request.method == 'GET':
-        f = BarcodesUploadForm()
-        return render(request, 'qpcr_records/barcode_list_upload.html', {'form': f})
+        f = PlatemapUploadForm()
+        return render(request, 'qpcr_records/platemap_upload.html', {'form': f})
     # Upon form submission, redirect to index if valid
     else:
-        f = BarcodesUploadForm(request.POST, request.FILES)
+        f = PlatemapUploadForm(request.POST, request.FILES)
 
         if f.is_valid():
-            barcodes = request.FILES['barcodes_file'].read().decode("utf-8").splitlines()
+            platemap = pd.read_csv(request.FILES['barcodes_file'], index_col=0, names=['barcode'])
 
             # Write barcodes to db
             objs = list()
-            for b in barcodes:
-                objs.append(test_results(barcode=b, sampling_date=date.today().strftime('%Y-%m-%d')))
+            for i in platemap.index:
+                entry = test_results(barcode=platemap.loc[i,'barcode'], ssp_id=f.cleaned_data['ssp_id'], ssp_well=i,
+                                     sep_id=f.cleaned_data['sep_id'], sep_well=i, rep_well=i, rsp_well=i,
+                                     sampling_date=date.today().strftime('%Y-%m-%d'),
+                                     sampling_time=datetime.now().strftime("%H:%M:%S"),
+                                     personnel1_andersen_lab=request.user.get_full_name(),
+                                     personnel2_andersen_lab=request.session['personnel2_andersen_lab'].strip(),
+                                     sample_bag_id=f.cleaned_data['sample_bag_id'])
+                objs.append(entry)
             test_results.objects.bulk_create(objs)
+
+            backup_filename = f.cleaned_data["sep_id"] + '_' + str(date.today().strftime("%y-%m-%d")) + '.csv'
+            df = pd.DataFrame([model_to_dict(entry) for entry in objs])
+            s3 = boto3.resource('s3', region_name=config('aws_s3_region_name'),
+                                aws_access_key_id=config('aws_access_key_id'),
+                                aws_secret_access_key=config('aws_secret_access_key'))
+            s3.Bucket(config('aws_storage_bucket_name')).put_object(Key=backup_filename, Body=df.to_csv())
+            s3_filepath = 'https://covidtest2.s3-us-west-2.amazonaws.com/' + backup_filename
+            objs = test_results.objects.filter(sep_id=f.cleaned_data['sep_id']).update(sampling_plate_csv=s3_filepath)
 
             messages.success(request, mark_safe('Barcodes list uploaded successfully.'))
             return redirect('index')
         else:  # Show form again with user data and errors
-            return render(request, 'qpcr_records/barcode_list_upload.html', {'form': f})
+            return render(request, 'qpcr_records/platemap_upload.html', {'form': f})
 
 
 @login_required

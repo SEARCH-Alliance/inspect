@@ -87,17 +87,38 @@ class ArrayingForm(forms.Form):
 
 
 # FORM TO UPLOAD FILE CONTAINING EXPECTED BARCODES
-class BarcodesUploadForm(forms.Form):
-    barcodes_file = forms.FileField(required=True)
+class PlatemapUploadForm(forms.Form):
+    platemap_file = forms.FileField(required=True)
+    ssp_id = forms.CharField(max_length=30, label='Sample Storage Plate ID. Leave blank if no SSP', required=False)
+    sep_id = forms.CharField(max_length=30, label='Sample Extraction Plate ID. Leave blank if no SEP', required=False)
+    sample_bag_id = forms.CharField(max_length=30, label='Sample Storage Bag ID. Leave blank if no SSB', required=False)
 
-    def clean_barcodes_file(self):
-        barcodes_file = self.cleaned_data['barcodes_file']
+    def clean_platemap_file(self):
+        platemap_file = self.cleaned_data['platemap_file']
 
         # TODO validations
         # if not test_results.objects.filter(?).exists():
         #     raise ValidationError(f'File not uploaded. {barcodes_file.name}' ??, code="invalid")
 
-        return barcodes_file
+        return platemap_file
+
+    def clean_ssp_id(self):
+        ssp_id = self.cleaned_data['ssp_id']
+        if test_results.objects.filter(ssp_id__iexact=ssp_id).exists():
+            raise ValidationError("Sample storage plate ID already exists.", code='invalid')
+        return ssp_id
+
+    def clean_sep_id(self):
+        sep_id = self.cleaned_data['sep_id']
+        if test_results.objects.filter(sep_id__iexact=sep_id).exists():
+            raise ValidationError("Sample extraction plate ID already exists.", code='invalid')
+        return sep_id
+
+    def clean_sample_bag_id(self):
+        sample_bag_id = self.cleaned_data['sample_bag_id']
+        if test_results.objects.filter(sample_bag_id__iexact=sample_bag_id).exists():
+            raise ValidationError("Sample bag ID already exists.", code='invalid')
+        return sample_bag_id
 
 
 # FORM TO CHOOSE QPCR PLATE FOR WHICH RESULTS FILE WILL BE UPLOADED
