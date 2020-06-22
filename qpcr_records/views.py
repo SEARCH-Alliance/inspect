@@ -117,7 +117,7 @@ def plot_trend_chart(symptoms):
     data.columns=['Symptoms', 'Count']
     data['angle'] = data['Count'] / data['Count'].sum() * 2 * pi
     data['color'] = Category20c[len(symptoms)]
-    print(data)
+    data = data.sort_values('Count', ascending=False)
 
     p1 = figure(plot_height=400, title='Observed Symptoms', toolbar_location=None, tools="hover",
                 tooltips="@Symptoms: @Count", x_range=(-0.5, 1.0))
