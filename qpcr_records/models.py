@@ -83,6 +83,7 @@ class test_results(models.Model):
     file_transfer_status = models.CharField(max_length=15, null=False, default='Not Complete',
                                             choices=file_transfer_status_choices)
     sample_release = models.BooleanField(default=False, choices=sample_release_choices)
+    project = models.CharField(max_length=50, null=False, default='')
 
     class Meta:
         indexes = [models.Index(fields=['barcode', 'fake_name', 'ssp_id', 'sep_id', 'rep_id', 'rsp_id', 'rwp_id', 'qrp_id'])]

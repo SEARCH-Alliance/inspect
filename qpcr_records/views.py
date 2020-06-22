@@ -16,16 +16,19 @@ from qpcr_records.data_processing.results import Results
 from decouple import config
 from datetime import date, timedelta, datetime
 import boto3
-import numpy as np
+from math import pi
 import pandas as pd
 
 # plotting
 from bokeh.plotting import figure
-from bokeh.models import LinearAxis
-from bokeh.models.tools import HoverTool, BoxZoomTool, ZoomInTool, ZoomOutTool
+from bokeh.models import LinearAxis, ColumnDataSource
+from bokeh.models.tools import HoverTool, ZoomInTool, ZoomOutTool
 from bokeh.embed import components
 from bokeh.models import Range1d
 from bokeh.models.tickers import AdaptiveTicker
+from bokeh.palettes import Category20c
+from bokeh.transform import cumsum
+from bokeh.layouts import row
 
 """
 @login_required implements a check by django for login credentials. Add this tag to every function to enforce checks for
@@ -49,6 +52,7 @@ def dashboard(request):
     Generate summaries for the dashboard. Called each time a user lands on the dahboard page
     """
     summary_data = get_dashboard_data()
+    print(summary_data.keys())
     return render(request, 'qpcr_records/dashboard.html', {'summary_data': summary_data})
 
 
@@ -56,120 +60,121 @@ def get_dashboard_data():
     """
     Performs queries to show sample information for the overall dashboard public view
     """
+    rchsd = pd.read_csv('qpcr_records/aggregates/data-aggr_sngl_spec_pr_sub-20200618-rchsd.csv')
+    scripps = pd.read_csv('qpcr_records/aggregates/data-aggr_sngl_spec_pr_sub-20200618-scripps.csv')
+
+    symptoms = dict()
+    for i, j in zip(['symp_chills_yn', 'symp_cough_yn', 'symp_diarrhea_yn', 'symp_fatigue_yn', 'symp_fever_yn',
+                     'symp_myalgia_yn', 'symp_nausea_yn', 'symp_rash_yn', 'symp_runny_nose_yn', 'symp_sob_yn',
+                     'symp_sore_throat_yn', 'symp_stuffy_nose_yn', 'symp_trbl_breathing_yn', 'symp_vomit_yn'],
+                    ['Chills', 'Cough', 'Diarrhea', 'Fatigue', 'Fever', 'Myalgia', 'Nausea', 'Rash', 'Runny Nose',
+                     'Sob', 'Sore Throat', 'Stuffy Nose', 'Trouble Breathing', 'Vomiting']):
+        symptoms[j] = rchsd[i] + scripps[i + '_scrp']
+    # ['plots_script', 'main_plot', 'overall_num_tot_cases', 'overall_num_pos_cases', 'overall_num_neg_cases',
+    # 'overall_pct_pos_cases', 'overall_pct_neg_cases', 'todays_date', 'today_num_tot_cases', 'today_num_pos_cases',
+    # 'today_num_neg_cases', 'today_pct_pos_cases', 'today_pct_neg_cases']
+
     # Gather the results of all the cases we've extracted so far along with when they were sampled
-    obj = test_results.objects.all()
-    all_cases_with_date = list(obj.values_list('sampling_date', 'final_results'))
+    plots_script, plot_divs = plot_trend_chart(symptoms)
 
-    # Extract just the case result information for overall dashboard
-    all_cases = [e[1] for e in all_cases_with_date]
-    num_tot_cases = len(all_cases)
-
-    # Determine the number of each case type we've tested
-    num_cases = {'Positive': 0, 'Negative': 0}
-    for result in all_cases:
-        if result in num_cases.keys():
-            num_cases[result] += 1
-    pct_pos_cases = round(float(num_cases['Positive'])/num_tot_cases * 100, 2) if num_tot_cases > 0 else 0
-    pct_neg_cases = round(float(num_cases['Negative'])/num_tot_cases * 100, 2) if num_tot_cases > 0 else 0
-
-    # Gather just the results from the cases we've extracted so far
-    todays_date = date.today()
-    todays_cases = list(obj.filter(
-        sampling_date=todays_date).values_list('final_results', flat=True))
-    tod_tot_cases = len(todays_cases)
-
-    # Determine the number of each case type we've tested
-    tod_num_cases = {'Positive': 0, 'Negative': 0}
-    for result in todays_cases:
-        if result in tod_num_cases.keys():
-            tod_num_cases[result] += 1
-    tod_pct_pos_cases = round(float(tod_num_cases['Positive'])/tod_tot_cases * 100, 2) if tod_tot_cases > 0 else 0
-    tod_pct_neg_cases = round(float(tod_num_cases['Negative'])/tod_tot_cases * 100, 2) if tod_tot_cases > 0 else 0
-
-    # Parse the sampling data for the Bokeh dashboard by summing the
-    # number of positive, negative or undetermined samples per date
-    plots_script, plot_divs = plot_trend_chart(all_cases_with_date)
-
-    # Compile all of our values before returning them for HTML input
     dashboard_information = {
         'plots_script': plots_script,
         'main_plot': plot_divs,
         # All of the overall testing numbers to include in the dashboard
-        'overall_num_tot_cases': num_tot_cases,
-        'overall_num_pos_cases': num_cases['Positive'],
-        'overall_num_neg_cases': num_cases['Negative'],
-        'overall_pct_pos_cases': pct_pos_cases,
-        'overall_pct_neg_cases': pct_neg_cases,
-        # All of the to-date testing numbers to include in the dashboard
-        'todays_date': todays_date,
-        'today_num_tot_cases': tod_tot_cases,
-        'today_num_pos_cases': tod_num_cases['Positive'],
-        'today_num_neg_cases': tod_num_cases['Negative'],
-        'today_pct_pos_cases': tod_pct_pos_cases,
-        'today_pct_neg_cases': tod_pct_neg_cases,
+        'overall_num_tot_cases': rchsd.loc[0, 'subj_count'] + scripps.loc[0, 'subj_count'],
+        'overall_num_pos_cases': rchsd.loc[0, 'pos_count'] + scripps.loc[0, 'pos_count'],
+        'overall_num_neg_cases': rchsd.loc[0, 'neg_count'] + scripps.loc[0, 'neg_count'],
+        'overall_pct_pos_cases': round((rchsd.loc[0, 'pos_count'] + scripps.loc[0, 'pos_count']) /
+                                       (rchsd.loc[0, 'subj_count'] + scripps.loc[0, 'subj_count']) * 100, 4),
+        'overall_pct_neg_cases': round((rchsd.loc[0, 'neg_count'] + scripps.loc[0, 'neg_count']) /
+                                       (rchsd.loc[0, 'subj_count'] + scripps.loc[0, 'subj_count']) * 100, 4),
+        # Numbers by Testing Sites
+        'rchsd_num_tot_cases': rchsd.loc[0, 'subj_count'],
+        'rchsd_num_pos_cases': rchsd.loc[0, 'pos_count'],
+        'rchsd_pct_pos_cases': round(rchsd.loc[0, 'pos_count'] / rchsd.loc[0, 'subj_count'] * 100, 4),
+        'rchsd_num_neg_cases': rchsd.loc[0, 'neg_count'],
+        'rchsd_pct_neg_cases': round(rchsd.loc[0, 'neg_count'] / rchsd.loc[0, 'subj_count'] * 100, 4),
+
+        'scripps_num_tot_cases': scripps.loc[0, 'subj_count'],
+        'scripps_num_pos_cases': scripps.loc[0, 'pos_count'],
+        'scripps_pct_pos_cases': round(scripps.loc[0, 'pos_count'] / scripps.loc[0, 'subj_count'] * 100, 4),
+        'scripps_num_neg_cases': scripps.loc[0, 'neg_count'],
+        'scripps_pct_neg_cases': round(scripps.loc[0, 'neg_count'] / scripps.loc[0, 'subj_count'] * 100, 4),
     }
     return dashboard_information
 
 
-def plot_trend_chart(cases):
+def plot_trend_chart(symptoms):
     """
     Generate bar and line plots to summarize data. Returns the javascript that can be embedded in web page to display
     the plots
     :param cases: django queryset
     :return componenets(p): embedable javascript for plot 'p'
     """
-    if not cases:
-        return None, None
+    # PIE CHART
+    data = pd.DataFrame.from_dict(symptoms, orient='index')
+    data = data.reset_index()
+    data.columns=['Symptoms', 'Count']
+    data['angle'] = data['Count'] / data['Count'].sum() * 2 * pi
+    data['color'] = Category20c[len(symptoms)]
+    print(data)
+
+    p1 = figure(plot_height=400, title='Observed Symptoms', toolbar_location=None, tools="hover",
+                tooltips="@Symptoms: @Count", x_range=(-0.5, 1.0))
+    p1.wedge(x=0, y=1, radius=0.4, start_angle=cumsum('angle', include_zero=True), end_angle=cumsum('angle'),
+             line_color="white", fill_color='color', legend_field='Symptoms', source=data)
+    p1.axis.axis_label = None
+    p1.axis.visible = False
+    p1.grid.grid_line_color = None
+    p1.toolbar.autohide = True
+    p1.sizing_mode = 'stretch_height'
+
+    # CASE TREND PLOT
+    obj = test_results.objects.filter(project='Radys')
+    obj = obj.exclude(barcode__contains='.')
+    result_summary = pd.DataFrame(
+        obj.exclude(barcode__contains='-').values_list('sampling_date', 'final_results', 'project'))
 
     # Reformat data for bokeh plotting
-    result_summary = pd.DataFrame(cases)
-    result_summary.columns = ['sampling_date', 'final_results']
+    result_summary.columns = ['sampling_date', 'final_results', 'project']
+    result_summary = result_summary[result_summary['project'] == 'Radys']
     result_summary = result_summary.groupby('sampling_date').apply(lambda r: r['final_results'].value_counts())
 
     # If you only have a single entry in the database, you don't need to reset the index and pivot
     if result_summary.shape[0] > 1:
-        result_summary = result_summary.reset_index().pivot(index='sampling_date', columns='level_1', values='final_results')
+        result_summary = result_summary.reset_index().pivot(index='sampling_date', columns='level_1',
+                                                            values='final_results')
+    result_summary = result_summary[['Negative', 'Positive']]
     result_summary.fillna(0, inplace=True)
 
     result_summary.index = result_summary.index.astype('datetime64[ns]')
     result_summary[['Positive', 'Negative']] = result_summary[['Positive', 'Negative']].astype(int)
-    result_summary['Infection Rate'] = result_summary['Positive'].div(result_summary[['Positive', 'Negative']].sum(axis=1)).fillna(0)
+    p = 0
+    n = 0
+    for i, j, k in zip(result_summary.index, result_summary['Negative'], result_summary['Positive']):
+        p = p + k
+        n = n + j
+        result_summary.loc[i, 'Infection Rate'] = ((p / (p + n)) * 100)
 
-    # Limit default view to 1 month prior to today
-    start_date = max([min(result_summary.index), date.today() - timedelta(days=30)])
-    start_date = np.datetime64(start_date)
-    end_date = np.datetime64(date.today())
+    source = ColumnDataSource(data=result_summary.reset_index())
+    p = figure(plot_width=1000, plot_height=400, x_axis_type='datetime')
+    p.varea_stack(['Negative', 'Positive'], x='sampling_date', color=("forestgreen", "firebrick"), source=source)
+    y_range = Range1d(0, result_summary['Negative'].max() + 5)
+    hover_tool = HoverTool(tooltips=[("Date", "@sampling_date{%F}"), ("Positive", "@Positive"),
+                                     ("Negative", "@Negative")], formatters={"@sampling_date": "datetime"})
+    p.add_tools(hover_tool)
 
-    # Create bokeh figure
-    y_range = Range1d(0, result_summary['Negative'].max())
-    p = figure(x_axis_type="datetime", tools="xpan, reset, save", x_range=(start_date, end_date), y_range=y_range)
-
-    hover_tool = HoverTool(
-        tooltips=[("Date", "@sampling_date{%F}"),
-                  ("Positive", "@Positive"),
-                  ("Negative", "@Negative")],
-        formatters={"@sampling_date": "datetime"}
-    )
-
-    p.add_tools(hover_tool, BoxZoomTool(), ZoomInTool(), ZoomOutTool())
-
-    # Plot the information
-    # https://stackoverflow.com/questions/45711567/categorical-y-axis-and-datetime-x-axis-with-bokeh-vbar-plot
-    status_order = ['Positive', 'Negative']
-    status_colors = ['red', 'green']
-    bar_width = timedelta(days=1).total_seconds() * 1000 * 0.9
-    p.vbar_stack(status_order, x='sampling_date', color=status_colors, fill_alpha=0.7, line_alpha=0.7, width=bar_width,
-                 legend_label=status_order, source=result_summary)
     p.yaxis.axis_label = "Samples Tested Per Day"
     p.yaxis.ticker = AdaptiveTicker(min_interval=1)
 
     p.extra_y_ranges = {"InfectionRate": Range1d(start=0, end=result_summary['Infection Rate'].max())}
-    p.line(x='sampling_date', y='Infection Rate', source=result_summary, line_width=2, y_range_name='InfectionRate')
-    p.add_layout(LinearAxis(y_range_name="InfectionRate", axis_label="Infection Rate"), 'right')
+    p.line(x='sampling_date', y='Infection Rate', source=result_summary, color='firebrick', line_width=3,
+           y_range_name='InfectionRate')
+    p.add_layout(LinearAxis(y_range_name="InfectionRate", axis_label="Infection Rate (%)"), 'right')
 
     # Style plot
     p.toolbar_location = "above"
-    p.sizing_mode = 'stretch_both'
+    p.sizing_mode = 'stretch_height'
     p.outline_line_color = None
     p.toolbar.logo = None
     p.toolbar.autohide = False
@@ -188,7 +193,7 @@ def plot_trend_chart(cases):
     p.yaxis.axis_label_text_font_size = "16px"
     p.yaxis.minor_tick_line_color = None
 
-    return components([p])
+    return components(row(p, p1))
 
 
 def sample_counter_display():
@@ -274,9 +279,9 @@ def sample_counter_display():
         'data_cleared': data_cleared,
         'num_samples': len(final_results),  # total number of samples present
         'num_positives': num_positives, 'num_negatives': num_negatives, 'num_undetermined': num_undetermined,
-        'p_positive': round(num_positives/len(final_results)*100, 2) if len(final_results) > 0 else 0,
-        'p_negative': round(num_negatives/len(final_results)*100, 2) if len(final_results) > 0 else 0,
-        'p_undetermined': round(num_undetermined/len(final_results)*100, 2) if len(final_results) > 0 else 0,
+        'p_positive': round(num_positives / len(final_results) * 100, 2) if len(final_results) > 0 else 0,
+        'p_negative': round(num_negatives / len(final_results) * 100, 2) if len(final_results) > 0 else 0,
+        'p_undetermined': round(num_undetermined / len(final_results) * 100, 2) if len(final_results) > 0 else 0,
     }
     return counter_information
 
@@ -299,12 +304,10 @@ def index(request):
 def platemap_upload(request):
     # Show initial form
     if request.method == 'GET':
-        print('Here 1')
         f = PlatemapUploadForm()
         return render(request, 'qpcr_records/platemap_upload.html', {'form': f})
     # Upon form submission, redirect to index if valid
     else:
-        print('Here 2')
         f = PlatemapUploadForm(request.POST, request.FILES)
 
         if f.is_valid():
@@ -314,10 +317,11 @@ def platemap_upload(request):
             # Write barcodes to db
             objs = list()
             for i in platemap.index:
-                if i in ['A1','H1']:
+                if i in ['A1', 'H1']:
                     continue
                 else:
-                    entry = test_results(barcode=platemap.loc[i,'barcode'], ssp_id=f.cleaned_data['ssp_id'], ssp_well=i,
+                    entry = test_results(barcode=platemap.loc[i, 'barcode'], ssp_id=f.cleaned_data['ssp_id'],
+                                         ssp_well=i,
                                          sep_id=f.cleaned_data['sep_id'], sep_well=i, rep_well=i, rsp_well=i,
                                          sampling_date=date.today().strftime('%Y-%m-%d'),
                                          sampling_time=datetime.now().strftime("%H:%M:%S"),
@@ -564,10 +568,10 @@ def rwp_plate_capture(request):
                 for col1, col2 in zip([1, 3, 5, 7, 9, 11], [2, 4, 6, 8, 10, 12]):
                     for row in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
                         d[str(z) + row + str(col1)] = rows_384[row_index] + \
-                            str(cols_384[col_index])
+                                                      str(cols_384[col_index])
                         row_index = row_index + 1
                         d[str(z) + row + str(col2)] = rows_384[row_index] + \
-                            str(cols_384[col_index])
+                                                      str(cols_384[col_index])
                         row_index = row_index + 1
 
                     col_index = col_index + 1
@@ -583,7 +587,8 @@ def rwp_plate_capture(request):
                     for z in test_results.objects.filter(rep_id=b).values_list('sep_well', flat=True):
                         test_results.objects.filter(rep_id=b, sep_well=z).update(rwp_well=d[str(i) + z],
                                                                                  rsp_well=d[str(i) + z],
-                                                                                 arraying_time=datetime.now().strftime("%H:%M:%S"),
+                                                                                 arraying_time=datetime.now().strftime(
+                                                                                     "%H:%M:%S"),
                                                                                  qrp_well=d[str(i) + z])
                     i = i + 1
 
@@ -659,27 +664,21 @@ def search_results(request):
 
         q = ''
         for field, value in request.session['search'].items():
-            print(field)
-            print(value)
-            print(type(value))
             if value == "" or value == 'None':
                 continue
             else:
                 if field == 'barcode':
                     if q == '':
-                        print('1')
                         q = test_results.objects.filter(barcode__iexact=value)
                     else:
                         q = q.filter(barcode__iexact=value)
                 elif field == 'sampling_date':
                     if q == '':
-                        print('2')
                         q = test_results.objects.filter(sampling_date__iexact=value)
                     else:
                         q = q.filter(sampling_date__iexact=value)
                 elif field == 'plate_id':
                     if q == '':
-                        print('3')
                         q = test_results.objects.filter(Q(ssp_id__iexact=value.strip()) |
                                                         Q(sep_id__iexact=value.strip()) |
                                                         Q(rep_id__iexact=value.strip()) |
@@ -693,7 +692,6 @@ def search_results(request):
                             Q(rsp_id__iexact=value.strip()) | Q(qrp_id__iexact=value.strip()))
                 elif field == 'technician':
                     if q == '':
-                        print('4')
                         q = test_results.objects.filter(Q(personnel1_andersen_lab__iexact=value) |
                                                         Q(personnel2_andersen_lab__iexact=value) |
                                                         Q(personnel_knight_lab__iexact=value) |
@@ -705,13 +703,11 @@ def search_results(request):
                                      Q(personnel_laurent_lab__iexact=value))
                 elif field == 'final_results':
                     if q == '':
-                        print('5')
                         q = test_results.objects.filter(final_results__iexact=value.strip())
                     else:
                         q = q.filter(final_results__iexact=value.strip())
                 elif field == 'sample_bag_id':
                     if q == '':
-                        print('6')
                         q = test_results.objects.filter(sample_bag_id__iexact=value)
                     else:
                         q = q.filter(sample_bag_id__iexact=value)
@@ -723,7 +719,6 @@ def search_results(request):
         else:
             # Export query as table
             table = SearchResultsTable(q)
-            print(table)
             RequestConfig(request).configure(table)
             export_format = request.GET.get('_export', None)
             if TableExport.is_valid_format(export_format):
@@ -784,7 +779,6 @@ def upload_qpcr_results(request):
             messages.success(request, mark_safe('qRT-PCR data uploaded successfully.'))
             return redirect('index')
         else:
-            print("Here5")
             return render(request, 'qpcr_records/upload_qpcr_results.html', {'form': f})
 
 
@@ -833,10 +827,10 @@ def review_results(request):
 
 @login_required
 def sample_release(request):
-
     if request.method == 'GET':
         # Query all reviewed positive samples that have NOT been released
-        q = test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True', sample_release__iexact='False')
+        q = test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True',
+                                        sample_release__iexact='False')
         table = SampleReleaseTable(q)
         RequestConfig(request, paginate=False).configure(table)
 
@@ -849,10 +843,10 @@ def sample_release(request):
         form_data = [request.POST[f"release{i}"] for i in range(len(request.POST) - 1)]
         form_data = [True if v == 'true' else v for v in form_data]
         form_data = [False if v == 'false' else v for v in form_data]
-        print(form_data)
 
         # Update query sample_release values
-        q = list(test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True', sample_release__iexact='False'))
+        q = list(test_results.objects.filter(final_results__iexact='Positive', is_reviewed__iexact='True',
+                                             sample_release__iexact='False'))
         for entry, release_value in zip(q, form_data):
             entry.sample_release = release_value
 

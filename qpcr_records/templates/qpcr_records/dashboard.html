@@ -3,15 +3,15 @@
 <!-- Overall Cases -->
 
 <div class="row mx-3">
-    <div class="col-sm-3 p-3">
+    <div class="col-sm-3 p-4">
         <div class="card shadow border-0">
             <div class="card-body">
-                <h5 class="text-primary card-title">Total Cases</h5>
+                <h5 class="text-primary card-title">Total Subjects</h5>
                 <h2 class="font-weight-lighter card-text">{{ summary_data.overall_num_tot_cases }}</h2>
             </div>
         </div>
     </div>
-    <div class="col-sm-3 p-3">
+    <div class="col-sm-3 p-4">
         <div class="card shadow border-0">
             <div class="card-body">
                 <h5 class="text-danger card-title">Total Positive Cases</h5>
@@ -22,7 +22,7 @@
             </div>
         </div>
     </div>
-    <div class="col-sm-3 p-3">
+    <div class="col-sm-3 p-4">
         <div class="card shadow border-0">
             <div class="card-body">
                 <h5 class="text-success card-title">Total Negative Cases</h5>
@@ -34,34 +34,68 @@
     </div>
 </div>
 
-<!-- Daily Cases -->
+<!-- RCHSD Cases -->
 
 <div class="row mx-3">
-    <div class="col-sm-3 p-3">
+    <div class="col-sm-3 p-4">
         <div class="card shadow border-0">
             <div class="card-body">
-                <h5 class="text-primary card-title">Daily Total Cases</h5>
-                <h2 class="font-weight-lighter card-text">{{ summary_data.today_num_tot_cases }}</h2>
+                <h5 class="text-primary card-title">RCHSD Total Subjects</h5>
+                <h2 class="font-weight-lighter card-text">{{ summary_data.rchsd_num_tot_cases }}</h2>
             </div>
         </div>
     </div>
-    <div class="col-sm-3 p-3">
+    <div class="col-sm-3 p-4">
         <div class="card shadow border-0">
             <div class="card-body">
-                <h5 class="text-danger card-title">Daily Positive Cases</h5>
-                <h2 class="font-weight-lighter card-text">{{ summary_data.today_num_pos_cases }}
-                    <small class="text-muted">({{ summary_data.today_pct_pos_cases }})%</small>
+                <h5 class="text-danger card-title">RCHSD Total Positive Cases</h5>
+                <h2 class="font-weight-lighter card-text">{{ summary_data.rchsd_num_pos_cases }}
+                    <small class="text-muted">({{ summary_data.rchsd_pct_pos_cases }})%</small>
                 </h2>
 
             </div>
         </div>
     </div>
-    <div class="col-sm-3 p-3">
+    <div class="col-sm-3 p-4">
         <div class="card shadow border-0">
             <div class="card-body">
-                <h5 class="text-success card-title">Daily Negative Cases</h5>
-                <h2 class="font-weight-lighter card-text">{{ summary_data.today_num_neg_cases }}
-                    <small class="text-muted">({{ summary_data.today_pct_neg_cases }})%</small>
+                <h5 class="text-success card-title">RCHSD Total Negative Cases</h5>
+                <h2 class="font-weight-lighter card-text">{{ summary_data.rchsd_num_neg_cases }}
+                    <small class="text-muted">({{ summary_data.rchsd_pct_neg_cases }})%</small>
+                </h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripps Cases -->
+
+<div class="row mx-3">
+    <div class="col-sm-3 p-4">
+        <div class="card shadow border-0">
+            <div class="card-body">
+                <h5 class="text-primary card-title">Scripps Total Subjects</h5>
+                <h2 class="font-weight-lighter card-text">{{ summary_data.scripps_num_tot_cases }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3 p-4">
+        <div class="card shadow border-0">
+            <div class="card-body">
+                <h5 class="text-danger card-title">Scripps Total Positive Cases</h5>
+                <h2 class="font-weight-lighter card-text">{{ summary_data.scripps_num_pos_cases }}
+                    <small class="text-muted">({{ summary_data.scripps_pct_pos_cases }})%</small>
+                </h2>
+
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3 p-4">
+        <div class="card shadow border-0">
+            <div class="card-body">
+                <h5 class="text-success card-title">Scripps Total Negative Cases</h5>
+                <h2 class="font-weight-lighter card-text">{{ summary_data.scripps_num_neg_cases }}
+                    <small class="text-muted">({{ summary_data.scripps_pct_neg_cases }})%</small>
                 </h2>
             </div>
         </div>
