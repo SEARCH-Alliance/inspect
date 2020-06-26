@@ -174,6 +174,8 @@ def plot_trend_chart(p_symptoms, n_symptoms):
     p1.xaxis.major_label_text_font_size = "16px"
 
     p1.yaxis.axis_label_text_font_size = "18px"
+    p1.yaxis[0].axis_label_text_color = "forestgreen"
+    p1.yaxis[1].axis_label_text_color = "firebrick"
     p1.yaxis.major_label_text_font_size = "16px"
     p1.yaxis.minor_tick_line_color = None
 
