@@ -22,7 +22,7 @@ import pandas as pd
 # plotting
 from bokeh.plotting import figure
 from bokeh.models import LinearAxis, ColumnDataSource
-from bokeh.models.tools import HoverTool, ZoomInTool, ZoomOutTool
+from bokeh.models.tools import HoverTool, PanTool
 from bokeh.embed import components
 from bokeh.models import Range1d
 from bokeh.models.tickers import AdaptiveTicker
@@ -60,26 +60,31 @@ def get_dashboard_data():
     """
     Performs queries to show sample information for the overall dashboard public view
     """
-    rchsd = pd.read_csv('qpcr_records/aggregates/data-aggr_sngl_spec_pr_sub-20200618-rchsd.csv')
-    scripps = pd.read_csv('qpcr_records/aggregates/data-aggr_sngl_spec_pr_sub-20200618-scripps.csv')
+    rchsd = pd.read_csv('qpcr_records/aggregates/data-aggr_sngl_spec_pr_sub-20200624-rchsd.csv')
+    scripps = pd.read_csv('qpcr_records/aggregates/data-aggr_sngl_spec_pr_sub-20200624-scripps.csv')
+    symptoms = pd.read_csv('qpcr_records/aggregates/data-pos_symptom_count-20200624.csv')
 
-    symptoms = dict()
+    pos_symptoms = dict()
+    neg_symptoms = dict()
     for i, j in zip(['symp_chills_yn', 'symp_cough_yn', 'symp_diarrhea_yn', 'symp_fatigue_yn', 'symp_fever_yn',
                      'symp_myalgia_yn', 'symp_nausea_yn', 'symp_rash_yn', 'symp_runny_nose_yn', 'symp_sob_yn',
                      'symp_sore_throat_yn', 'symp_stuffy_nose_yn', 'symp_trbl_breathing_yn', 'symp_vomit_yn'],
                     ['Chills', 'Cough', 'Diarrhea', 'Fatigue', 'Fever', 'Myalgia', 'Nausea', 'Rash', 'Runny Nose',
                      'Sob', 'Sore Throat', 'Stuffy Nose', 'Trouble Breathing', 'Vomiting']):
-        symptoms[j] = rchsd[i] + scripps[i + '_scrp']
+        neg_symptoms[j] = rchsd[i] + scripps[i + '_scrp'] - symptoms[i]
+        pos_symptoms[j] = symptoms[i]
     # ['plots_script', 'main_plot', 'overall_num_tot_cases', 'overall_num_pos_cases', 'overall_num_neg_cases',
     # 'overall_pct_pos_cases', 'overall_pct_neg_cases', 'todays_date', 'today_num_tot_cases', 'today_num_pos_cases',
     # 'today_num_neg_cases', 'today_pct_pos_cases', 'today_pct_neg_cases']
 
     # Gather the results of all the cases we've extracted so far along with when they were sampled
-    plots_script, plot_divs = plot_trend_chart(symptoms)
+    script1, div1, script2, div2 = plot_trend_chart(pos_symptoms, neg_symptoms)
 
     dashboard_information = {
-        'plots_script': plots_script,
-        'main_plot': plot_divs,
+        'trend_plot_script': script1,
+        'trend_plot_div': div1,
+        'symptom_script': script2,
+        'symptom_div': div2,
         # All of the overall testing numbers to include in the dashboard
         'overall_num_tot_cases': rchsd.loc[0, 'subj_count'] + scripps.loc[0, 'subj_count'],
         'overall_num_pos_cases': rchsd.loc[0, 'pos_count'] + scripps.loc[0, 'pos_count'],
@@ -104,31 +109,13 @@ def get_dashboard_data():
     return dashboard_information
 
 
-def plot_trend_chart(symptoms):
+def plot_trend_chart(p_symptoms, n_symptoms):
     """
     Generate bar and line plots to summarize data. Returns the javascript that can be embedded in web page to display
     the plots
     :param cases: django queryset
     :return componenets(p): embedable javascript for plot 'p'
     """
-    # PIE CHART
-    data = pd.DataFrame.from_dict(symptoms, orient='index')
-    data = data.reset_index()
-    data.columns=['Symptoms', 'Count']
-    data['angle'] = data['Count'] / data['Count'].sum() * 2 * pi
-    data['color'] = Category20c[len(symptoms)]
-    data = data.sort_values('Count', ascending=False)
-
-    p1 = figure(plot_height=400, title='Observed Symptoms', toolbar_location=None, tools="hover",
-                tooltips="@Symptoms: @Count", x_range=(-0.5, 1.0))
-    p1.wedge(x=0, y=1, radius=0.4, start_angle=cumsum('angle', include_zero=True), end_angle=cumsum('angle'),
-             line_color="white", fill_color='color', legend_field='Symptoms', source=data)
-    p1.axis.axis_label = None
-    p1.axis.visible = False
-    p1.grid.grid_line_color = None
-    p1.toolbar.autohide = True
-    p1.sizing_mode = 'stretch_height'
-
     # CASE TREND PLOT
     obj = test_results.objects.filter(project='Radys')
     obj = obj.exclude(barcode__contains='.')
@@ -149,51 +136,94 @@ def plot_trend_chart(symptoms):
 
     result_summary.index = result_summary.index.astype('datetime64[ns]')
     result_summary[['Positive', 'Negative']] = result_summary[['Positive', 'Negative']].astype(int)
-    p = 0
-    n = 0
-    for i, j, k in zip(result_summary.index, result_summary['Negative'], result_summary['Positive']):
-        p = p + k
-        n = n + j
-        result_summary.loc[i, 'Infection Rate'] = ((p / (p + n)) * 100)
+    result_summary['Positive_Rolling_Mean'] = result_summary['Positive'].rolling(5).mean()
+    result_summary['Positive_Rolling_Mean'] = result_summary['Positive_Rolling_Mean'].fillna(0)
 
     source = ColumnDataSource(data=result_summary.reset_index())
-    p = figure(plot_width=1000, plot_height=400, x_axis_type='datetime')
-    p.varea_stack(['Negative', 'Positive'], x='sampling_date', color=("forestgreen", "firebrick"), source=source)
+    p1 = figure(plot_height=500, x_axis_type='datetime', tools=[PanTool(dimensions='width')])
+    p1.varea_stack(['Negative'], x='sampling_date', color=("forestgreen"), alpha=0.7, source=source,
+                   legend=['# of samples tested'])
     y_range = Range1d(0, result_summary['Negative'].max() + 5)
     hover_tool = HoverTool(tooltips=[("Date", "@sampling_date{%F}"), ("Positive", "@Positive"),
                                      ("Negative", "@Negative")], formatters={"@sampling_date": "datetime"})
-    p.add_tools(hover_tool)
+    p1.add_tools(hover_tool)
 
-    p.yaxis.axis_label = "Samples Tested Per Day"
-    p.yaxis.ticker = AdaptiveTicker(min_interval=1)
+    p1.yaxis.axis_label = "Samples Tested Per Day"
+    p1.yaxis.ticker = AdaptiveTicker(min_interval=1)
 
-    p.extra_y_ranges = {"InfectionRate": Range1d(start=0, end=result_summary['Infection Rate'].max())}
-    p.line(x='sampling_date', y='Infection Rate', source=result_summary, color='firebrick', line_width=3,
-           y_range_name='InfectionRate')
-    p.add_layout(LinearAxis(y_range_name="InfectionRate", axis_label="Infection Rate (%)"), 'right')
-
+    p1.extra_y_ranges = {"Positive_Rolling_Mean": Range1d(start=0, end=result_summary['Positive_Rolling_Mean'].max())}
+    p1.line(x='sampling_date', y='Positive_Rolling_Mean', source=result_summary, color='firebrick', line_width=3,
+            y_range_name='Positive_Rolling_Mean', legend='5 day mean positive samples')
+    p1.add_layout(LinearAxis(y_range_name="Positive_Rolling_Mean", axis_label="5 Day Rolling Mean of Positive Cases"),
+                  'right')
     # Style plot
-    p.toolbar_location = "above"
-    p.sizing_mode = 'stretch_height'
-    p.outline_line_color = None
-    p.toolbar.logo = None
-    p.toolbar.autohide = False
-    p.ygrid.grid_line_color = None
+    p1.toolbar_location = "above"
+    p1.sizing_mode = 'stretch_both'
+    p1.outline_line_color = None
+    p1.toolbar.logo = None
+    p1.toolbar.autohide = False
+    p1.ygrid.grid_line_color = None
 
-    p.legend.location = "top_left"
-    p.legend.title = "Case Status"
-    p.legend.title_text_font_style = "bold"
-    p.legend.title_text_font_size = "20px"
+    p1.legend.location = "top_left"
+    p1.legend.title = "Case Status"
+    p1.legend.title_text_font_style = "bold"
+    p1.legend.title_text_font_size = "20px"
 
-    p.xaxis.axis_label = "Date"
-    p.xaxis.axis_label_text_font_style = "bold"
-    p.xaxis.axis_label_text_font_size = "16px"
+    p1.xaxis.axis_label = "Date"
+    p1.xaxis.axis_label_text_font_size = "18px"
+    p1.xaxis.major_label_text_font_size = "16px"
 
-    p.yaxis.axis_label_text_font_style = "bold"
-    p.yaxis.axis_label_text_font_size = "16px"
-    p.yaxis.minor_tick_line_color = None
+    p1.yaxis.axis_label_text_font_size = "18px"
+    p1.yaxis.major_label_text_font_size = "16px"
+    p1.yaxis.minor_tick_line_color = None
 
-    return components(row(p, p1))
+    # PIE CHART
+    data = pd.DataFrame.from_dict(p_symptoms, orient='index')
+    data = data.reset_index()
+    data.columns = ['Symptoms', 'Count']
+    data['angle'] = data['Count'] / data['Count'].sum() * 2 * pi
+    data['color'] = Category20c[len(p_symptoms)]
+    data = data.sort_values('Count', ascending=False)
+    l = list(data['Symptoms'])
+
+    p2 = figure(plot_height=400, title='Positive Subjects', toolbar_location=None, tools="hover",
+                tooltips="@Symptoms: @Count", x_range=(-0.5, 1.0))
+    p2.wedge(x=0, y=1, radius=0.4, start_angle=cumsum('angle', include_zero=True), end_angle=cumsum('angle'),
+             line_color="white", fill_color='color', legend_field='Symptoms', source=data)
+    p2.axis.axis_label = None
+    p2.axis.visible = False
+    p2.grid.grid_line_color = None
+    p2.toolbar.autohide = True
+    p2.grid.visible = False
+    p2.outline_line_color = None
+    p2.title.align = "left"
+
+    data = pd.DataFrame.from_dict(n_symptoms, orient='index')
+    data = data.reset_index()
+    data.columns = ['Symptoms', 'Count']
+    data['angle'] = data['Count'] / data['Count'].sum() * 2 * pi
+    data['color'] = Category20c[len(n_symptoms)]
+    data = data.sort_values('Count', ascending=False)
+    data = data.set_index('Symptoms').loc[l].reset_index()
+
+    p3 = figure(plot_height=400, title='Negative Subjects', toolbar_location=None, tools="hover",
+                tooltips="@Symptoms: @Count", x_range=(-0.5, 1.0))
+    p3.wedge(x=0, y=1, radius=0.4, start_angle=cumsum('angle', include_zero=True), end_angle=cumsum('angle'),
+             line_color="white", fill_color='color', legend_field='Symptoms', source=data)
+    p3.axis.axis_label = None
+    p3.axis.visible = False
+    p3.grid.grid_line_color = None
+    p3.toolbar.autohide = True
+    p3.legend.visible = False
+    p3.grid.visible = False
+    p3.outline_line_color = None
+    p3.title.align = "left"
+
+    s1, d1 = components(p1)
+    p4 = row(p2, p3)
+    p4.sizing_mode = 'stretch_both'
+    s2, d2 = components(p4)
+    return s1, d1, s2, d2
 
 
 def sample_counter_display():
